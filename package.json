@@ -2,7 +2,10 @@
   "name": "spotter-tv-app",
   "private": true,
   "license": "MIT",
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev:camera": "npm run dev -w apps/camera",
     "build:camera": "npm run build -w apps/camera"

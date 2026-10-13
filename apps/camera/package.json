@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.1.0",
+    "@spotter/shared": "*",
     "spotter-movement": "github:Mallikarjuntr/spotter-movement#dev"
   },
   "devDependencies": {

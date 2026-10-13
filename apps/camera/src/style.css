@@ -91,6 +91,56 @@ h1 em {
   line-height: 1.45;
 }
 
+.pair {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1.5px solid var(--ink);
+  border-bottom: 1.5px solid var(--ink);
+  padding: 12px 0;
+}
+
+.intro .pair-status {
+  font-size: 16px;
+}
+
+.pair-status.linked {
+  font-family: var(--hand);
+  font-size: 22px;
+  color: var(--ink);
+}
+
+.pair-status.failed {
+  color: var(--pen);
+}
+
+.pair-form {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pair-form label {
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--pencil);
+  text-transform: uppercase;
+}
+
+.pair-form input {
+  width: 110px;
+  min-height: 48px;
+  font-family: var(--mono);
+  font-size: 24px;
+  letter-spacing: 0.2em;
+  padding: 6px 10px;
+  border: 2px solid var(--ink);
+  border-radius: 3px;
+  background: #fbf8f1;
+  color: var(--ink);
+}
+
 .options {
   border: 1.5px solid var(--ink);
   padding: 12px 14px;

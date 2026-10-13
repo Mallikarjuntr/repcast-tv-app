@@ -1,4 +1,5 @@
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
+import { BODY_PARTS, findSession, publish, type BodyPart, type SpotterEvent } from '@spotter/shared';
 import { RepDetector, squat, type PointName, type RepResult, type RepUpdate } from 'spotter-movement';
 
 const MODEL_URL = {
@@ -13,6 +14,11 @@ const BONES: [number, number][] = [
   [23, 25], [25, 27], [27, 29], [29, 31], [27, 31],
   [24, 26], [26, 28], [28, 30], [30, 32], [28, 32],
 ];
+
+/** MediaPipe landmark indices that must be visible for each part of the TV's framing checklist. */
+const PART_POINTS: Record<BodyPart, number[]> = { head: [0], hips: [23, 24], knees: [25, 26], feet: [27, 28] };
+const FRAMING_MIN_GAP_MS = 400;
+const FRAMING_HEARTBEAT_MS = 2000;
 
 const FRIENDLY: Partial<Record<PointName, string>> = {
   leftHip: 'hips', rightHip: 'hips', leftKnee: 'knees', rightKnee: 'knees',
@@ -43,7 +49,51 @@ const ui = {
   copy: $<HTMLButtonElement>('copy'),
   reset: $<HTMLButtonElement>('reset'),
   flip: $<HTMLButtonElement>('flip'),
+  pairStatus: $('pair-status'),
+  pairForm: $<HTMLFormElement>('pair-form'),
+  codeInput: $<HTMLInputElement>('code'),
 };
+
+/** The TV session this phone is linked to, if any. */
+let channel: string | null = null;
+let lastFraming = '';
+let lastFramingAt = 0;
+
+function send(event: SpotterEvent): void {
+  if (channel) publish(channel, event).catch(() => {});
+}
+
+async function linkToTv(code: string): Promise<void> {
+  ui.pairStatus.className = 'pair-status';
+  ui.pairStatus.textContent = `Looking for TV ${code}…`;
+  try {
+    const session = await findSession(code);
+    channel = session.channel;
+    ui.pairStatus.className = 'pair-status linked';
+    ui.pairStatus.textContent = `Linked to your TV · code ${code} ✓`;
+    ui.pairForm.hidden = true;
+    send({ type: 'hello', device: navigator.userAgent.includes('Android') ? 'Android phone' : 'phone', at: Date.now() });
+  } catch (err) {
+    channel = null;
+    ui.pairStatus.className = 'pair-status failed';
+    ui.pairStatus.textContent = `Couldn't link: ${err instanceof Error ? err.message : String(err)}`;
+  }
+}
+
+/** Tells the TV which body parts are in view: on every change (throttled) and as a heartbeat. */
+function reportFraming(pose: NormalizedLandmark[] | undefined, now: number): void {
+  if (!channel) return;
+  const visible = Object.fromEntries(
+    BODY_PARTS.map((part) => [part, !!pose && PART_POINTS[part].every((i) => (pose[i]?.visibility ?? 0) >= 0.5)]),
+  ) as Record<BodyPart, boolean>;
+  const key = JSON.stringify(visible);
+  const changed = key !== lastFraming && now - lastFramingAt >= FRAMING_MIN_GAP_MS;
+  if (changed || now - lastFramingAt >= FRAMING_HEARTBEAT_MS) {
+    lastFraming = key;
+    lastFramingAt = now;
+    send({ type: 'framing', visible, at: Date.now() });
+  }
+}
 
 const modelKind = new URLSearchParams(location.search).get('model') === 'full' ? 'full' : 'lite';
 const detector = new RepDetector(squat);
@@ -152,6 +202,7 @@ function onRep(rep: RepResult): void {
   setTimeout(() => countBox.classList.remove('bump'), 350);
 
   const issues = [...(rep.depthOk === false ? [squat.depth!.cue] : []), ...rep.faults.map((f) => f.cue)];
+  send({ type: 'rep', exercise: squat.id, count: rep.count, depthOk: rep.depthOk, cues: issues, at: Date.now() });
   if (issues.length > 0) {
     setCue(issues.join(' · '), true);
     say(`${rep.count}. ${issues[0]}`);
@@ -193,6 +244,7 @@ function loop(): void {
     const result = landmarker.detectForVideo(video, now);
     const pose = result.landmarks[0];
     draw(pose);
+    reportFraming(pose, now);
     frames++;
     if (pose) {
       noPersonFrames = 0;
@@ -253,6 +305,8 @@ ui.start.addEventListener('click', async () => {
   }
   ui.intro.hidden = true;
   ui.session.hidden = false;
+  lastFramingAt = 0;
+  send({ type: 'hello', device: 'camera started', at: Date.now() });
   await keepScreenOn();
   requestAnimationFrame(loop);
 });
@@ -287,6 +341,22 @@ ui.copy.addEventListener('click', async () => {
   }
   setTimeout(() => (ui.copy.textContent = 'Copy results'), 2500);
 });
+
+ui.pairForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const code = ui.codeInput.value.trim();
+  if (!/^\d{4}$/.test(code)) {
+    ui.pairStatus.className = 'pair-status failed';
+    ui.pairStatus.textContent = 'Enter the 4-digit code shown on your TV.';
+    return;
+  }
+  void linkToTv(code);
+});
+
+const codeFromQr = new URLSearchParams(location.search).get('code');
+if (codeFromQr && /^\d{4}$/.test(codeFromQr)) void linkToTv(codeFromQr);
+
+window.addEventListener('pagehide', () => send({ type: 'bye', at: Date.now() }));
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && stream && !wakeLock) void keepScreenOn();

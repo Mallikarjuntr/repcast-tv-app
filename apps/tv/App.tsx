@@ -10,11 +10,12 @@ import { BackHandler, View } from 'react-native';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { ModesScreen, type Mode } from './src/screens/ModesScreen';
 import { NextUpScreen } from './src/screens/NextUpScreen';
+import { PairScreen } from './src/screens/PairScreen';
 import { colors } from './src/theme';
 
 void SplashScreen.preventAutoHideAsync();
 
-type Screen = { name: 'home' } | { name: 'modes' } | { name: 'next'; mode: Mode };
+type Screen = { name: 'home' } | { name: 'modes' } | { name: 'pair' } | { name: 'next'; mode: Mode };
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -54,13 +55,16 @@ export default function App() {
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
       <StatusBar hidden />
       {screen.name === 'home' && <HomeScreen onStart={() => go({ name: 'modes' })} onNoCamera={() => go({ name: 'next', mode: 'core' })} />}
-      {screen.name === 'modes' && <ModesScreen freeCoachSessionsLeft={2} onChoose={(mode) => go({ name: 'next', mode })} />}
+      {screen.name === 'modes' && (
+        <ModesScreen freeCoachSessionsLeft={2} onChoose={(mode) => go(mode === 'coach' ? { name: 'pair' } : { name: 'next', mode })} />
+      )}
+      {screen.name === 'pair' && <PairScreen onReady={() => go({ name: 'next', mode: 'coach' })} />}
       {screen.name === 'next' && (
         <NextUpScreen
-          title={screen.mode === 'coach' ? 'Pairing your phone' : 'Your guided workout'}
+          title={screen.mode === 'coach' ? 'The live workout' : 'Your guided workout'}
           detail={
             screen.mode === 'coach'
-              ? 'Next you will scan a code with your phone, place it using the floor plan, and Spotter will check your form on every rep.'
+              ? 'Next: your reps counted live on the TV, with red-pen form notes drawn over your movement.'
               : 'Next comes the follow-along workout: a voice coach, timers and a tempo beat — no camera needed.'
           }
           onBack={back}
