@@ -19,3 +19,8 @@ local.properties
 # MediaPipe runtime copied at build time
 apps/camera/public/mediapipe/
 .claude/
+
+# Expo TV app: native folders are generated (expo prebuild)
+apps/tv/android/
+apps/tv/ios/
+apps/tv/.expo/

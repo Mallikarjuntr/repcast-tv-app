@@ -1,0 +1,32 @@
+{
+  "name": "@spotter/tv",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "expo start",
+    "android": "EXPO_TV=1 expo run:android",
+    "prebuild:tv": "EXPO_TV=1 expo prebuild --platform android --clean",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@expo-google-fonts/fraunces": "^0.4.1",
+    "@expo-google-fonts/ibm-plex-mono": "^0.4.1",
+    "@expo-google-fonts/instrument-sans": "^0.4.2",
+    "@expo-google-fonts/kalam": "^0.4.1",
+    "@expo/vector-icons": "^15.0.2",
+    "expo": "~57.0.13",
+    "expo-font": "~57.0.4",
+    "expo-splash-screen": "~57.0.6",
+    "expo-status-bar": "~57.0.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "npm:react-native-tvos@0.86-stable",
+    "react-native-svg": "15.15.4",
+    "react-native-web": "~0.21.0"
+  },
+  "devDependencies": {
+    "@react-native-tvos/config-tv": "^0.1.6",
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  },
+  "private": true
+}
