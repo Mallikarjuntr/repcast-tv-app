@@ -45,7 +45,7 @@ function ModeCard({ kicker, title, titleItalic, points, action, numberColor, bad
         const focused = isFocused(state);
         return (
         <>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: s(16) }}>
             <Kicker size={15}>{kicker}</Kicker>
             {badge ? (
               <View style={{ backgroundColor: colors.highlighter, paddingHorizontal: s(8), paddingVertical: s(3) }}>
@@ -118,7 +118,7 @@ export function ModesScreen({ onChoose, freeCoachSessionsLeft }: { onChoose: (mo
           onPress={() => onChoose('core')}
         />
         <ModeCard
-          kicker="SMART COACHING · SPOTTER COACH"
+          kicker="SMART COACHING · PAID"
           title="Coach "
           titleItalic="me"
           points={['Form checks on every single rep', 'Uses the phone or webcam you already own', "Your coach's note after every session", 'Plans that adapt to how you moved']}
