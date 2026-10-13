@@ -10,12 +10,17 @@ import { BackHandler, View } from 'react-native';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { ModesScreen, type Mode } from './src/screens/ModesScreen';
 import { NextUpScreen } from './src/screens/NextUpScreen';
+import { LiveScreen } from './src/screens/LiveScreen';
 import { PairScreen } from './src/screens/PairScreen';
+import type { WorkoutPlan } from './src/useLiveWorkout';
 import { colors } from './src/theme';
 
 void SplashScreen.preventAutoHideAsync();
 
-type Screen = { name: 'home' } | { name: 'modes' } | { name: 'pair' } | { name: 'next'; mode: Mode };
+type Screen = { name: 'home' } | { name: 'modes' } | { name: 'pair' } | { name: 'live'; channel: string } | { name: 'next'; mode: Mode; reps?: number };
+
+// Today's sample session until plans come from the backend.
+const SQUAT_PLAN: WorkoutPlan = { exercise: 'squat', name: 'Squats', sets: 3, reps: 12, restSeconds: 30 };
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -58,13 +63,14 @@ export default function App() {
       {screen.name === 'modes' && (
         <ModesScreen freeCoachSessionsLeft={2} onChoose={(mode) => go(mode === 'coach' ? { name: 'pair' } : { name: 'next', mode })} />
       )}
-      {screen.name === 'pair' && <PairScreen onReady={() => go({ name: 'next', mode: 'coach' })} />}
+      {screen.name === 'pair' && <PairScreen onReady={(channel) => go({ name: 'live', channel })} />}
+      {screen.name === 'live' && <LiveScreen channel={screen.channel} plan={SQUAT_PLAN} onFinish={(history) => go({ name: 'next', mode: 'coach', reps: history.length })} />}
       {screen.name === 'next' && (
         <NextUpScreen
-          title={screen.mode === 'coach' ? 'The live workout' : 'Your guided workout'}
+          title={screen.mode === 'coach' ? (screen.reps ? `${screen.reps} reps done — your receipt` : 'The live workout') : 'Your guided workout'}
           detail={
             screen.mode === 'coach'
-              ? 'Next: your reps counted live on the TV, with red-pen form notes drawn over your movement.'
+              ? 'Next: the workout receipt, with your AI coach\'s handwritten note and the plan for next time.'
               : 'Next comes the follow-along workout: a voice coach, timers and a tempo beat — no camera needed.'
           }
           onBack={back}

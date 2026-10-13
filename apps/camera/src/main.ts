@@ -1,5 +1,5 @@
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
-import { BODY_PARTS, findSession, publish, type BodyPart, type SpotterEvent } from '@spotter/shared';
+import { BODY_PARTS, findSession, openChannel, POSE_SOURCE_INDEX, type BodyPart, type LiveChannel, type SpotterEvent } from '@spotter/shared';
 import { RepDetector, squat, type PointName, type RepResult, type RepUpdate } from 'spotter-movement';
 
 const MODEL_URL = {
@@ -19,6 +19,8 @@ const BONES: [number, number][] = [
 const PART_POINTS: Record<BodyPart, number[]> = { head: [0], hips: [23, 24], knees: [25, 26], feet: [27, 28] };
 const FRAMING_MIN_GAP_MS = 400;
 const FRAMING_HEARTBEAT_MS = 2000;
+/** About 12 outline updates a second is smooth on a TV and light on data. */
+const POSE_INTERVAL_MS = 80;
 
 const FRIENDLY: Partial<Record<PointName, string>> = {
   leftHip: 'hips', rightHip: 'hips', leftKnee: 'knees', rightKnee: 'knees',
@@ -54,13 +56,28 @@ const ui = {
   codeInput: $<HTMLInputElement>('code'),
 };
 
-/** The TV session this phone is linked to, if any. */
-let channel: string | null = null;
+/** Live connection to the TV session this phone is linked to, if any. */
+let tv: LiveChannel | null = null;
 let lastFraming = '';
 let lastFramingAt = 0;
+let lastPoseAt = 0;
 
+/** Important messages (hello, reps) fall back to HTTPS if the socket is down. */
 function send(event: SpotterEvent): void {
-  if (channel) publish(channel, event).catch(() => {});
+  tv?.send(event, true);
+}
+
+/** Streams the body outline to the TV; frames are simply dropped while the socket reconnects. */
+function streamPose(pose: NormalizedLandmark[] | undefined, now: number): void {
+  if (!tv || !pose || now - lastPoseAt < POSE_INTERVAL_MS) return;
+  lastPoseAt = now;
+  const p: number[] = [];
+  for (const i of POSE_SOURCE_INDEX) {
+    const lm = pose[i];
+    const seen = lm && (lm.visibility ?? 0) >= 0.5;
+    p.push(seen ? Math.round(lm.x * 1000) / 1000 : -1, seen ? Math.round(lm.y * 1000) / 1000 : -1);
+  }
+  tv.send({ type: 'pose', p, aspect: ui.video.videoWidth / ui.video.videoHeight, mirrored: facing === 'user', at: Date.now() });
 }
 
 async function linkToTv(code: string): Promise<void> {
@@ -68,13 +85,15 @@ async function linkToTv(code: string): Promise<void> {
   ui.pairStatus.textContent = `Looking for TV ${code}…`;
   try {
     const session = await findSession(code);
-    channel = session.channel;
+    tv?.close();
+    tv = openChannel(session.channel);
     ui.pairStatus.className = 'pair-status linked';
     ui.pairStatus.textContent = `Linked to your TV · code ${code} ✓`;
     ui.pairForm.hidden = true;
     send({ type: 'hello', device: navigator.userAgent.includes('Android') ? 'Android phone' : 'phone', at: Date.now() });
   } catch (err) {
-    channel = null;
+    tv?.close();
+    tv = null;
     ui.pairStatus.className = 'pair-status failed';
     ui.pairStatus.textContent = `Couldn't link: ${err instanceof Error ? err.message : String(err)}`;
   }
@@ -82,7 +101,7 @@ async function linkToTv(code: string): Promise<void> {
 
 /** Tells the TV which body parts are in view: on every change (throttled) and as a heartbeat. */
 function reportFraming(pose: NormalizedLandmark[] | undefined, now: number): void {
-  if (!channel) return;
+  if (!tv) return;
   const visible = Object.fromEntries(
     BODY_PARTS.map((part) => [part, !!pose && PART_POINTS[part].every((i) => (pose[i]?.visibility ?? 0) >= 0.5)]),
   ) as Record<BodyPart, boolean>;
@@ -202,7 +221,7 @@ function onRep(rep: RepResult): void {
   setTimeout(() => countBox.classList.remove('bump'), 350);
 
   const issues = [...(rep.depthOk === false ? [squat.depth!.cue] : []), ...rep.faults.map((f) => f.cue)];
-  send({ type: 'rep', exercise: squat.id, count: rep.count, depthOk: rep.depthOk, cues: issues, at: Date.now() });
+  send({ type: 'rep', exercise: squat.id, count: rep.count, depthOk: rep.depthOk, faults: rep.faults.map((f) => f.id), cues: issues, at: Date.now() });
   if (issues.length > 0) {
     setCue(issues.join(' · '), true);
     say(`${rep.count}. ${issues[0]}`);
@@ -245,6 +264,7 @@ function loop(): void {
     const pose = result.landmarks[0];
     draw(pose);
     reportFraming(pose, now);
+    streamPose(pose, now);
     frames++;
     if (pose) {
       noPersonFrames = 0;

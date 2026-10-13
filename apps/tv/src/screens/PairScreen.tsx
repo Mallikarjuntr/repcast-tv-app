@@ -42,7 +42,7 @@ function missingCue(missing: BodyPart[]): string {
   return `step back a little — I can't see your ${missing.map((p) => PART_LABEL[p].toLowerCase()).join(' and ')}`;
 }
 
-export function PairScreen({ onReady }: { onReady: () => void }) {
+export function PairScreen({ onReady }: { onReady: (channel: string) => void }) {
   const s = useScale();
   const { state, newCode } = usePairing();
 
@@ -106,7 +106,7 @@ export function PairScreen({ onReady }: { onReady: () => void }) {
             ) : (
               <>
                 {ready?.phoneConnected ? (
-                  <FocusButton label={allVisible ? 'Start workout' : 'Start anyway'} onPress={onReady} preferredFocus={allVisible} fontSize={20} />
+                  <FocusButton label={allVisible ? 'Start workout' : 'Start anyway'} onPress={() => onReady(ready.session.channel)} preferredFocus={allVisible} fontSize={20} />
                 ) : null}
                 <FocusButton label="New code" onPress={newCode} variant="link" fontSize={18} preferredFocus={!ready?.phoneConnected} />
               </>
