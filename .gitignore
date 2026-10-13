@@ -15,3 +15,7 @@ local.properties
 .gradle/
 .idea/
 .vscode/
+
+# MediaPipe runtime copied at build time
+apps/camera/public/mediapipe/
+.claude/

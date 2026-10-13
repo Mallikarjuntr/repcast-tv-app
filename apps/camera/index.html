@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#EFE8DA" />
+    <title>Spotter camera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,300..900,0..100,0..1;1,9..144,300..900,0..100,0..1&family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&family=Kalam:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="top">
+        <div class="wordmark">spotter<span class="dot">.</span></div>
+        <div class="tag" id="status-tag">CAMERA TEST · SQUATS</div>
+      </header>
+
+      <section class="intro" id="intro">
+        <h1>Let's count some <em>squats.</em></h1>
+        <p>Prop your phone at hip height, about 2–3 metres away, turned a little to the side. Stand tall, then squat at your own pace.</p>
+        <fieldset class="options">
+          <legend class="sr-only">Options</legend>
+          <label><input type="radio" name="facing" value="user" checked /> Front camera</label>
+          <label><input type="radio" name="facing" value="environment" /> Back camera</label>
+          <label><input type="checkbox" id="speak" checked /> Count out loud</label>
+        </fieldset>
+        <button class="primary" id="start" type="button">Start camera</button>
+        <p class="note">Video stays on this phone. Nothing is uploaded.</p>
+        <p class="error" id="error" role="alert" hidden></p>
+      </section>
+
+      <section class="session" id="session" hidden>
+        <div class="stage" id="stage">
+          <video id="video" playsinline muted></video>
+          <canvas id="overlay"></canvas>
+          <div class="count" aria-live="polite"><span id="count">0</span><span class="of">reps</span></div>
+        </div>
+
+        <p class="cue" id="cue" aria-live="assertive">Stand tall to begin</p>
+        <p class="hint" id="hint"></p>
+
+        <dl class="readout">
+          <div><dt>Knee</dt><dd id="angle">–</dd></div>
+          <div><dt>FPS</dt><dd id="fps">–</dd></div>
+          <div><dt>Phase</dt><dd id="phase">–</dd></div>
+        </dl>
+
+        <ol class="log" id="log"></ol>
+
+        <div class="actions">
+          <button class="primary" id="copy" type="button">Copy results</button>
+          <button id="reset" type="button">Reset</button>
+          <button id="flip" type="button">Switch camera</button>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
