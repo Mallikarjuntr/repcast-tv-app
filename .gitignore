@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.aws-sam/
+cdk.out/
+*.keystore
+*.jks
+local.properties
+.gradle/
+.idea/
+.vscode/
