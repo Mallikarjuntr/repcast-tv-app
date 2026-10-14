@@ -47,7 +47,7 @@ function Speaker({ size }: { size: number }) {
   );
 }
 
-export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan: WorkoutPlan; onFinish: (history: RepNote[]) => void }) {
+export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan: WorkoutPlan; onFinish: (history: RepNote[], seconds: number) => void }) {
   const s = useScale();
   const [paused, setPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -74,9 +74,9 @@ export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan:
   useEffect(() => {
     if (w.phase === 'done' && !finished.current) {
       finished.current = true;
-      onFinish(w.history);
+      onFinish(w.history, elapsed);
     }
-  }, [w.phase, w.history, onFinish]);
+  }, [w.phase, w.history, elapsed, onFinish]);
 
   const recent = w.lastRep && Date.now() - w.lastRep.at < NOTE_MS ? w.lastRep : null;
   const notes: Annotations = {

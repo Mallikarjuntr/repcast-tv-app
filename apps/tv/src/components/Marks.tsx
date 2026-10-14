@@ -79,3 +79,12 @@ export function SetDot({ size, state }: { size: number; state: 'done' | 'current
     </Svg>
   );
 }
+
+/** A red-pen cross for an attempt that didn't count. */
+export function Cross({ size, color = colors.pen }: MarkProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 34 34">
+      <Path d="M9 9 L 25 25 M 25 9 L 9 25" fill="none" stroke={color} strokeWidth={3.5} strokeLinecap="round" />
+    </Svg>
+  );
+}

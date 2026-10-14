@@ -8,15 +8,17 @@ import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { BackHandler, View } from 'react-native';
 import { HomeScreen } from './src/screens/HomeScreen';
-import { ModesScreen, type Mode } from './src/screens/ModesScreen';
+import { ModesScreen } from './src/screens/ModesScreen';
 import { FollowDoneScreen } from './src/screens/FollowDoneScreen';
 import { FollowScreen, type FollowResult } from './src/screens/FollowScreen';
-import { NextUpScreen } from './src/screens/NextUpScreen';
+import { ReceiptScreen } from './src/screens/ReceiptScreen';
 import { LiveScreen } from './src/screens/LiveScreen';
 import { PairScreen } from './src/screens/PairScreen';
-import { loadSessions, saveSession, weekView, type SessionRecord } from './src/storage';
-import type { WorkoutPlan } from './src/useLiveWorkout';
-import { LEGS_GENTLY } from './src/workouts';
+import { freeCoachSessionsLeft, loadSessions, saveSession, streakDays, weekView, type SessionRecord } from './src/storage';
+import { spotterNote, summarize, type WorkoutSummary } from './src/summary';
+import { useCoachNote } from './src/useCoachNote';
+import type { RepNote, WorkoutPlan } from './src/useLiveWorkout';
+import { estimateSeconds, LEGS_GENTLY } from './src/workouts';
 import { colors } from './src/theme';
 
 void SplashScreen.preventAutoHideAsync();
@@ -28,7 +30,30 @@ type Screen =
   | { name: 'live'; channel: string }
   | { name: 'follow' }
   | { name: 'followDone'; result: FollowResult }
-  | { name: 'next'; mode: Mode; reps?: number };
+  | { name: 'receipt'; receipt: CoachReceiptData };
+
+interface CoachReceiptData {
+  summary: WorkoutSummary;
+  history: RepNote[];
+  at: string;
+  sessionNumber: number;
+  streak: number;
+}
+
+function CoachReceipt({ data, onDone }: { data: CoachReceiptData; onDone: () => void }) {
+  const coach = useCoachNote(data.summary);
+  return (
+    <ReceiptScreen
+      summary={data.summary}
+      history={data.history}
+      coach={coach}
+      sessionNumber={data.sessionNumber}
+      streak={data.streak}
+      finishedAt={new Date(data.at)}
+      onDone={onDone}
+    />
+  );
+}
 
 // Today's sample session until plans come from the backend.
 const SQUAT_PLAN: WorkoutPlan = { exercise: 'squat', name: 'Squats', sets: 3, reps: 12, restSeconds: 30 };
@@ -60,6 +85,27 @@ export default function App() {
     void loadSessions().then(setSessions);
   }, []);
 
+  const finishLive = useCallback(
+    (history: RepNote[], seconds: number) => {
+      const summary = summarize(SQUAT_PLAN, history, seconds);
+      const record: SessionRecord = {
+        at: new Date().toISOString(),
+        mode: 'coach',
+        title: SQUAT_PLAN.name,
+        reps: summary.counted,
+        seconds,
+        cleanReps: summary.good,
+        nextTime: spotterNote(summary).nextTime,
+      };
+      void saveSession(record).then(setSessions);
+      swap({
+        name: 'receipt',
+        receipt: { summary, history, at: record.at, sessionNumber: sessions.length + 1, streak: streakDays([...sessions, record]) },
+      });
+    },
+    [sessions, swap],
+  );
+
   const finishFollow = useCallback(
     (result: FollowResult) => {
       void saveSession({ at: new Date().toISOString(), mode: 'core', title: 'Legs, gently.', reps: result.reps, seconds: result.seconds }).then(setSessions);
@@ -89,10 +135,14 @@ export default function App() {
       <StatusBar hidden />
       {screen.name === 'home' && <HomeScreen today={LEGS_GENTLY} sessions={sessions} onStart={() => go({ name: 'modes' })} onNoCamera={() => go({ name: 'follow' })} />}
       {screen.name === 'modes' && (
-        <ModesScreen freeCoachSessionsLeft={2} onChoose={(mode) => go(mode === 'coach' ? { name: 'pair' } : { name: 'follow' })} />
+        <ModesScreen
+          sessionLabel={`LEGS, GENTLY · ${Math.round(estimateSeconds(LEGS_GENTLY) / 60)} MIN`}
+          freeCoachSessionsLeft={freeCoachSessionsLeft(sessions)}
+          onChoose={(mode) => go(mode === 'coach' ? { name: 'pair' } : { name: 'follow' })} />
       )}
       {screen.name === 'pair' && <PairScreen onReady={(channel) => go({ name: 'live', channel })} />}
-      {screen.name === 'live' && <LiveScreen channel={screen.channel} plan={SQUAT_PLAN} onFinish={(history) => go({ name: 'next', mode: 'coach', reps: history.length })} />}
+      {screen.name === 'live' && <LiveScreen channel={screen.channel} plan={SQUAT_PLAN} onFinish={finishLive} />}
+      {screen.name === 'receipt' && <CoachReceipt data={screen.receipt} onDone={home} />}
       {screen.name === 'follow' && <FollowScreen session={LEGS_GENTLY} onFinish={finishFollow} />}
       {screen.name === 'followDone' && (
         <FollowDoneScreen
@@ -102,13 +152,6 @@ export default function App() {
           week={weekView(sessions)}
           onHome={home}
           onCoach={() => setHistory([{ name: 'home' }, { name: 'modes' }, { name: 'pair' }])}
-        />
-      )}
-      {screen.name === 'next' && (
-        <NextUpScreen
-          title={screen.reps ? `${screen.reps} reps done — your receipt` : 'The live workout'}
-          detail="Next: the workout receipt, with your AI coach's handwritten note and the plan for next time."
-          onBack={back}
         />
       )}
     </View>

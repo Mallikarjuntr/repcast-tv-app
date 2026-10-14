@@ -47,6 +47,9 @@ export function HomeScreen({
   const last = lastTime(sessions[sessions.length - 1]);
   const minutes = Math.round(estimateSeconds(today) / 60);
   const done = week.filter((d) => d.state === 'done').length;
+  // Carry the coach's advice from the last coached session over to today.
+  const advice = sessions[sessions.length - 1]?.nextTime;
+  const penNote = advice ? `last time's note —\n${advice.charAt(0).toUpperCase()}${advice.slice(1)}` : today.coachNote;
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(28) }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -68,7 +71,7 @@ export function HomeScreen({
             <FocusButton label="Move without camera" onPress={onNoCamera} variant="link" fontSize={22} />
           </View>
           <View style={{ marginLeft: s(40), marginTop: s(4) }}>
-            <PenNote size={26}>{today.coachNote}</PenNote>
+            <PenNote size={26}>{penNote}</PenNote>
           </View>
         </View>
 

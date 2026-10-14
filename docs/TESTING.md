@@ -51,7 +51,13 @@ Test clips are openly licensed exercise videos streamed from Wikimedia Commons (
 
 ## 3. End-to-end on the TV
 
-A scripted "virtual athlete" publishes pose and rep events to a real pairing session over AppSync Events, while the Fire TV app runs on the Android TV emulator; screenshots of each state are in `docs/screenshots/`.
+`tools/fake-phone.mjs` plays the phone's side of a coached workout against the real backend, so the whole TV flow can be tested without anyone squatting. It pairs with the code on the TV, sends framing, a moving outline and a scripted 3 × 12 squat session with clean reps, form notes (knees caving) and no-reps (not deep enough):
+
+```bash
+node tools/fake-phone.mjs 1234 --start-after 8 --rest 32
+```
+
+Press "Start workout" on the TV within `--start-after` seconds. The script's attempts are known in advance, so the receipt can be checked exactly: knees caved on reps 2, 6, 16 and 32, three attempts didn't count, 32 of 36 reps were clean (89%) — which is what the receipt shows (`docs/screenshots/18-receipt.png`, `19-receipt-every-rep.png`). Screenshots of every state are in `docs/screenshots/`.
 
 ## Known limits
 

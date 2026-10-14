@@ -11,6 +11,8 @@ export interface WorkoutPlan {
 }
 
 export interface RepNote {
+  /** Which set (0-based) the attempt was in. */
+  set: number;
   /** Counted reps in the set after this attempt. */
   count: number;
   counted: boolean;
@@ -76,6 +78,7 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
             setRepsInSet(repsRef.current);
           }
           const note: RepNote = {
+            set: s.setIndex,
             count: repsRef.current,
             counted,
             verdict: event.verdict ?? 'good',

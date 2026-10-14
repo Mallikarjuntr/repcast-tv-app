@@ -10,4 +10,6 @@ export const config = {
   eventsApiKey: 'da2-g4deiumcerfwzdyxlr3igkm7n4',
   /** Where the phone camera app is hosted; the TV's QR code points here with ?code=1234. */
   cameraAppUrl: 'https://mallikarjuntr.github.io/spotter-tv-app/',
+  /** POST {apiUrl}/coach-note (Claude on Amazon Bedrock). Off until the backend route is live. */
+  aiCoach: false,
 } as const;

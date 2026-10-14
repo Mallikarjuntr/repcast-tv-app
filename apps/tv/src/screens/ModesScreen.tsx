@@ -89,13 +89,21 @@ function ModeCard({ kicker, title, titleItalic, points, action, numberColor, bad
   );
 }
 
-export function ModesScreen({ onChoose, freeCoachSessionsLeft }: { onChoose: (mode: Mode) => void; freeCoachSessionsLeft: number }) {
+export function ModesScreen({
+  sessionLabel,
+  onChoose,
+  freeCoachSessionsLeft,
+}: {
+  sessionLabel: string;
+  onChoose: (mode: Mode) => void;
+  freeCoachSessionsLeft: number;
+}) {
   const s = useScale();
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(32), gap: s(22) }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
         <View style={{ gap: s(10) }}>
-          <Kicker>LEGS, GENTLY · 18 MIN</Kicker>
+          <Kicker>{sessionLabel}</Kicker>
           <Headline lead="How shall we " italic="train today?" size={72} />
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: s(6), transform: [{ rotate: '-3deg' }] }}>
@@ -112,7 +120,7 @@ export function ModesScreen({ onChoose, freeCoachSessionsLeft }: { onChoose: (mo
         <ModeCard
           kicker="CORE · FREE · NO CAMERA"
           title="Follow along"
-          points={['A voice that guides every move', 'Timers and a tempo beat to follow', 'Reps counted by the beat, or press OK', 'Streaks and progress, week by week']}
+          points={['A voice that guides every move', 'Timers and a tempo beat to follow', 'Reps counted for you, on the beat', 'Streaks and progress, week by week']}
           action="Start following along"
           numberColor={colors.pencil}
           onPress={() => onChoose('core')}
@@ -124,7 +132,7 @@ export function ModesScreen({ onChoose, freeCoachSessionsLeft }: { onChoose: (mo
           points={['Form checks on every single rep', 'Uses the phone or webcam you already own', "Your coach's note after every session", 'Plans that adapt to how you moved']}
           action="Start coaching"
           numberColor={colors.pen}
-          badge={`${freeCoachSessionsLeft} OF 3 FREE LEFT`}
+          badge={freeCoachSessionsLeft > 0 ? `${freeCoachSessionsLeft} OF 3 FREE LEFT` : 'FREE SESSIONS USED THIS WEEK'}
           price={'THEN ₹149 / MONTH\nOR ₹999 / YEAR'}
           preferredFocus
           onPress={() => onChoose('coach')}

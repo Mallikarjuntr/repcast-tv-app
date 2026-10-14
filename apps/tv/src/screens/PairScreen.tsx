@@ -1,9 +1,9 @@
 import { BODY_PARTS, config, type BodyPart } from '@spotter/shared';
 import { Text, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Circle } from 'react-native-svg';
 import { FloorPlan } from '../components/FloorPlan';
 import { FocusButton } from '../components/FocusButton';
-import { Tick } from '../components/Marks';
+import { Cross, Tick } from '../components/Marks';
 import { QrCode } from '../components/QrCode';
 import { Headline, Kicker, PenNote } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
@@ -15,14 +15,6 @@ function Waiting({ size }: { size: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 34 34">
       <Circle cx={17} cy={17} r={9} fill="none" stroke={colors.pencil} strokeWidth={2.5} strokeDasharray="4 4" />
-    </Svg>
-  );
-}
-
-function Cross({ size }: { size: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 34 34">
-      <Path d="M9 9 L 25 25 M25 9 L 9 25" fill="none" stroke={colors.pen} strokeWidth={3.5} strokeLinecap="round" />
     </Svg>
   );
 }
