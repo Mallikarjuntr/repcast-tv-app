@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { FocusButton } from '../components/FocusButton';
-import { PoseFigure } from '../components/PoseFigure';
+import { DemoFigure } from '../components/DemoFigure';
 import { Headline, Kicker } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { isFocused } from '../tv';
-import { blend, SWAP_OPTIONS, type Session, type Step, type Swaps } from '../workouts';
-
-const NO_NOTES = { depth: false, knees: false, chest: false };
+import { SWAP_OPTIONS, type Session, type Step, type Swaps } from '../workouts';
 
 function amount(step: Step): string {
   return step.kind === 'reps' ? `${step.sets} × ${step.reps}` : `${step.seconds} s`;
@@ -29,12 +27,6 @@ export function SwapScreen({ base, swaps: initial, onDone }: { base: Session; sw
   const [swaps, setSwaps] = useState<Swaps>(initial);
   const [focusedIndex, setFocusedIndex] = useState(0);
   const [panel, setPanel] = useState({ width: 0, height: 0 });
-  const [now, setNow] = useState(Date.now());
-
-  useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 80);
-    return () => clearInterval(timer);
-  }, []);
 
   const choiceFor = (original: Step): Step => SWAP_OPTIONS[original.id]?.find((o) => o.id === swaps[original.id]) ?? original;
   const cycle = (original: Step) => {
@@ -52,7 +44,7 @@ export function SwapScreen({ base, swaps: initial, onDone }: { base: Session; sw
   const shown = choiceFor(focused);
   const options = SWAP_OPTIONS[focused.id] ?? [focused];
   const optionIndex = options.findIndex((o) => o.id === shown.id);
-  const frame = { p: blend(shown.demo.a, shown.demo.b, demoPhase(shown, now)), aspect: shown.demo.aspect, mirrored: false };
+  const position = useCallback(() => demoPhase(shown, Date.now()), [shown]);
   const swapCount = Object.keys(swaps).length;
 
   return (
@@ -119,7 +111,14 @@ export function SwapScreen({ base, swaps: initial, onDone }: { base: Session; sw
               <Kicker size={13}>LIKE THIS</Kicker>
               <Kicker size={13}>{options.length > 1 ? `OPTION ${optionIndex + 1} OF ${options.length}` : 'NO SWAPS FOR THIS ONE'}</Kicker>
             </View>
-            <PoseFigure key={shown.id} frame={frame} notes={NO_NOTES} width={panel.width} height={panel.height} fitBox={shown.demo.fitBox} anchorX={0.5} />
+            <DemoFigure
+              key={shown.id}
+              demo={shown.demo}
+              position={position}
+              width={panel.width}
+              height={panel.height}
+              animate={shown.kind === 'reps' || shown.cycle > 0}
+            />
           </View>
           <Text style={{ fontFamily: fonts.display, fontSize: s(28), lineHeight: s(36), color: colors.ink }}>{shown.name}</Text>
           <Text style={{ fontFamily: fonts.sans, fontSize: s(19), lineHeight: s(27), color: colors.inkSoft }}>{shown.why}</Text>

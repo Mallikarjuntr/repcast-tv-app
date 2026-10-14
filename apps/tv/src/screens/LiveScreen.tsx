@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { FocusButton } from '../components/FocusButton';
 import { SetDot } from '../components/Marks';
-import { PoseFigure, type Annotations } from '../components/PoseFigure';
+import { PoseFigure, type Annotations, type PoseFrame } from '../components/PoseFigure';
 import { Tally } from '../components/Tally';
 import { Headline, Kicker, PenNote } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
@@ -47,6 +47,51 @@ function Speaker({ size }: { size: number }) {
   );
 }
 
+/** How long without an outline before we say the phone has lost sight of you. */
+const LOST_SIGHT_MS = 2500;
+
+/**
+ * The live outline. It subscribes to outlines itself and redraws on each one (about 12 a second),
+ * so the rest of the live screen doesn't re-render with every frame.
+ */
+const LivePose = memo(function LivePose({
+  getPose,
+  subscribePose,
+  notes,
+  width,
+  height,
+}: {
+  getPose: () => { frame: PoseFrame; at: number } | null;
+  subscribePose: (listener: () => void) => () => void;
+  notes: Annotations;
+  width: number;
+  height: number;
+}) {
+  const [, setTick] = useState(0);
+  useEffect(() => subscribePose(() => setTick((t) => (t + 1) % 1_000_000)), [subscribePose]);
+  // Re-check now and then, so a phone that stops sending is noticed even with no new outlines.
+  useEffect(() => {
+    const timer = setInterval(() => setTick((t) => (t + 1) % 1_000_000), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const latest = getPose();
+  const lostSight = latest !== null && Date.now() - latest.at > LOST_SIGHT_MS;
+  if (latest && !lostSight) return <PoseFigure frame={latest.frame} notes={notes} width={width} height={height} />;
+  return <PoseWaiting lostSight={lostSight} />;
+});
+
+function PoseWaiting({ lostSight }: { lostSight: boolean }) {
+  const s = useScale();
+  return (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: s(24) }}>
+      <PenNote arrow={false} size={26}>
+        {lostSight ? "I can't see you — step back into view" : 'waiting for the camera…'}
+      </PenNote>
+    </View>
+  );
+}
+
 export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan: WorkoutPlan; onFinish: (history: RepNote[], seconds: number) => void }) {
   const s = useScale();
   const [paused, setPaused] = useState(false);
@@ -79,14 +124,12 @@ export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan:
   }, [w.phase, w.history, elapsed, onFinish]);
 
   const recent = w.lastRep && Date.now() - w.lastRep.at < NOTE_MS ? w.lastRep : null;
-  const notes: Annotations = {
-    depth: recent?.depthOk === false,
-    knees: recent?.faults.includes('knees-caving') ?? false,
-    chest: recent?.faults.includes('chest-dropping') ?? false,
-  };
+  const depthNote = recent?.depthOk === false;
+  const kneesNote = recent?.faults.includes('knees-caving') ?? false;
+  const chestNote = recent?.faults.includes('chest-dropping') ?? false;
+  const notes: Annotations = useMemo(() => ({ depth: depthNote, knees: kneesNote, chest: chestNote }), [depthNote, kneesNote, chestNote]);
   const hasCorrection = !!recent && recent.verdict !== 'good';
   const noRep = !!recent && !recent.counted;
-  const lostSight = w.pose !== null && w.poseAgeMs > 2500;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(20) }}>
@@ -143,15 +186,7 @@ export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan:
               <Text style={{ fontFamily: fonts.monoMedium, fontSize: s(26), letterSpacing: s(4), color: colors.pen }}>NO REP</Text>
             </View>
           ) : null}
-          {w.pose && !lostSight ? (
-            <PoseFigure frame={w.pose} notes={notes} width={panel.width} height={panel.height} />
-          ) : (
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: s(24) }}>
-              <PenNote arrow={false} size={26}>
-                {lostSight ? "I can't see you — step back into view" : 'waiting for the camera…'}
-              </PenNote>
-            </View>
-          )}
+          <LivePose getPose={w.getPose} subscribePose={w.subscribePose} notes={notes} width={panel.width} height={panel.height} />
         </View>
       </View>
 

@@ -32,9 +32,12 @@ export interface LiveWorkout {
   repsInSet: number;
   totalReps: number;
   lastRep: RepNote | null;
-  pose: PoseFrame | null;
-  /** Milliseconds since the last outline arrived; large means the phone lost sight of you. */
-  poseAgeMs: number;
+  /**
+   * The latest outline and when it arrived. Outlines come about 12 times a second, so they are not
+   * React state: a panel subscribes and redraws itself, and the rest of the screen stays still.
+   */
+  getPose: () => { frame: PoseFrame; at: number } | null;
+  subscribePose: (listener: () => void) => () => void;
   restLeftSeconds: number;
   live: LiveStatus;
   skipRest: () => void;
@@ -51,11 +54,11 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
   const [setIndex, setSetIndex] = useState(0);
   const [repsInSet, setRepsInSet] = useState(0);
   const [lastRep, setLastRep] = useState<RepNote | null>(null);
-  const [pose, setPose] = useState<PoseFrame | null>(null);
   const [live, setLive] = useState<LiveStatus>('connecting');
   const [restEndsAt, setRestEndsAt] = useState(0);
   const [now, setNow] = useState(Date.now());
-  const poseAt = useRef(0);
+  const pose = useRef<{ frame: PoseFrame; at: number } | null>(null);
+  const poseListeners = useRef(new Set<() => void>());
   const history = useRef<RepNote[]>([]);
   const repsRef = useRef(0);
   const state = useRef({ phase, setIndex, paused });
@@ -66,8 +69,8 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
       channel,
       (event) => {
         if (event.type === 'pose') {
-          poseAt.current = Date.now();
-          setPose({ p: event.p, aspect: event.aspect, mirrored: event.mirrored });
+          pose.current = { frame: { p: event.p, aspect: event.aspect, mirrored: event.mirrored }, at: Date.now() };
+          poseListeners.current.forEach((listener) => listener());
         } else if (event.type === 'rep') {
           const s = state.current;
           if (s.phase !== 'work' || s.paused) return;
@@ -105,8 +108,17 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
   }, [channel, plan.reps, plan.sets, plan.restSeconds]);
 
   useEffect(() => {
-    const timer = setInterval(() => setNow(Date.now()), 250);
+    // Drives the rest countdown and how long the coach's marks stay up; a second's resolution is plenty.
+    const timer = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(timer);
+  }, []);
+
+  const getPose = useCallback(() => pose.current, []);
+  const subscribePose = useCallback((listener: () => void) => {
+    poseListeners.current.add(listener);
+    return () => {
+      poseListeners.current.delete(listener);
+    };
   }, []);
 
   const startNextSet = useCallback(() => {
@@ -127,8 +139,8 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
     repsInSet,
     totalReps: history.current.filter((n) => n.counted).length,
     lastRep,
-    pose,
-    poseAgeMs: poseAt.current ? now - poseAt.current : Infinity,
+    getPose,
+    subscribePose,
     restLeftSeconds: Math.max(0, Math.ceil((restEndsAt - now) / 1000)),
     live,
     skipRest: startNextSet,

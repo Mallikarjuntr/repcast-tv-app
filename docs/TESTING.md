@@ -67,7 +67,8 @@ Tested on a **Fire TV Stick 3rd gen (AFTSSS)**: Fire OS 7.7.1.7 (Android 9, API 
   `EXPO_TV=1 NODE_ENV=production ./gradlew assembleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a`
 - Install over Wi-Fi: turn on *Settings → My Fire TV → Developer Options → ADB debugging*, then `adb connect <stick-ip>:5555` and accept the prompt on the TV. The stick announces itself on the network as `_amzn-wplay._tcp` (`dns-sd -B _amzn-wplay._tcp`).
 - Results: cold start 3.2 s; about 76 MB of memory at Home and about 134 MB after a full coached workout. Pairing, the live outline, rep verdicts and the receipt all work over the real AWS backend (driven by `tools/fake-phone.mjs`). The voice coach binds to the stick's own speech engine (Ivona).
-- Animation runs at roughly 35–60 fps on this chip (about 45% of frames over 16 ms during a workout) — the next thing to optimise.
+- **Voice:** the stick's built-in text-to-speech engine accepts requests but plays nothing (friction log #10), so every coach line is pre-recorded with Amazon Polly and bundled (56 lines, 872 KB). Confirmed on the stick: the audio service logs a new media player from the app for each count, on the beat.
+- **Smoothness:** the follow-along screen used to re-render entirely ten times a second, and the figure (SVG) was re-uploaded to the GPU as a bitmap every frame. Now the clock lives outside React state, the figure animates on its own ~30 fps loop, and it is drawn with native views. Measured over 10 s of squats: bitmap uploads 91 → 0, app CPU ~140% → ~95% (of 400%), no missed vsyncs; median frame 20 ms. The remaining slow frames line up with the stick's memory pressure (~46 MB free, swap nearly full).
 
 ## Known limits
 

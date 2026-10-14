@@ -1,6 +1,7 @@
 import { POSE_POINTS, type PosePoint } from '@spotter/shared';
 import { memo, useRef } from 'react';
-import Svg, { Circle, Ellipse, G, Line, Path, Text as SvgText } from 'react-native-svg';
+import { View } from 'react-native';
+import Svg, { Ellipse, G, Line, Path, Text as SvgText } from 'react-native-svg';
 import { colors, fonts } from '../theme';
 
 export interface PoseFrame {
@@ -97,51 +98,84 @@ export const PoseFigure = memo(function PoseFigure({
   const headR = Math.max(10, shoulderWidth * 0.32, k * 0.035);
   const stroke = Math.max(5, width * 0.018);
 
+  const anyNote = notes.depth || notes.knees || notes.chest;
   return (
-    <Svg width={width} height={height}>
-      {notes.depth && knees ? (
-        <G>
-          <Line x1={width * 0.06} y1={knees.y} x2={width * 0.94} y2={knees.y} stroke={colors.pen} strokeWidth={2.5} strokeDasharray="10 8" />
-          <SvgText x={marginX} y={knees.y - noteSize * 1.6} fontFamily={fonts.hand} fontSize={noteSize} fill={colors.pen}>
-            hips down
-          </SvgText>
-          <SvgText x={marginX} y={knees.y - noteSize * 0.45} fontFamily={fonts.hand} fontSize={noteSize} fill={colors.pen}>
-            to here
-          </SvgText>
-        </G>
+    <View style={{ width, height }}>
+      {/* The body is plain native views, not SVG: on Android an SVG is repainted into a bitmap and
+          re-uploaded to the GPU every frame, which a Fire TV Stick can't keep up with. */}
+      {BONES.map(([a, b]) => {
+        const pa = pts[a];
+        const pb = pts[b];
+        if (!pa || !pb) return null;
+        const length = Math.hypot(pb.x - pa.x, pb.y - pa.y) + stroke;
+        return (
+          <View
+            key={`${a}-${b}`}
+            style={{
+              position: 'absolute',
+              left: (pa.x + pb.x) / 2 - length / 2,
+              top: (pa.y + pb.y) / 2 - stroke / 2,
+              width: length,
+              height: stroke,
+              borderRadius: stroke / 2,
+              backgroundColor: colors.ink,
+              transform: [{ rotate: `${Math.atan2(pb.y - pa.y, pb.x - pa.x)}rad` }],
+            }}
+          />
+        );
+      })}
+      {pts.nose ? (
+        <View
+          style={{
+            position: 'absolute',
+            left: pts.nose.x - headR,
+            top: pts.nose.y - headR,
+            width: headR * 2,
+            height: headR * 2,
+            borderRadius: headR,
+            borderWidth: stroke * 0.8,
+            borderColor: colors.ink,
+          }}
+        />
       ) : null}
+      {anyNote ? (
+        <Svg width={width} height={height} style={{ position: 'absolute', left: 0, top: 0 }}>
+          {notes.depth && knees ? (
+            <G>
+              <Line x1={width * 0.06} y1={knees.y} x2={width * 0.94} y2={knees.y} stroke={colors.pen} strokeWidth={2.5} strokeDasharray="10 8" />
+              <SvgText x={marginX} y={knees.y - noteSize * 1.6} fontFamily={fonts.hand} fontSize={noteSize} fill={colors.pen}>
+                hips down
+              </SvgText>
+              <SvgText x={marginX} y={knees.y - noteSize * 0.45} fontFamily={fonts.hand} fontSize={noteSize} fill={colors.pen}>
+                to here
+              </SvgText>
+            </G>
+          ) : null}
 
-      <G stroke={colors.ink} strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" fill="none">
-        {BONES.map(([a, b]) => {
-          const pa = pts[a];
-          const pb = pts[b];
-          return pa && pb ? <Line key={`${a}-${b}`} x1={pa.x} y1={pa.y} x2={pb.x} y2={pb.y} /> : null;
-        })}
-        {pts.nose ? <Circle cx={pts.nose.x} cy={pts.nose.y} r={headR} strokeWidth={stroke * 0.8} /> : null}
-      </G>
+          {notes.depth && hips ? <Ellipse cx={hips.x} cy={hips.y} rx={shoulderWidth * 0.9 + 20} ry={headR * 1.3} stroke={colors.pen} strokeWidth={3} fill="none" /> : null}
 
-      {notes.depth && hips ? <Ellipse cx={hips.x} cy={hips.y} rx={shoulderWidth * 0.9 + 20} ry={headR * 1.3} stroke={colors.pen} strokeWidth={3} fill="none" /> : null}
+          {notes.knees && pts.lKnee && pts.rKnee ? (
+            <G stroke={colors.pen} strokeWidth={3} strokeLinecap="round" fill="none">
+              {[pts.lKnee, pts.rKnee].map((k, i) => {
+                const dir = k.x < (knees?.x ?? k.x) ? -1 : 1;
+                return <Path key={i} d={`M${k.x + dir * 8} ${k.y} l${dir * 34} 0 m${-dir * 10} -8 l${dir * 10} 8 l${-dir * 10} 8`} />;
+              })}
+              <SvgText x={marginX} y={(knees?.y ?? 0) + noteSize * 0.35} fontFamily={fonts.hand} fontSize={noteSize} fill={colors.pen} stroke="none">
+                knees out
+              </SvgText>
+            </G>
+          ) : null}
 
-      {notes.knees && pts.lKnee && pts.rKnee ? (
-        <G stroke={colors.pen} strokeWidth={3} strokeLinecap="round" fill="none">
-          {[pts.lKnee, pts.rKnee].map((k, i) => {
-            const dir = k.x < (knees?.x ?? k.x) ? -1 : 1;
-            return <Path key={i} d={`M${k.x + dir * 8} ${k.y} l${dir * 34} 0 m${-dir * 10} -8 l${dir * 10} 8 l${-dir * 10} 8`} />;
-          })}
-          <SvgText x={marginX} y={(knees?.y ?? 0) + noteSize * 0.35} fontFamily={fonts.hand} fontSize={noteSize} fill={colors.pen} stroke="none">
-            knees out
-          </SvgText>
-        </G>
+          {notes.chest && shoulders ? (
+            <G>
+              <Path d={`M${shoulders.x + 40} ${shoulders.y + 30} C ${shoulders.x + 70} ${shoulders.y}, ${shoulders.x + 60} ${shoulders.y - 40}, ${shoulders.x + 30} ${shoulders.y - 60}`} stroke={colors.pen} strokeWidth={3} strokeLinecap="round" fill="none" />
+              <SvgText x={shoulders.x + 54} y={shoulders.y - 36} fontFamily={fonts.hand} fontSize={noteSize} fill={colors.pen}>
+                chest up
+              </SvgText>
+            </G>
+          ) : null}
+        </Svg>
       ) : null}
-
-      {notes.chest && shoulders ? (
-        <G>
-          <Path d={`M${shoulders.x + 40} ${shoulders.y + 30} C ${shoulders.x + 70} ${shoulders.y}, ${shoulders.x + 60} ${shoulders.y - 40}, ${shoulders.x + 30} ${shoulders.y - 60}`} stroke={colors.pen} strokeWidth={3} strokeLinecap="round" fill="none" />
-          <SvgText x={shoulders.x + 54} y={shoulders.y - 36} fontFamily={fonts.hand} fontSize={noteSize} fill={colors.pen}>
-            chest up
-          </SvgText>
-        </G>
-      ) : null}
-    </Svg>
+    </View>
   );
 });

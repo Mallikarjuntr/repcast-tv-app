@@ -2,15 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { FocusButton } from '../components/FocusButton';
 import { SetDot } from '../components/Marks';
-import { PoseFigure } from '../components/PoseFigure';
+import { DemoFigure } from '../components/DemoFigure';
 import { Tally } from '../components/Tally';
 import { Headline, Kicker, PenNote } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { useTVEventHandler, type TVRemoteEvent } from '../tv';
 import { useGuidedWorkout } from '../useGuidedWorkout';
-import { blend, type Session } from '../workouts';
-
-const NO_NOTES = { depth: false, knees: false, chest: false };
+import type { Session } from '../workouts';
 
 function formatTime(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
@@ -57,14 +55,13 @@ export function FollowScreen({ session, onFinish }: { session: Session; onFinish
   const sets = step.kind === 'reps' ? step.sets : 1;
   // While resting, the panel previews the next move on a slow loop.
   const shown = resting && w.upcoming ? w.upcoming : step;
-  const demoT = resting
-    ? (Math.sin((Date.now() / 3000) * Math.PI * 2) + 1) / 2
-    : step.kind === 'reps'
-      ? w.depth
-      : step.cycle > 0
-        ? (Math.sin((w.timedElapsed / step.cycle) * Math.PI * 2) + 1) / 2
-        : 0;
-  const demoFrame = { p: blend(shown.demo.a, shown.demo.b, demoT), aspect: shown.demo.aspect, mirrored: false };
+  const { motion } = w;
+  const position = useCallback(() => {
+    if (resting) return (Math.sin((Date.now() / 3000) * Math.PI * 2) + 1) / 2;
+    if (step.kind === 'reps') return motion().depth;
+    return step.cycle > 0 ? (Math.sin((motion().timedElapsed / step.cycle) * Math.PI * 2) + 1) / 2 : 0;
+  }, [motion, resting, step]);
+  const holdStill = !resting && step.kind === 'timed' && step.cycle === 0;
   const coach =
     w.phase === 'rest'
       ? `Breathe. Next: ${w.nextLabel ?? 'the finish'}.`
@@ -139,12 +136,15 @@ export function FollowScreen({ session, onFinish }: { session: Session; onFinish
               </Text>
             ) : null}
           </View>
-          <PoseFigure key={shown.id} frame={demoFrame} notes={NO_NOTES} width={panel.width} height={panel.height} fitBox={shown.demo.fitBox} anchorX={0.5} />
-          {step.kind === 'reps' && w.phase === 'work' ? (
-            <View style={{ position: 'absolute', left: s(18), right: s(18), bottom: s(14), height: s(8), backgroundColor: colors.paper }}>
-              <View style={{ width: `${Math.round(w.depth * 100)}%`, height: '100%', backgroundColor: colors.highlighter }} />
-            </View>
-          ) : null}
+          <DemoFigure
+            key={shown.id}
+            demo={shown.demo}
+            position={position}
+            width={panel.width}
+            height={panel.height}
+            animate={!holdStill && !paused}
+            depthBar={step.kind === 'reps' && w.phase === 'work'}
+          />
         </View>
       </View>
 

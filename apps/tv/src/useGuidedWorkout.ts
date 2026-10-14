@@ -1,9 +1,12 @@
-import * as Speech from 'expo-speech';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { hush, say } from './voice';
+import { countLine, FINISH_LINE, restLine, setIntroLine } from './voiceLines';
 import type { Session, Step } from './workouts';
 
-const TICK_MS = 100;
-const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
+/** How often the workout checks for rep, set and phase boundaries. Cheap: it only sets state on change. */
+const CHECK_MS = 50;
+/** Time for the coach's intro before the beat starts: a new move's intro is longer than "Set 2. 12 reps." */
+const LEAD_IN_MS = { firstSet: 4500, laterSet: 2500 };
 
 export type GuidedPhase = 'work' | 'rest' | 'done';
 
@@ -14,25 +17,21 @@ export interface GuidedWorkout {
   phase: GuidedPhase;
   /** Reps counted by the beat in the current set. */
   reps: number;
-  /** Where the current rep is: 0 standing → 1 at the bottom → back to 0. */
-  depth: number;
   /** Which half of the beat we're in. */
   half: 'down' | 'up';
-  /** Seconds left in a timed step or a rest. */
+  /** Whole seconds left in a timed step or a rest. */
   secondsLeft: number;
-  /** Seconds of a timed step done so far (drives its demo). */
-  timedElapsed: number;
   nextLabel: string | null;
   /** The move that runs after the current set or rest (the same move when sets remain). */
   upcoming: Step | null;
   totalReps: number;
+  /**
+   * Where the demo is right now: `depth` 0 standing → 1 at the bottom of a rep, and seconds into
+   * a timed step. Read it every animation frame; it isn't React state, so reading it re-renders nothing.
+   */
+  motion: () => { depth: number; timedElapsed: number };
   finishSet: () => void;
   skipRest: () => void;
-}
-
-function say(text: string): void {
-  Speech.stop().catch(() => {});
-  Speech.speak(text, { language: 'en-IN', rate: 1.0 });
 }
 
 function ease(t: number): number {
@@ -42,50 +41,104 @@ function ease(t: number): number {
 /**
  * Runs a follow-along session with no camera: reps are counted by the tempo beat, timed moves count
  * down, rests come between sets. Pausing freezes everything.
+ *
+ * The clock lives in refs rather than state, so the screen re-renders only when something visible
+ * changes (a rep, a second, a phase) instead of ten times a second — on a Fire TV Stick that was
+ * the difference between a smooth and a stuttering workout.
  */
 export function useGuidedWorkout(session: Session, paused: boolean): GuidedWorkout {
   const [stepIndex, setStepIndex] = useState(0);
   const [setIndex, setSetIndex] = useState(0);
-  const [phase, setPhase] = useState<GuidedPhase>('work');
-  const [, setTick] = useState(0);
-  const activeMs = useRef(0);
-  const restMs = useRef(0);
-  const lastReps = useRef(0);
+  const [phase, setPhaseState] = useState<GuidedPhase>('work');
+  const [reps, setRepsState] = useState(0);
+  // Mirrors of phase and reps that update immediately, so the 50 ms checker never acts twice on
+  // the same boundary before React has re-rendered.
+  const phaseRef = useRef<GuidedPhase>('work');
+  const repsRef = useRef(0);
+  const setPhase = useCallback((p: GuidedPhase) => {
+    phaseRef.current = p;
+    setPhaseState(p);
+  }, []);
+  const setReps = useCallback((n: number) => {
+    repsRef.current = n;
+    setRepsState(n);
+  }, []);
+  const [half, setHalfState] = useState<'down' | 'up'>('down');
+  const [secondsLeft, setSecondsLeftState] = useState(0);
+  // The checker runs every 50 ms; only touch React state when the shown value actually changes,
+  // or React may re-render the whole screen for nothing.
+  const halfRef = useRef<'down' | 'up'>('down');
+  const secondsRef = useRef(0);
+  const setHalf = useCallback((h: 'down' | 'up') => {
+    if (halfRef.current === h) return;
+    halfRef.current = h;
+    setHalfState(h);
+  }, []);
+  const setSecondsLeft = useCallback((n: number) => {
+    if (secondsRef.current === n) return;
+    secondsRef.current = n;
+    setSecondsLeftState(n);
+  }, []);
   const totalReps = useRef(0);
+  const restMs = useRef(0);
   const step = session.steps[stepIndex]!;
 
+  // A pausable stopwatch for the current phase (a set, a timed move or a rest).
+  const phaseAcc = useRef(0);
+  const runningSince = useRef<number | null>(paused ? null : Date.now());
+  const pausedRef = useRef(paused);
+  const elapsed = useCallback(() => phaseAcc.current + (runningSince.current === null ? 0 : Date.now() - runningSince.current), []);
+  /** Start the phase's stopwatch; a lead-in starts it below zero so the beat waits for the intro. */
+  const restartClock = useCallback((leadInMs = 0) => {
+    phaseAcc.current = -leadInMs;
+    runningSince.current = pausedRef.current ? null : Date.now();
+  }, []);
+
+  useEffect(() => {
+    pausedRef.current = paused;
+    if (paused && runningSince.current !== null) {
+      phaseAcc.current += Date.now() - runningSince.current;
+      runningSince.current = null;
+      hush();
+    } else if (!paused && runningSince.current === null) {
+      runningSince.current = Date.now();
+    }
+  }, [paused]);
+
   const introduce = useCallback((s: Step, set: number) => {
-    if (s.kind === 'reps') say(set === 0 ? s.cues.start : `Set ${set + 1}. ${s.reps} reps.`);
-    else say(s.cue);
+    say(s.kind === 'reps' ? setIntroLine(s, set) : s.cue);
   }, []);
 
   const startStep = useCallback(
     (index: number, set: number) => {
-      activeMs.current = 0;
-      lastReps.current = 0;
+      const s = session.steps[index]!;
+      restartClock(s.kind === 'reps' ? (set === 0 ? LEAD_IN_MS.firstSet : LEAD_IN_MS.laterSet) : 0);
       setStepIndex(index);
       setSetIndex(set);
+      setReps(0);
+      setHalf('down');
+      setSecondsLeft(s.kind === 'timed' ? s.seconds : 0);
       setPhase('work');
-      introduce(session.steps[index]!, set);
+      introduce(s, set);
     },
-    [introduce, session.steps],
+    [introduce, restartClock, session.steps, setHalf, setPhase, setReps, setSecondsLeft],
   );
 
   const endSet = useCallback(() => {
+    if (phaseRef.current !== 'work') return;
     const s = session.steps[stepIndex]!;
     const moreSets = s.kind === 'reps' && setIndex + 1 < s.sets;
-    const isLast = stepIndex + 1 >= session.steps.length;
-    if (!moreSets && isLast) {
+    if (!moreSets && stepIndex + 1 >= session.steps.length) {
       setPhase('done');
-      say("That's the session. Well done.");
+      say(FINISH_LINE);
       return;
     }
-    const rest = s.kind === 'reps' ? s.restSeconds : 10;
-    restMs.current = rest * 1000;
+    restMs.current = (s.kind === 'reps' ? s.restSeconds : 10) * 1000;
+    restartClock();
+    setSecondsLeft(Math.ceil(restMs.current / 1000));
     setPhase('rest');
-    const next = moreSets ? `set ${setIndex + 2}` : session.steps[stepIndex + 1]!.name.toLowerCase();
-    say(`Rest. Next, ${next}.`);
-  }, [session.steps, setIndex, stepIndex]);
+    say(restLine(moreSets ? `set ${setIndex + 2}` : session.steps[stepIndex + 1]!.name));
+  }, [restartClock, session.steps, setIndex, setPhase, setSecondsLeft, stepIndex]);
 
   const advance = useCallback(() => {
     const s = session.steps[stepIndex]!;
@@ -93,79 +146,82 @@ export function useGuidedWorkout(session: Session, paused: boolean): GuidedWorko
     else startStep(stepIndex + 1, 0);
   }, [session.steps, setIndex, startStep, stepIndex]);
 
-  // Say the first move once.
+  // Say the first move once, and start its countdown.
   const started = useRef(false);
   useEffect(() => {
     if (started.current) return;
     started.current = true;
-    introduce(session.steps[0]!, 0);
-  }, [introduce, session.steps]);
+    const first = session.steps[0]!;
+    if (first.kind === 'timed') setSecondsLeft(first.seconds);
+    else restartClock(LEAD_IN_MS.firstSet);
+    introduce(first, 0);
+  }, [introduce, restartClock, session.steps, setSecondsLeft]);
+
+  useEffect(() => () => hush(), []);
 
   useEffect(() => {
-    if (paused) Speech.stop().catch(() => {});
-  }, [paused]);
-
-  useEffect(() => () => void Speech.stop().catch(() => {}), []);
-
-  useEffect(() => {
+    if (phase === 'done') return;
     const timer = setInterval(() => {
-      if (paused || phase === 'done') return;
-      if (phase === 'rest') {
-        restMs.current -= TICK_MS;
-        if (restMs.current <= 0) advance();
-        setTick((t) => t + 1);
+      const ms = elapsed();
+      if (phaseRef.current === 'done') return;
+      if (phaseRef.current === 'rest') {
+        const left = restMs.current - ms;
+        if (left <= 0) advance();
+        else setSecondsLeft(Math.ceil(left / 1000));
         return;
       }
-      activeMs.current += TICK_MS;
       const s = session.steps[stepIndex]!;
       if (s.kind === 'reps') {
-        const beatMs = (s.beat.down + s.beat.up) * 1000;
-        const reps = Math.floor(activeMs.current / beatMs);
-        if (reps > lastReps.current) {
-          lastReps.current = reps;
-          totalReps.current += 1;
-          say(NUMBER_WORDS[reps] ?? String(reps));
-          if (reps >= s.reps) endSet();
+        const downMs = s.beat.down * 1000;
+        const beatMs = downMs + s.beat.up * 1000;
+        if (ms < 0) return; // still in the lead-in
+        const done = Math.min(Math.floor(ms / beatMs), s.reps);
+        setHalf(ms % beatMs < downMs ? 'down' : 'up');
+        if (done > repsRef.current) {
+          totalReps.current += done - repsRef.current;
+          setReps(done);
+          say(countLine(done));
+          if (done >= s.reps) endSet();
         }
-      } else if (activeMs.current >= s.seconds * 1000) {
-        endSet();
+      } else {
+        const left = s.seconds * 1000 - ms;
+        if (left <= 0) endSet();
+        else setSecondsLeft(Math.ceil(left / 1000));
       }
-      setTick((t) => t + 1);
-    }, TICK_MS);
+    }, CHECK_MS);
     return () => clearInterval(timer);
-  }, [advance, endSet, paused, phase, session.steps, stepIndex]);
+  }, [advance, elapsed, endSet, phase, session.steps, setHalf, setReps, setSecondsLeft, stepIndex]);
+
+  const motion = useCallback(() => {
+    const ms = elapsed();
+    const s = session.steps[stepIndex]!;
+    if (phase !== 'work') return { depth: 0, timedElapsed: 0 };
+    if (s.kind === 'timed') return { depth: 0, timedElapsed: ms / 1000 };
+    if (ms < 0) return { depth: 0, timedElapsed: 0 };
+    const downMs = s.beat.down * 1000;
+    const upMs = s.beat.up * 1000;
+    const within = ms % (downMs + upMs);
+    const depth = within < downMs ? ease(within / downMs) : 1 - ease((within - downMs) / upMs);
+    return { depth, timedElapsed: 0 };
+  }, [elapsed, phase, session.steps, stepIndex]);
 
   const finishSet = useCallback(() => {
     if (phase === 'work') endSet();
   }, [endSet, phase]);
 
-  let depth = 0;
-  let half: 'down' | 'up' = 'down';
-  if (step.kind === 'reps' && phase === 'work') {
-    const downMs = step.beat.down * 1000;
-    const beatMs = downMs + step.beat.up * 1000;
-    const within = activeMs.current % beatMs;
-    half = within < downMs ? 'down' : 'up';
-    depth = half === 'down' ? ease(within / downMs) : 1 - ease((within - downMs) / (step.beat.up * 1000));
-  }
-
   const moreSets = step.kind === 'reps' && setIndex + 1 < step.sets;
-  const nextStep = moreSets ? `${step.name}, set ${setIndex + 2}` : (session.steps[stepIndex + 1]?.name ?? null);
-  const upcoming = moreSets ? step : (session.steps[stepIndex + 1] ?? null);
-
   return {
     step,
     stepIndex,
     setIndex,
     phase,
-    reps: lastReps.current,
-    depth,
+    reps,
     half,
-    secondsLeft: phase === 'rest' ? Math.max(0, Math.ceil(restMs.current / 1000)) : step.kind === 'timed' ? Math.max(0, Math.ceil(step.seconds - activeMs.current / 1000)) : 0,
-    timedElapsed: activeMs.current / 1000,
-    nextLabel: nextStep,
-    upcoming,
+    secondsLeft,
+    nextLabel: moreSets ? `${step.name}, set ${setIndex + 2}` : (session.steps[stepIndex + 1]?.name ?? null),
+    upcoming: moreSets ? step : (session.steps[stepIndex + 1] ?? null),
     totalReps: totalReps.current,
+    motion,
     finishSet,
     skipRest: advance,
   };
