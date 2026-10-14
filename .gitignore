@@ -24,3 +24,6 @@ apps/camera/public/mediapipe/
 apps/tv/android/
 apps/tv/ios/
 apps/tv/.expo/
+
+# Python bytecode (Blender scripts in tools/trainer)
+__pycache__/

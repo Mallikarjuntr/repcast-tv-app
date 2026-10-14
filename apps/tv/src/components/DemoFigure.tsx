@@ -29,10 +29,22 @@ export const DemoFigure = memo(function DemoFigure({
   depthBar?: boolean;
 }) {
   const s = useScale();
-  const [, setFrame] = useState(0);
+  useFrameLoop(animate);
 
+  const t = position();
+  return (
+    <>
+      <PoseFigure frame={{ p: blend(demo.a, demo.b, t), aspect: demo.aspect, mirrored: false }} notes={NO_NOTES} width={width} height={height} fitBox={demo.fitBox} anchorX={0.5} />
+      {depthBar ? <BarFill fraction={t} inset={s(18)} bottom={s(14)} height={s(8)} /> : null}
+    </>
+  );
+});
+
+/** Re-render the calling component about 30 times a second while `active`. */
+function useFrameLoop(active: boolean): void {
+  const [, setFrame] = useState(0);
   useEffect(() => {
-    if (!animate) return;
+    if (!active) return;
     // About 30 frames a second: smooth to the eye, and half the work of 60 on a Fire TV Stick.
     const frameMs = 1000 / 30;
     let raf = 0;
@@ -46,17 +58,20 @@ export const DemoFigure = memo(function DemoFigure({
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [animate]);
+  }, [active]);
+}
 
-  const t = position();
+function BarFill({ fraction, inset, bottom, height }: { fraction: number; inset: number; bottom: number; height: number }) {
   return (
-    <>
-      <PoseFigure frame={{ p: blend(demo.a, demo.b, t), aspect: demo.aspect, mirrored: false }} notes={NO_NOTES} width={width} height={height} fitBox={demo.fitBox} anchorX={0.5} />
-      {depthBar ? (
-        <View style={{ position: 'absolute', left: s(18), right: s(18), bottom: s(14), height: s(8), backgroundColor: colors.paper }}>
-          <View style={{ width: `${Math.round(t * 100)}%`, height: '100%', backgroundColor: colors.highlighter }} />
-        </View>
-      ) : null}
-    </>
+    <View style={{ position: 'absolute', left: inset, right: inset, bottom, height, backgroundColor: colors.paper }}>
+      <View style={{ width: `${Math.round(fraction * 100)}%`, height: '100%', backgroundColor: colors.highlighter }} />
+    </View>
   );
+}
+
+/** The highlighter bar along the bottom of the panel showing how far into the rep the beat is. */
+export const BeatBar = memo(function BeatBar({ position, animate = true }: { position: () => number; animate?: boolean }) {
+  const s = useScale();
+  useFrameLoop(animate);
+  return <BarFill fraction={position()} inset={s(18)} bottom={s(14)} height={s(8)} />;
 });

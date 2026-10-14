@@ -2,6 +2,8 @@ import { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { FocusButton } from '../components/FocusButton';
 import { DemoFigure } from '../components/DemoFigure';
+import { TrainerVideo } from '../components/TrainerVideo';
+import { TRAINER_CLIPS } from '../trainerClips';
 import { Headline, Kicker } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { isFocused } from '../tv';
@@ -45,6 +47,8 @@ export function SwapScreen({ base, swaps: initial, onDone }: { base: Session; sw
   const options = SWAP_OPTIONS[focused.id] ?? [focused];
   const optionIndex = options.findIndex((o) => o.id === shown.id);
   const position = useCallback(() => demoPhase(shown, Date.now()), [shown]);
+  const freeLoop = useCallback(() => null, []);
+  const clip = TRAINER_CLIPS[shown.id];
   const swapCount = Object.keys(swaps).length;
 
   return (
@@ -107,18 +111,22 @@ export function SwapScreen({ base, swaps: initial, onDone }: { base: Session; sw
             style={{ flex: 1, backgroundColor: colors.paperDeep, borderWidth: s(1.5), borderColor: colors.ink }}
             onLayout={(e) => setPanel({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
           >
-            <View style={{ position: 'absolute', top: s(12), left: s(16), right: s(16), flexDirection: 'row', justifyContent: 'space-between' }}>
+            <View style={{ position: 'absolute', top: s(12), left: s(16), right: s(16), flexDirection: 'row', justifyContent: 'space-between', zIndex: 2 }}>
               <Kicker size={13}>LIKE THIS</Kicker>
               <Kicker size={13}>{options.length > 1 ? `OPTION ${optionIndex + 1} OF ${options.length}` : 'NO SWAPS FOR THIS ONE'}</Kicker>
             </View>
-            <DemoFigure
-              key={shown.id}
-              demo={shown.demo}
-              position={position}
-              width={panel.width}
-              height={panel.height}
-              animate={shown.kind === 'reps' || shown.cycle > 0}
-            />
+            {clip !== undefined ? (
+              <TrainerVideo key={shown.id} clip={clip} paused={false} position={freeLoop} />
+            ) : (
+              <DemoFigure
+                key={shown.id}
+                demo={shown.demo}
+                position={position}
+                width={panel.width}
+                height={panel.height}
+                animate={shown.kind === 'reps' || shown.cycle > 0}
+              />
+            )}
           </View>
           <Text style={{ fontFamily: fonts.display, fontSize: s(28), lineHeight: s(36), color: colors.ink }}>{shown.name}</Text>
           <Text style={{ fontFamily: fonts.sans, fontSize: s(19), lineHeight: s(27), color: colors.inkSoft }}>{shown.why}</Text>

@@ -70,6 +70,8 @@ Tested on a **Fire TV Stick 3rd gen (AFTSSS)**: Fire OS 7.7.1.7 (Android 9, API 
 - **Voice:** the stick's built-in text-to-speech engine accepts requests but plays nothing (friction log #10), so every coach line is pre-recorded with Amazon Polly and bundled (56 lines, 872 KB). Confirmed on the stick: the audio service logs a new media player from the app for each count, on the beat.
 - **Smoothness:** the follow-along screen used to re-render entirely ten times a second, and the figure (SVG) was re-uploaded to the GPU as a bitmap every frame. Now the clock lives outside React state, the figure animates on its own ~30 fps loop, and it is drawn with native views. Measured over 10 s of squats: bitmap uploads 91 → 0, app CPU ~140% → ~95% (of 400%), no missed vsyncs; median frame 20 ms. The remaining slow frames line up with the stick's memory pressure (~46 MB free, swap nearly full).
 
+- **3D trainer (Follow along):** each move plays a pre-rendered loop of a 3D trainer drawn in the app's style (`tools/trainer`). On the stick the follow-along screen drops from ~55% slow frames with the drawn figure to **~2% (median 8 ms)** with the trainer video, because the stick decodes H.264 in hardware. The trainer holds still during the coach's intro and stays on the beat (resynced if it drifts > 0.15 s). Screenshots: `docs/screenshots/fire-tv/6-9`.
+
 ## Known limits
 
 - **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other. Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.

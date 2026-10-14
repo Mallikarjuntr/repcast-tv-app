@@ -21,6 +21,7 @@
     "expo-speech": "~57.0.3",
     "expo-splash-screen": "~57.0.6",
     "expo-status-bar": "~57.0.1",
+    "expo-video": "~57.0.5",
     "qrcode-generator": "^2.0.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",

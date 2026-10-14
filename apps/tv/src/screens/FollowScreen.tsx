@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { FocusButton } from '../components/FocusButton';
 import { SetDot } from '../components/Marks';
-import { DemoFigure } from '../components/DemoFigure';
+import { BeatBar, DemoFigure } from '../components/DemoFigure';
+import { TrainerVideo, type TrainerPosition } from '../components/TrainerVideo';
+import { TRAINER_CLIPS } from '../trainerClips';
 import { Tally } from '../components/Tally';
 import { Headline, Kicker, PenNote } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
@@ -62,6 +64,15 @@ export function FollowScreen({ session, onFinish }: { session: Session; onFinish
     return step.cycle > 0 ? (Math.sin((motion().timedElapsed / step.cycle) * Math.PI * 2) + 1) / 2 : 0;
   }, [motion, resting, step]);
   const holdStill = !resting && step.kind === 'timed' && step.cycle === 0;
+  // The 3D trainer when this move has a clip; it waits during the intro, then follows the beat.
+  const clip = TRAINER_CLIPS[shown.id];
+  const trainerPosition = useCallback((): TrainerPosition => {
+    if (resting) return null;
+    const { beat } = motion();
+    return beat === 'lead-in' ? 'hold' : beat;
+  }, [motion, resting]);
+  const depth = useCallback(() => motion().depth, [motion]);
+  const onBeat = step.kind === 'reps' && w.phase === 'work';
   const coach =
     w.phase === 'rest'
       ? `Breathe. Next: ${w.nextLabel ?? 'the finish'}.`
@@ -128,7 +139,7 @@ export function FollowScreen({ session, onFinish }: { session: Session; onFinish
           style={{ flex: 1, alignSelf: 'stretch', backgroundColor: colors.paperDeep, borderWidth: s(1.5), borderColor: colors.ink }}
           onLayout={(e) => setPanel({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
         >
-          <View style={{ position: 'absolute', top: s(14), left: s(18), right: s(18), flexDirection: 'row', justifyContent: 'space-between' }}>
+          <View style={{ position: 'absolute', top: s(14), left: s(18), right: s(18), flexDirection: 'row', justifyContent: 'space-between', zIndex: 2 }}>
             <Kicker size={14}>{resting ? `UP NEXT · ${shown.name.toUpperCase()}` : step.kind === 'reps' ? 'FOLLOW THE BEAT' : 'LIKE THIS'}</Kicker>
             {step.kind === 'reps' && w.phase === 'work' ? (
               <Text style={{ fontFamily: fonts.hand, fontSize: s(30), lineHeight: s(40), color: w.half === 'down' ? colors.pen : colors.ink }}>
@@ -136,15 +147,22 @@ export function FollowScreen({ session, onFinish }: { session: Session; onFinish
               </Text>
             ) : null}
           </View>
-          <DemoFigure
-            key={shown.id}
-            demo={shown.demo}
-            position={position}
-            width={panel.width}
-            height={panel.height}
-            animate={!holdStill && !paused}
-            depthBar={step.kind === 'reps' && w.phase === 'work'}
-          />
+          {clip !== undefined ? (
+            <>
+              <TrainerVideo key={`${shown.id}-${resting ? 'preview' : 'live'}`} clip={clip} paused={paused} position={trainerPosition} />
+              {onBeat ? <BeatBar position={depth} animate={!paused} /> : null}
+            </>
+          ) : (
+            <DemoFigure
+              key={shown.id}
+              demo={shown.demo}
+              position={position}
+              width={panel.width}
+              height={panel.height}
+              animate={!holdStill && !paused}
+              depthBar={onBeat}
+            />
+          )}
         </View>
       </View>
 

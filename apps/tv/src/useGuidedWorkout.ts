@@ -10,6 +10,12 @@ const LEAD_IN_MS = { firstSet: 4500, laterSet: 2500 };
 
 export type GuidedPhase = 'work' | 'rest' | 'done';
 
+export interface Motion {
+  depth: number;
+  timedElapsed: number;
+  beat: number | 'lead-in' | null;
+}
+
 export interface GuidedWorkout {
   step: Step;
   stepIndex: number;
@@ -26,10 +32,11 @@ export interface GuidedWorkout {
   upcoming: Step | null;
   totalReps: number;
   /**
-   * Where the demo is right now: `depth` 0 standing → 1 at the bottom of a rep, and seconds into
-   * a timed step. Read it every animation frame; it isn't React state, so reading it re-renders nothing.
+   * Where the demo is right now: `depth` 0 standing → 1 at the bottom of a rep, seconds into a timed
+   * step, and seconds into the current beat ('lead-in' while the intro plays, null off the beat).
+   * Read it every animation frame; it isn't React state, so reading it re-renders nothing.
    */
-  motion: () => { depth: number; timedElapsed: number };
+  motion: () => Motion;
   finishSet: () => void;
   skipRest: () => void;
 }
@@ -192,17 +199,17 @@ export function useGuidedWorkout(session: Session, paused: boolean): GuidedWorko
     return () => clearInterval(timer);
   }, [advance, elapsed, endSet, phase, session.steps, setHalf, setReps, setSecondsLeft, stepIndex]);
 
-  const motion = useCallback(() => {
+  const motion = useCallback((): Motion => {
     const ms = elapsed();
     const s = session.steps[stepIndex]!;
-    if (phase !== 'work') return { depth: 0, timedElapsed: 0 };
-    if (s.kind === 'timed') return { depth: 0, timedElapsed: ms / 1000 };
-    if (ms < 0) return { depth: 0, timedElapsed: 0 };
+    if (phase !== 'work') return { depth: 0, timedElapsed: 0, beat: null };
+    if (s.kind === 'timed') return { depth: 0, timedElapsed: ms / 1000, beat: null };
+    if (ms < 0) return { depth: 0, timedElapsed: 0, beat: 'lead-in' };
     const downMs = s.beat.down * 1000;
     const upMs = s.beat.up * 1000;
     const within = ms % (downMs + upMs);
     const depth = within < downMs ? ease(within / downMs) : 1 - ease((within - downMs) / upMs);
-    return { depth, timedElapsed: 0 };
+    return { depth, timedElapsed: 0, beat: within / 1000 };
   }, [elapsed, phase, session.steps, stepIndex]);
 
   const finishSet = useCallback(() => {
