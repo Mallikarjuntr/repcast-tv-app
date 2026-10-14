@@ -59,6 +59,16 @@ node tools/fake-phone.mjs 1234 --start-after 8 --rest 32
 
 Press "Start workout" on the TV within `--start-after` seconds. The script's attempts are known in advance, so the receipt can be checked exactly: knees caved on reps 2, 6, 16 and 32, three attempts didn't count, 32 of 36 reps were clean (89%) — which is what the receipt shows (`docs/screenshots/18-receipt.png`, `19-receipt-every-rep.png`). Screenshots of every state are in `docs/screenshots/`.
 
+## 4. On a real Fire TV
+
+Tested on a **Fire TV Stick 3rd gen (AFTSSS)**: Fire OS 7.7.1.7 (Android 9, API 28), MediaTek MT8695 (4 × Cortex-A53), PowerVR GE8300 (OpenGL ES 3.2, Vulkan 1.1), about 900 MB of RAM. Screenshots taken on the stick are in `docs/screenshots/fire-tv/`.
+
+- **This stick is 32-bit only (`armeabi-v7a`)**, so the APK must include 32-bit libraries:
+  `EXPO_TV=1 NODE_ENV=production ./gradlew assembleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a`
+- Install over Wi-Fi: turn on *Settings → My Fire TV → Developer Options → ADB debugging*, then `adb connect <stick-ip>:5555` and accept the prompt on the TV. The stick announces itself on the network as `_amzn-wplay._tcp` (`dns-sd -B _amzn-wplay._tcp`).
+- Results: cold start 3.2 s; about 76 MB of memory at Home and about 134 MB after a full coached workout. Pairing, the live outline, rep verdicts and the receipt all work over the real AWS backend (driven by `tools/fake-phone.mjs`). The voice coach binds to the stick's own speech engine (Ivona).
+- Animation runs at roughly 35–60 fps on this chip (about 45% of frames over 16 ms during a workout) — the next thing to optimise.
+
 ## Known limits
 
 - **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other. Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.
