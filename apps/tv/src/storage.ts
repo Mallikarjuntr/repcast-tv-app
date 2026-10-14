@@ -84,3 +84,23 @@ export function streakDays(sessions: SessionRecord[], now = new Date()): number 
   }
   return streak;
 }
+
+const SWAPS_KEY = 'spotter.swaps.v1';
+
+/** Moves the person swapped out (original step id → replacement id); kept until they change them. */
+export async function loadSwaps(): Promise<Record<string, string>> {
+  try {
+    const raw = await AsyncStorage.getItem(SWAPS_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, string>) : {};
+  } catch {
+    return {};
+  }
+}
+
+export async function saveSwaps(swaps: Record<string, string>): Promise<void> {
+  try {
+    await AsyncStorage.setItem(SWAPS_KEY, JSON.stringify(swaps));
+  } catch {
+    // Not remembered this time; the swaps still apply to today's session.
+  }
+}

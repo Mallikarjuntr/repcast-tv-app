@@ -53,7 +53,7 @@ function ModeCard({ kicker, title, titleItalic, points, action, numberColor, bad
               </View>
             ) : null}
           </View>
-          <Text style={{ fontFamily: fonts.display, fontSize: s(48), lineHeight: s(52), color: colors.ink }}>
+          <Text style={{ fontFamily: fonts.display, fontSize: s(48), lineHeight: s(60), color: colors.ink }}>
             {title}
             {titleItalic ? <Text style={{ fontFamily: fonts.displayItalic }}>{titleItalic}</Text> : null}
           </Text>
@@ -107,7 +107,7 @@ export function ModesScreen({
           <Headline lead="How shall we " italic="train today?" size={72} />
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: s(6), transform: [{ rotate: '-3deg' }] }}>
-          <Text style={{ fontFamily: fonts.hand, fontSize: s(26), lineHeight: s(30), color: colors.pen, textAlign: 'right' }}>
+          <Text style={{ fontFamily: fonts.hand, fontSize: s(26), lineHeight: s(34), color: colors.pen, textAlign: 'right' }}>
             this one watches{'\n'}your form
           </Text>
           <Svg width={s(60)} height={s(56)} viewBox="0 0 60 56">

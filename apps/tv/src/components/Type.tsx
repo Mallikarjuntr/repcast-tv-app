@@ -20,15 +20,39 @@ export function Wordmark({ size = 36 }: { size?: number }) {
   );
 }
 
-/** Big serif headline with an optional italic second line. */
+/** Big serif headline with an optional italic part; `\n` starts a new line. */
 export function Headline({ lead, italic, size }: { lead: string; italic?: string; size: number }) {
   const s = useScale();
-  const base: TextStyle = { fontSize: s(size), lineHeight: s(size * 0.98), color: colors.ink, letterSpacing: -s(size * 0.02) };
+  // Android clips glyphs to a text box shorter than the font, which cuts off descenders (g, y, p)
+  // at tight leading. So each line is its own Text with roomy line height, and the lines are
+  // overlapped back to the tight 0.98 leading with negative margins.
+  const roomy = size * 1.3;
+  const pull = s(roomy - size * 0.98);
+  const segments = [
+    ...lead.split('\n').map((text, i) => ({ text, italic: false, newLine: i > 0 })),
+    ...(italic ?? '').split('\n').map((text, i) => ({ text, italic: true, newLine: i > 0 })),
+  ];
+  const lines: { text: string; italic: boolean }[][] = [[]];
+  for (const segment of segments) {
+    if (segment.newLine) lines.push([]);
+    if (segment.text) lines[lines.length - 1]!.push(segment);
+  }
+  const base: TextStyle = { fontSize: s(size), lineHeight: s(roomy), color: colors.ink, letterSpacing: -s(size * 0.02) };
   return (
-    <Text style={[base, { fontFamily: fonts.display }]}>
-      {lead}
-      {italic ? <Text style={{ fontFamily: fonts.displayItalic }}>{italic}</Text> : null}
-    </Text>
+    // Trim the roomy line's extra space above the first line; below, it leaves room for descenders.
+    <View style={{ marginTop: -pull / 2 }}>
+      {lines
+        .filter((line) => line.length > 0)
+        .map((line, i) => (
+          <Text key={i} style={[base, { fontFamily: fonts.display, marginTop: i > 0 ? -pull : 0 }]}>
+            {line.map((part, j) => (
+              <Text key={j} style={part.italic ? { fontFamily: fonts.displayItalic } : undefined}>
+                {part.text}
+              </Text>
+            ))}
+          </Text>
+        ))}
+    </View>
   );
 }
 

@@ -5,7 +5,7 @@ import { Kalam_400Regular } from '@expo-google-fonts/kalam';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BackHandler, View } from 'react-native';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { ModesScreen } from './src/screens/ModesScreen';
@@ -14,11 +14,12 @@ import { FollowScreen, type FollowResult } from './src/screens/FollowScreen';
 import { ReceiptScreen } from './src/screens/ReceiptScreen';
 import { LiveScreen } from './src/screens/LiveScreen';
 import { PairScreen } from './src/screens/PairScreen';
-import { freeCoachSessionsLeft, loadSessions, saveSession, streakDays, weekView, type SessionRecord } from './src/storage';
+import { SwapScreen } from './src/screens/SwapScreen';
+import { freeCoachSessionsLeft, loadSessions, loadSwaps, saveSession, saveSwaps, streakDays, weekView, type SessionRecord } from './src/storage';
 import { spotterNote, summarize, type WorkoutSummary } from './src/summary';
 import { useCoachNote } from './src/useCoachNote';
 import type { RepNote, WorkoutPlan } from './src/useLiveWorkout';
-import { estimateSeconds, LEGS_GENTLY } from './src/workouts';
+import { applySwaps, estimateSeconds, LEGS_GENTLY, type Swaps } from './src/workouts';
 import { colors } from './src/theme';
 
 void SplashScreen.preventAutoHideAsync();
@@ -29,6 +30,7 @@ type Screen =
   | { name: 'pair' }
   | { name: 'live'; channel: string }
   | { name: 'follow' }
+  | { name: 'swap' }
   | { name: 'followDone'; result: FollowResult }
   | { name: 'receipt'; receipt: CoachReceiptData };
 
@@ -81,8 +83,12 @@ export default function App() {
   const swap = useCallback((next: Screen) => setHistory((h) => [...h.slice(0, -1), next]), []);
   const home = useCallback(() => setHistory([{ name: 'home' }]), []);
 
+  const [swaps, setSwaps] = useState<Swaps>({});
+  const today = useMemo(() => applySwaps(LEGS_GENTLY, swaps), [swaps]);
+
   useEffect(() => {
     void loadSessions().then(setSessions);
+    void loadSwaps().then(setSwaps);
   }, []);
 
   const finishLive = useCallback(
@@ -119,6 +125,15 @@ export default function App() {
     return true;
   }, [history.length]);
 
+  const finishSwaps = useCallback(
+    (next: Swaps) => {
+      setSwaps(next);
+      void saveSwaps(next);
+      back();
+    },
+    [back],
+  );
+
   useEffect(() => {
     if (fontsLoaded) void SplashScreen.hideAsync();
   }, [fontsLoaded]);
@@ -133,20 +148,30 @@ export default function App() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
       <StatusBar hidden />
-      {screen.name === 'home' && <HomeScreen today={LEGS_GENTLY} sessions={sessions} onStart={() => go({ name: 'modes' })} onNoCamera={() => go({ name: 'follow' })} />}
+      {screen.name === 'home' && (
+        <HomeScreen
+          today={today}
+          sessions={sessions}
+          swapCount={Object.keys(swaps).length}
+          onStart={() => go({ name: 'modes' })}
+          onSwap={() => go({ name: 'swap' })}
+          onNoCamera={() => go({ name: 'follow' })}
+        />
+      )}
+      {screen.name === 'swap' && <SwapScreen base={LEGS_GENTLY} swaps={swaps} onDone={finishSwaps} />}
       {screen.name === 'modes' && (
         <ModesScreen
-          sessionLabel={`LEGS, GENTLY · ${Math.round(estimateSeconds(LEGS_GENTLY) / 60)} MIN`}
+          sessionLabel={`LEGS, GENTLY · ${Math.round(estimateSeconds(today) / 60)} MIN`}
           freeCoachSessionsLeft={freeCoachSessionsLeft(sessions)}
           onChoose={(mode) => go(mode === 'coach' ? { name: 'pair' } : { name: 'follow' })} />
       )}
       {screen.name === 'pair' && <PairScreen onReady={(channel) => go({ name: 'live', channel })} />}
       {screen.name === 'live' && <LiveScreen channel={screen.channel} plan={SQUAT_PLAN} onFinish={finishLive} />}
       {screen.name === 'receipt' && <CoachReceipt data={screen.receipt} onDone={home} />}
-      {screen.name === 'follow' && <FollowScreen session={LEGS_GENTLY} onFinish={finishFollow} />}
+      {screen.name === 'follow' && <FollowScreen session={today} onFinish={finishFollow} />}
       {screen.name === 'followDone' && (
         <FollowDoneScreen
-          session={LEGS_GENTLY}
+          session={today}
           reps={screen.result.reps}
           seconds={screen.result.seconds}
           week={weekView(sessions)}

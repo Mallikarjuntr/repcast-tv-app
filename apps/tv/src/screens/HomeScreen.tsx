@@ -33,12 +33,16 @@ function formatToday(date: Date): string {
 export function HomeScreen({
   today,
   sessions,
+  swapCount,
   onStart,
+  onSwap,
   onNoCamera,
 }: {
   today: Session;
   sessions: SessionRecord[];
+  swapCount: number;
   onStart: () => void;
+  onSwap: () => void;
   onNoCamera: () => void;
 }) {
   const s = useScale();
@@ -62,12 +66,14 @@ export function HomeScreen({
 
       <View style={{ flex: 1, flexDirection: 'row', gap: s(72) }}>
         <View style={{ flex: 1.55, gap: s(18) }}>
-          <Kicker>TODAY'S SESSION — {minutes} MIN</Kicker>
+          <Kicker>
+            TODAY'S SESSION — {minutes} MIN{swapCount > 0 ? ` · ${swapCount} ${swapCount === 1 ? 'MOVE' : 'MOVES'} SWAPPED` : ''}
+          </Kicker>
           <Headline lead={today.title} italic={today.titleItalic} size={104} />
           <Text style={{ fontFamily: fonts.sans, fontSize: s(24), lineHeight: s(35), color: colors.inkSoft, maxWidth: s(600) }}>{today.summary}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(28), marginTop: s(10) }}>
             <FocusButton label="Start session" onPress={onStart} preferredFocus />
-            <FocusButton label="Swap a move" onPress={() => {}} variant="link" fontSize={22} />
+            <FocusButton label="Swap a move" onPress={onSwap} variant="link" fontSize={22} />
             <FocusButton label="Move without camera" onPress={onNoCamera} variant="link" fontSize={22} />
           </View>
           <View style={{ marginLeft: s(40), marginTop: s(4) }}>

@@ -134,7 +134,7 @@ export function FollowScreen({ session, onFinish }: { session: Session; onFinish
           <View style={{ position: 'absolute', top: s(14), left: s(18), right: s(18), flexDirection: 'row', justifyContent: 'space-between' }}>
             <Kicker size={14}>{resting ? `UP NEXT · ${shown.name.toUpperCase()}` : step.kind === 'reps' ? 'FOLLOW THE BEAT' : 'LIKE THIS'}</Kicker>
             {step.kind === 'reps' && w.phase === 'work' ? (
-              <Text style={{ fontFamily: fonts.hand, fontSize: s(30), lineHeight: s(32), color: w.half === 'down' ? colors.pen : colors.ink }}>
+              <Text style={{ fontFamily: fonts.hand, fontSize: s(30), lineHeight: s(40), color: w.half === 'down' ? colors.pen : colors.ink }}>
                 {w.half === 'down' ? 'down…' : 'up!'}
               </Text>
             ) : null}
