@@ -4,32 +4,33 @@
       [
         "@react-native-tvos/config-tv",
         {
-          "androidTVBanner": "./assets/images/icon-400x240.png",
-          "appleTVImages": {
-            "icon": "./assets/images/icon-1280x768.png",
-            "iconSmall": "./assets/images/icon-400x240.png",
-            "iconSmall2x": "./assets/images/icon-800x480.png",
-            "topShelf": "./assets/images/icon-1920x720.png",
-            "topShelf2x": "./assets/images/icon-3840x1440.png",
-            "topShelfWide": "./assets/images/icon-2320x720.png",
-            "topShelfWide2x": "./assets/images/icon-4640x1440.png"
-          }
+          "androidTVBanner": "./assets/images/tv-banner.png"
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash.png",
+          "imageWidth": 360,
+          "resizeMode": "contain",
+          "backgroundColor": "#EFE8DA"
+        }
+      ]
     ],
     "android": {
-      "splash": {
-        "image": "./assets/images/icon-1920x720.png",
+      "package": "com.mallikarjuntr.spotter",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#EFE8DA"
-      },
-      "package": "com.mallikarjuntr.spotter"
+      }
     },
     "name": "Spotter",
     "slug": "spotter",
     "version": "0.1.0",
     "orientation": "landscape",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#EFE8DA"
+    "backgroundColor": "#EFE8DA",
+    "icon": "./assets/images/icon.png"
   }
 }

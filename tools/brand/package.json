@@ -1,0 +1,14 @@
+{
+  "name": "spotter-brand",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "Generates Spotter's app icon, TV banner, splash and Appstore images from SVG.",
+  "scripts": {
+    "build": "node make.mjs"
+  },
+  "devDependencies": {
+    "opentype.js": "1.3.4",
+    "sharp": "0.33.5"
+  }
+}
