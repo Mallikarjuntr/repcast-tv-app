@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spotter replay test bench</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="top">
+        <div class="wordmark">spotter<span class="dot">.</span></div>
+        <div class="tag">REPLAY TEST BENCH</div>
+      </header>
+      <p class="hint">
+        Runs a recorded video through the same pose model and movement engine as the phone. Use
+        <code>?src=&lt;video url&gt;&amp;exercise=squat|lunge&amp;fps=15&amp;model=lite|full</code>.
+      </p>
+      <div class="stage" id="stage">
+        <video id="video" muted playsinline crossorigin="anonymous"></video>
+        <canvas id="overlay"></canvas>
+        <div class="count" aria-live="polite"><span id="count">0</span><span class="of">reps</span></div>
+      </div>
+      <p class="cue" id="cue">Loading…</p>
+      <ol class="log" id="log"></ol>
+      <pre id="result" class="log"></pre>
+    </main>
+    <script type="module" src="./src/replay.ts"></script>
+  </body>
+</html>

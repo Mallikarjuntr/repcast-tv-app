@@ -10,6 +10,7 @@ export type PairingState =
       live: LiveStatus;
       phoneConnected: boolean;
       framing: Record<BodyPart, boolean> | null;
+      sideOn: boolean;
     };
 
 /** Creates a pairing session, listens on its channel and tracks the phone's connection and framing. */
@@ -25,14 +26,14 @@ export function usePairing(): { state: PairingState; newCode: () => void } {
     createSession()
       .then((session) => {
         if (cancelled) return;
-        setState({ phase: 'ready', session, live: 'connecting', phoneConnected: false, framing: null });
+        setState({ phase: 'ready', session, live: 'connecting', phoneConnected: false, framing: null, sideOn: false });
         const update = (fn: (s: Extract<PairingState, { phase: 'ready' }>) => Partial<Extract<PairingState, { phase: 'ready' }>>) =>
           setState((s) => (s.phase === 'ready' ? { ...s, ...fn(s) } : s));
         const sub = subscribe(
           session.channel,
           (event) => {
             if (event.type === 'hello') update(() => ({ phoneConnected: true }));
-            else if (event.type === 'framing') update(() => ({ phoneConnected: true, framing: event.visible }));
+            else if (event.type === 'framing') update(() => ({ phoneConnected: true, framing: event.visible, sideOn: event.sideOn ?? false }));
             else if (event.type === 'bye') update(() => ({ phoneConnected: false, framing: null }));
           },
           (live) => update(() => ({ live })),

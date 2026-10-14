@@ -11,7 +11,10 @@ export interface WorkoutPlan {
 }
 
 export interface RepNote {
+  /** Counted reps in the set after this attempt. */
   count: number;
+  counted: boolean;
+  verdict: 'good' | 'fix' | 'no-rep';
   depthOk: boolean | null;
   faults: string[];
   cues: string[];
@@ -33,7 +36,7 @@ export interface LiveWorkout {
   restLeftSeconds: number;
   live: LiveStatus;
   skipRest: () => void;
-  /** Per-rep log for the summary. */
+  /** Every attempt, counted or not, for the summary. */
   history: RepNote[];
 }
 
@@ -66,9 +69,21 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
         } else if (event.type === 'rep') {
           const s = state.current;
           if (s.phase !== 'work' || s.paused) return;
-          repsRef.current += 1;
-          setRepsInSet(repsRef.current);
-          const note = { count: repsRef.current, depthOk: event.depthOk, faults: event.faults ?? [], cues: event.cues, at: Date.now() };
+          // Older phones send no `counted` flag; treat those as counted.
+          const counted = event.counted ?? true;
+          if (counted) {
+            repsRef.current += 1;
+            setRepsInSet(repsRef.current);
+          }
+          const note: RepNote = {
+            count: repsRef.current,
+            counted,
+            verdict: event.verdict ?? 'good',
+            depthOk: event.depthOk,
+            faults: event.faults ?? [],
+            cues: event.cues,
+            at: Date.now(),
+          };
           history.current.push(note);
           setLastRep(note);
           if (note.count >= plan.reps) {
@@ -107,7 +122,7 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
     phase,
     setIndex,
     repsInSet,
-    totalReps: history.current.length,
+    totalReps: history.current.filter((n) => n.counted).length,
     lastRep,
     pose,
     poseAgeMs: poseAt.current ? now - poseAt.current : Infinity,

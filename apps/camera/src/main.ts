@@ -1,6 +1,6 @@
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
 import { BODY_PARTS, findSession, openChannel, POSE_SOURCE_INDEX, type BodyPart, type LiveChannel, type SpotterEvent } from '@spotter/shared';
-import { RepDetector, squat, type PointName, type RepResult, type RepUpdate } from 'spotter-movement';
+import { isSideOn, RepDetector, squat, type PointName, type RepResult, type RepUpdate } from 'spotter-movement';
 
 const MODEL_URL = {
   lite: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
@@ -105,12 +105,13 @@ function reportFraming(pose: NormalizedLandmark[] | undefined, now: number): voi
   const visible = Object.fromEntries(
     BODY_PARTS.map((part) => [part, !!pose && PART_POINTS[part].every((i) => (pose[i]?.visibility ?? 0) >= 0.5)]),
   ) as Record<BodyPart, boolean>;
-  const key = JSON.stringify(visible);
+  const sideOn = !!pose && isSideOn({ t: now, landmarks: pose, aspect: ui.video.videoWidth / ui.video.videoHeight }, 0.5) === true;
+  const key = JSON.stringify({ visible, sideOn });
   const changed = key !== lastFraming && now - lastFramingAt >= FRAMING_MIN_GAP_MS;
   if (changed || now - lastFramingAt >= FRAMING_HEARTBEAT_MS) {
     lastFraming = key;
     lastFramingAt = now;
-    send({ type: 'framing', visible, at: Date.now() });
+    send({ type: 'framing', visible, sideOn, at: Date.now() });
   }
 }
 
@@ -127,6 +128,8 @@ let fps = 0;
 let frames = 0;
 let fallbackFrames = 0;
 let noPersonFrames = 0;
+/** When the person started being seen side-on (null when not). */
+let sideOnSince: number | null = null;
 
 function showError(message: string): void {
   ui.error.textContent = message;
@@ -215,24 +218,40 @@ function describeMissing(missing: PointName[]): string {
 
 function onRep(rep: RepResult): void {
   reps.push(rep);
-  ui.count.textContent = String(rep.count);
-  const countBox = ui.count.parentElement!;
-  countBox.classList.add('bump');
-  setTimeout(() => countBox.classList.remove('bump'), 350);
+  send({
+    type: 'rep',
+    exercise: squat.id,
+    count: rep.count,
+    counted: rep.counted,
+    verdict: rep.verdict,
+    depthOk: rep.depthOk,
+    faults: rep.faults.map((f) => f.id),
+    cues: rep.cues,
+    at: Date.now(),
+  });
 
-  const issues = [...(rep.depthOk === false ? [squat.depth!.cue] : []), ...rep.faults.map((f) => f.cue)];
-  send({ type: 'rep', exercise: squat.id, count: rep.count, depthOk: rep.depthOk, faults: rep.faults.map((f) => f.id), cues: issues, at: Date.now() });
-  if (issues.length > 0) {
-    setCue(issues.join(' · '), true);
-    say(`${rep.count}. ${issues[0]}`);
+  if (!rep.counted) {
+    // An honest spotter: say plainly that it didn't count, and why.
+    setCue(`No rep — ${rep.cues[0] ?? "that one doesn't count"}`, true);
+    say(`No rep. ${rep.cues[0] ?? ''}`);
   } else {
-    setCue(rep.count % 5 === 0 ? `${rep.count} — lovely, keep going` : 'Good depth');
-    say(String(rep.count));
+    ui.count.textContent = String(rep.count);
+    const countBox = ui.count.parentElement!;
+    countBox.classList.add('bump');
+    setTimeout(() => countBox.classList.remove('bump'), 350);
+    if (rep.verdict === 'fix') {
+      setCue(rep.cues.join(' · '), true);
+      say(`${rep.count}. ${rep.cues[0]}`);
+    } else {
+      setCue(rep.count % 5 === 0 ? `${rep.count} — lovely, keep going` : 'Good rep');
+      say(String(rep.count));
+    }
   }
 
   const item = document.createElement('li');
-  item.textContent = `${Math.round(rep.bottom)}° · ${(rep.durationMs / 1000).toFixed(1)}s · ${issues.length ? issues.join(', ') : 'clean'}`;
-  if (issues.length) item.className = 'bad';
+  const label = rep.counted ? (rep.verdict === 'fix' ? rep.cues.join(', ') : 'clean') : `NO REP: ${rep.cues[0] ?? ''}`;
+  item.textContent = `${Math.round(rep.bottom)}° · ${(rep.durationMs / 1000).toFixed(1)}s · ${label}`;
+  if (rep.verdict !== 'good') item.className = 'bad';
   ui.log.prepend(item);
 }
 
@@ -252,7 +271,11 @@ function render(update: RepUpdate): void {
   } else if (update.phase === 'top' && reps.length === 0) {
     setCue('Ready — squat when you are');
   }
-  ui.hint.textContent = update.usingFallback ? 'Feet out of view — estimating from your thighs (*)' : '';
+  ui.hint.textContent = sideOnSince !== null && performance.now() - sideOnSince > 2000
+    ? 'Turn the phone about 45° — from the side I can’t see both legs'
+    : update.usingFallback
+      ? 'Feet out of view — estimating from your thighs (*)'
+      : '';
 }
 
 function loop(): void {
@@ -268,6 +291,8 @@ function loop(): void {
     frames++;
     if (pose) {
       noPersonFrames = 0;
+      const side = isSideOn({ t: now, landmarks: pose, aspect: video.videoWidth / video.videoHeight }, 0.5) === true;
+      sideOnSince = side ? (sideOnSince ?? now) : null;
       render(detector.update({ t: now, landmarks: pose, world: result.worldLandmarks[0], aspect: video.videoWidth / video.videoHeight }));
     } else if (++noPersonFrames > 15) {
       setCue("I can't see you yet — step into the frame", true);
@@ -290,11 +315,15 @@ function results(): string {
       avgFps: Math.round(fps),
       frames,
       feetHiddenPct: frames ? Math.round((fallbackFrames / frames) * 100) : 0,
+      attempts: reps.length,
+      counted: reps.filter((r) => r.counted).length,
       reps: reps.map((r) => ({
         n: r.count,
+        verdict: r.verdict,
         bottomDeg: Math.round(r.bottom),
         deep: r.depthOk,
-        faults: r.faults.map((f) => f.id),
+        faults: r.faults.map((f) => `${f.id}:${f.severity}`),
+        cues: r.cues,
         sec: +(r.durationMs / 1000).toFixed(2),
       })),
     },

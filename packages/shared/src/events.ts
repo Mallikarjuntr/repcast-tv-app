@@ -15,7 +15,13 @@ export type PosePoint = (typeof POSE_POINTS)[number];
 /** Messages the camera device sends to the TV over the session channel. */
 export type SpotterEvent =
   | { type: 'hello'; device: string; at: number }
-  | { type: 'framing'; visible: Record<BodyPart, boolean>; at: number }
+  | {
+      type: 'framing';
+      visible: Record<BodyPart, boolean>;
+      /** The phone sees the person side-on, so one leg hides the other. */
+      sideOn?: boolean;
+      at: number;
+    }
   | {
       type: 'pose';
       /** x,y pairs (0..1, 3 decimals) in POSE_POINTS order; -1,-1 when a point isn't visible. */
@@ -29,7 +35,11 @@ export type SpotterEvent =
   | {
       type: 'rep';
       exercise: string;
+      /** Counted reps so far on the phone (unchanged by a no-rep). */
       count: number;
+      /** False when the attempt doesn't count; `cues[0]` says why. */
+      counted: boolean;
+      verdict: 'good' | 'fix' | 'no-rep';
       depthOk: boolean | null;
       /** Form check ids, e.g. 'knees-caving', 'chest-dropping'. */
       faults: string[];

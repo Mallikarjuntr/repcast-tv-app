@@ -94,7 +94,7 @@ export function PairScreen({ onReady }: { onReady: (channel: string) => void }) 
                 ))}
               </View>
               <PenNote arrow={false} size={24} tilt={-1.5}>
-                {allVisible ? 'I can see all of you — ready when you are' : missingCue(missing)}
+                {!allVisible ? missingCue(missing) : ready.sideOn ? 'turn the phone about 45° — from the side I can’t see both legs' : 'I can see all of you — ready when you are'}
               </PenNote>
             </>
           ) : (

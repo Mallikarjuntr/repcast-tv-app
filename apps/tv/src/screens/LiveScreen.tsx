@@ -17,6 +17,7 @@ const PRAISE = ['Good depth.', 'Nice and steady.', "That's it — smooth."];
 function coachLine(plan: WorkoutPlan, phase: string, rep: RepNote | null): string {
   if (phase === 'rest') return 'Good set. Breathe — shake out your legs.';
   if (!rep) return "Stand tall, then squat when you're ready.";
+  if (!rep.counted) return `No rep — ${rep.cues[0] ?? "that one doesn't count"}.`;
   if (rep.cues.length > 0) return `${rep.cues[0]}.`;
   const left = plan.reps - rep.count;
   if (left <= 0) return "That's the set!";
@@ -83,7 +84,8 @@ export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan:
     knees: recent?.faults.includes('knees-caving') ?? false,
     chest: recent?.faults.includes('chest-dropping') ?? false,
   };
-  const hasCorrection = !!recent && recent.cues.length > 0;
+  const hasCorrection = !!recent && recent.verdict !== 'good';
+  const noRep = !!recent && !recent.counted;
   const lostSight = w.pose !== null && w.poseAgeMs > 2500;
 
   return (
@@ -136,6 +138,11 @@ export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan:
           <View style={{ position: 'absolute', top: s(14), left: s(18) }}>
             <Kicker size={14}>YOU, RIGHT NOW</Kicker>
           </View>
+          {noRep ? (
+            <View style={{ position: 'absolute', top: s(36), right: s(22), borderWidth: s(3), borderColor: colors.pen, paddingHorizontal: s(14), paddingVertical: s(4), transform: [{ rotate: '-8deg' }], zIndex: 2 }}>
+              <Text style={{ fontFamily: fonts.monoMedium, fontSize: s(26), letterSpacing: s(4), color: colors.pen }}>NO REP</Text>
+            </View>
+          ) : null}
           {w.pose && !lostSight ? (
             <PoseFigure frame={w.pose} notes={notes} width={panel.width} height={panel.height} />
           ) : (
