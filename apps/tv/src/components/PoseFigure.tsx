@@ -39,7 +39,22 @@ function mid(a: Pt, b: Pt): Pt {
 }
 
 /** The live outline of the person, fitted into the panel, with the coach's red-pen marks. */
-export const PoseFigure = memo(function PoseFigure({ frame, notes, width, height }: { frame: PoseFrame | null; notes: Annotations; width: number; height: number }) {
+export const PoseFigure = memo(function PoseFigure({
+  frame,
+  notes,
+  width,
+  height,
+  fitBox = false,
+  anchorX = 0.64,
+}: {
+  frame: PoseFrame | null;
+  notes: Annotations;
+  width: number;
+  height: number;
+  fitBox?: boolean;
+  /** Where the hips sit across the panel (0..1); off-centre leaves a margin for notes. */
+  anchorX?: number;
+}) {
   // Stable framing: size from the tallest recent body height (standing), feet anchored near the
   // bottom, body on the right so the coach can write notes in the left margin. A squat then
   // visibly lowers the figure instead of the figure rescaling to fill the panel.
@@ -59,9 +74,17 @@ export const PoseFigure = memo(function PoseFigure({ frame, notes, width, height
   tallest.current = Math.max(bottom - top, tallest.current * 0.995);
   const hipsRaw = raw[7] && raw[8] ? (raw[7].x + raw[8].x) / 2 : seen.reduce((a, q) => a + q.x, 0) / seen.length;
   centerX.current = centerX.current === null ? hipsRaw : centerX.current + 0.2 * (hipsRaw - centerX.current);
-  const k = (height * 0.74) / Math.max(tallest.current, 0.05);
-  const ox = width * 0.64 - centerX.current * k;
-  const oy = height * 0.92 - bottom * k;
+  let k = (height * 0.74) / Math.max(tallest.current, 0.05);
+  let ox = width * anchorX - centerX.current * k;
+  let oy = height * 0.92 - bottom * k;
+  if (fitBox) {
+    // Lying or wide poses: fit the whole body in the panel, centred.
+    const left = Math.min(...seen.map((q) => q.x));
+    const right = Math.max(...seen.map((q) => q.x));
+    k = Math.min((width * 0.8) / Math.max(right - left, 0.05), (height * 0.6) / Math.max(bottom - top, 0.05));
+    ox = width / 2 - ((left + right) / 2) * k;
+    oy = height * 0.6 - ((top + bottom) / 2) * k;
+  }
   const pts = Object.fromEntries(POSE_POINTS.map((name, i) => [name, raw[i] ? { x: ox + raw[i].x * k, y: oy + raw[i].y * k } : null])) as Record<PosePoint, Pt>;
   const noteSize = Math.max(18, width * 0.05);
   const marginX = width * 0.06;
@@ -70,7 +93,8 @@ export const PoseFigure = memo(function PoseFigure({ frame, notes, width, height
   const hips = mid(pts.lHip, pts.rHip);
   const knees = mid(pts.lKnee, pts.rKnee);
   const shoulderWidth = pts.lShoulder && pts.rShoulder ? Math.abs(pts.lShoulder.x - pts.rShoulder.x) : k * 0.08;
-  const headR = Math.max(10, shoulderWidth * 0.32);
+  // Side-on, the shoulders overlap: fall back to a head sized from the body scale.
+  const headR = Math.max(10, shoulderWidth * 0.32, k * 0.035);
   const stroke = Math.max(5, width * 0.018);
 
   return (

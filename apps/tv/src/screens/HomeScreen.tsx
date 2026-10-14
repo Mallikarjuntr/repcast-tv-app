@@ -2,36 +2,27 @@ import { Text, View } from 'react-native';
 import { Dash, PenCircle, Tick } from '../components/Marks';
 import { FocusButton } from '../components/FocusButton';
 import { Headline, Kicker, PenNote, Wordmark } from '../components/Type';
+import { weekView, type SessionRecord } from '../storage';
 import { colors, fonts, useScale } from '../theme';
-
-// Sample data until sessions come from the backend.
-const TODAY = {
-  minutes: 18,
-  titleLead: 'Legs,\n',
-  titleItalic: 'gently.',
-  summary: "Squats, lunges and jumping jacks. You said your knees felt tight on Sunday, so we'll take a longer warm-up.",
-  coachNote: "go slow on the way down —\nI'll do the counting.",
-  session: 4,
-};
-type DayState = 'done' | 'missed' | 'today' | 'ahead';
-
-// Sample history until sessions come from the backend: every earlier day done except Wednesday.
-function weekSoFar(today: Date): { day: string; state: DayState }[] {
-  const todayIndex = (today.getDay() + 6) % 7; // Monday = 0
-  return ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => ({
-    day,
-    state: i === todayIndex ? 'today' : i > todayIndex ? 'ahead' : i === 2 ? 'missed' : 'done',
-  }));
-}
+import { estimateSeconds, type Session } from '../workouts';
 
 const NUMBER_WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven'];
 
-function streakLine(done: number): string {
+function streakLine(done: number, todayDone: boolean): string {
+  const word = (n: number) => NUMBER_WORDS[n] ?? String(n);
+  if (todayDone) return `${word(done)} ${done === 1 ? 'day' : 'days'} this week.\nToday's in the book.`;
   if (done === 0) return 'A fresh week.\nToday makes one.';
-  return `${NUMBER_WORDS[done]} ${done === 1 ? 'day' : 'days'} this week.\nToday makes ${NUMBER_WORDS[done + 1]!.toLowerCase()}.`;
+  return `${word(done)} ${done === 1 ? 'day' : 'days'} this week.\nToday makes ${word(done + 1).toLowerCase()}.`;
 }
 
-const LAST_TIME = { label: 'LAST TIME · SAT', lines: ['96 reps', '84% clean form', 'knees drifted on 2 reps'] };
+function lastTime(record: SessionRecord | undefined): { label: string; lines: string[] } {
+  if (!record) return { label: 'LAST TIME', lines: ['Nothing yet.', 'Your first session', 'shows up here.'] };
+  const day = new Date(record.at).toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase();
+  const lines = [`${record.reps} reps`, `${Math.max(1, Math.round(record.seconds / 60))} min`];
+  if (record.mode === 'coach' && record.cleanReps !== undefined && record.reps > 0) lines.push(`${Math.round((record.cleanReps / record.reps) * 100)}% clean form`);
+  else lines.push('followed along, no camera');
+  return { label: `LAST TIME · ${day}`, lines };
+}
 
 function formatToday(date: Date): string {
   const day = date.toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase();
@@ -39,10 +30,22 @@ function formatToday(date: Date): string {
   return `${day} · ${dm}`;
 }
 
-export function HomeScreen({ onStart, onNoCamera }: { onStart: () => void; onNoCamera: () => void }) {
+export function HomeScreen({
+  today,
+  sessions,
+  onStart,
+  onNoCamera,
+}: {
+  today: Session;
+  sessions: SessionRecord[];
+  onStart: () => void;
+  onNoCamera: () => void;
+}) {
   const s = useScale();
   const now = new Date();
-  const week = weekSoFar(now);
+  const week = weekView(sessions, now);
+  const last = lastTime(sessions[sessions.length - 1]);
+  const minutes = Math.round(estimateSeconds(today) / 60);
   const done = week.filter((d) => d.state === 'done').length;
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(28) }}>
@@ -50,22 +53,22 @@ export function HomeScreen({ onStart, onNoCamera }: { onStart: () => void; onNoC
         <Wordmark />
         <View style={{ alignItems: 'flex-end' }}>
           <Kicker>{formatToday(now)}</Kicker>
-          <Kicker>SESSION {String(TODAY.session).padStart(2, '0')}</Kicker>
+          <Kicker>SESSION {String(sessions.length + 1).padStart(2, '0')}</Kicker>
         </View>
       </View>
 
       <View style={{ flex: 1, flexDirection: 'row', gap: s(72) }}>
         <View style={{ flex: 1.55, gap: s(18) }}>
-          <Kicker>TODAY'S SESSION — {TODAY.minutes} MIN</Kicker>
-          <Headline lead={TODAY.titleLead} italic={TODAY.titleItalic} size={104} />
-          <Text style={{ fontFamily: fonts.sans, fontSize: s(24), lineHeight: s(35), color: colors.inkSoft, maxWidth: s(600) }}>{TODAY.summary}</Text>
+          <Kicker>TODAY'S SESSION — {minutes} MIN</Kicker>
+          <Headline lead={today.title} italic={today.titleItalic} size={104} />
+          <Text style={{ fontFamily: fonts.sans, fontSize: s(24), lineHeight: s(35), color: colors.inkSoft, maxWidth: s(600) }}>{today.summary}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(28), marginTop: s(10) }}>
             <FocusButton label="Start session" onPress={onStart} preferredFocus />
             <FocusButton label="Swap a move" onPress={() => {}} variant="link" fontSize={22} />
             <FocusButton label="Move without camera" onPress={onNoCamera} variant="link" fontSize={22} />
           </View>
           <View style={{ marginLeft: s(40), marginTop: s(4) }}>
-            <PenNote size={26}>{TODAY.coachNote}</PenNote>
+            <PenNote size={26}>{today.coachNote}</PenNote>
           </View>
         </View>
 
@@ -80,11 +83,11 @@ export function HomeScreen({ onStart, onNoCamera }: { onStart: () => void; onNoC
             ))}
           </View>
           <Text style={{ fontFamily: fonts.displayItalic, fontSize: s(34), lineHeight: s(39), color: colors.ink }}>
-            {streakLine(done)}
+            {streakLine(done, week[(now.getDay() + 6) % 7]?.state === 'done')}
           </Text>
           <View style={{ borderTopWidth: s(1.5), borderTopColor: colors.faint, paddingTop: s(22), gap: s(10) }}>
-            <Kicker>{LAST_TIME.label}</Kicker>
-            {LAST_TIME.lines.map((line) => (
+            <Kicker>{last.label}</Kicker>
+            {last.lines.map((line) => (
               <Text key={line} style={{ fontFamily: fonts.mono, fontSize: s(20), lineHeight: s(32), color: colors.ink }}>
                 {line}
               </Text>

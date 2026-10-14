@@ -9,5 +9,8 @@
   "scripts": {
     "dev:camera": "npm run dev -w apps/camera",
     "build:camera": "npm run build -w apps/camera"
+  },
+  "overrides": {
+    "react-native": "npm:react-native-tvos@0.86-stable"
   }
 }
