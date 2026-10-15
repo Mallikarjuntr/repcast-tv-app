@@ -1,6 +1,7 @@
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
 import { BODY_PARTS, findSession, openChannel, POSE_SOURCE_INDEX, type BodyPart, type LiveChannel, type SpotterEvent } from '@spotter/shared';
 import { isSideOn, RepDetector, squat, type PointName, type RepResult, type RepUpdate } from 'spotter-movement';
+import { VideoLink } from './video-link';
 
 const MODEL_URL = {
   lite: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
@@ -58,6 +59,8 @@ const ui = {
 
 /** Live connection to the TV session this phone is linked to, if any. */
 let tv: LiveChannel | null = null;
+/** The camera picture for the TV, straight over the home Wi-Fi (`?video=off` to test without it). */
+const video = new URLSearchParams(location.search).get('video') === 'off' ? null : new VideoLink();
 let lastFraming = '';
 let lastFramingAt = 0;
 let lastPoseAt = 0;
@@ -87,6 +90,7 @@ async function linkToTv(code: string): Promise<void> {
     const session = await findSession(code);
     tv?.close();
     tv = openChannel(session.channel);
+    video?.connect(session.channel);
     ui.pairStatus.className = 'pair-status linked';
     ui.pairStatus.textContent = `Linked to your TV · code ${code} ✓`;
     ui.pairForm.hidden = true;
@@ -94,6 +98,7 @@ async function linkToTv(code: string): Promise<void> {
   } catch (err) {
     tv?.close();
     tv = null;
+    video?.close();
     ui.pairStatus.className = 'pair-status failed';
     ui.pairStatus.textContent = `Couldn't link: ${err instanceof Error ? err.message : String(err)}`;
   }
@@ -162,6 +167,7 @@ async function startCamera(): Promise<void> {
   ui.overlay.height = ui.video.videoHeight;
   ui.stage.classList.toggle('mirrored', facing === 'user');
   lastVideoTime = -1;
+  video?.setTrack(stream.getVideoTracks()[0] ?? null);
 }
 
 async function keepScreenOn(): Promise<void> {
@@ -405,7 +411,10 @@ ui.pairForm.addEventListener('submit', (e) => {
 const codeFromQr = new URLSearchParams(location.search).get('code');
 if (codeFromQr && /^\d{4}$/.test(codeFromQr)) void linkToTv(codeFromQr);
 
-window.addEventListener('pagehide', () => send({ type: 'bye', at: Date.now() }));
+window.addEventListener('pagehide', () => {
+  send({ type: 'bye', at: Date.now() });
+  video?.close();
+});
 
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && stream && !wakeLock) void keepScreenOn();

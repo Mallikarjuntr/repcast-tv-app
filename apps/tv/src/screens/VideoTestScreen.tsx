@@ -1,20 +1,18 @@
-import { createSession, openChannel, type LiveChannel, type LiveStatus, type RtcSignal } from '@spotter/shared';
+import { createSession } from '@spotter/shared';
 import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import { RTCIceCandidate, RTCPeerConnection, RTCSessionDescription, RTCView } from 'react-native-webrtc';
+import { RTCView } from 'react-native-webrtc';
 import { Kicker } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
+import { VideoReceiver, type VideoSnapshot } from '../videoReceiver';
 
 /**
- * Phase 0 spike, not part of the product: receives the phone's camera over WebRTC and shows the
- * receive stats needed to judge whether a Fire TV Stick can afford live video. Opened only with
+ * Test screen, not part of the product: receives the phone's camera through VideoReceiver and
+ * shows the receive stats used to judge live video on a Fire TV Stick. Opened only with
  * `adb shell am start -a android.intent.action.VIEW -d spotter://video-test`.
  */
 
-const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
 const STATS_MS = 2000;
-
-type Candidate = NonNullable<RtcSignal['candidate']>;
 
 interface Stats {
   fps: number;
@@ -63,87 +61,33 @@ function readStats(report: Map<string, any>, previous: { bytes: number; at: numb
 export function VideoTestScreen() {
   const s = useScale();
   const [code, setCode] = useState<string | null>(null);
-  const [live, setLive] = useState<LiveStatus>('connecting');
-  const [state, setState] = useState('waiting for an offer');
-  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [video, setVideo] = useState<VideoSnapshot | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const channel = useRef<LiveChannel | null>(null);
-  const pc = useRef<RTCPeerConnection | null>(null);
-  const pending = useRef<Candidate[]>([]);
+  const receiver = useRef<VideoReceiver | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    const signal = (msg: Omit<RtcSignal, 'type' | 'from' | 'at'>) =>
-      channel.current?.send({ type: 'rtc', from: 'tv', at: Date.now(), ...msg }, true);
-
-    const closePeer = () => {
-      pc.current?.close();
-      pc.current = null;
-      pending.current = [];
-      setStreamUrl(null);
-    };
-
-    const onOffer = async (sdp: NonNullable<RtcSignal['sdp']>) => {
-      closePeer();
-      const peer = new RTCPeerConnection({ iceServers: ICE_SERVERS });
-      pc.current = peer;
-      // The library's addEventListener typings don't resolve here, so use the on* handlers.
-      peer.ontrack = (event: unknown) => {
-        const stream = (event as { streams: { toURL(): string }[] }).streams[0];
-        if (stream) setStreamUrl(stream.toURL());
-      };
-      peer.onicecandidate = (event: unknown) => {
-        const c = (event as { candidate: RTCIceCandidate | null }).candidate;
-        signal({ candidate: c ? { candidate: c.candidate, sdpMid: c.sdpMid ?? null, sdpMLineIndex: c.sdpMLineIndex ?? null } : null });
-      };
-      peer.onconnectionstatechange = () => setState(peer.connectionState);
-      await peer.setRemoteDescription(new RTCSessionDescription(sdp));
-      for (const c of pending.current) await peer.addIceCandidate(new RTCIceCandidate(c));
-      pending.current = [];
-      const answer = await peer.createAnswer();
-      await peer.setLocalDescription(answer);
-      signal({ sdp: { type: 'answer', sdp: answer.sdp ?? '' } });
-      setState('answered');
-    };
-
     createSession()
       .then((session) => {
         if (cancelled) return;
         setCode(session.code);
-        channel.current = openChannel(session.channel, {
-          onStatus: (status) => {
-            setLive(status);
-            if (status === 'live') signal({ want: 'offer' });
-          },
-          onEvent: (event) => {
-            if (event.type !== 'rtc' || event.from !== 'phone') return;
-            if (event.sdp?.type === 'offer') {
-              onOffer(event.sdp).catch((err: unknown) => setError(String(err)));
-            } else if (event.candidate) {
-              if (pc.current?.remoteDescription) pc.current.addIceCandidate(new RTCIceCandidate(event.candidate)).catch(() => {});
-              else pending.current.push(event.candidate);
-            }
-          },
-        });
+        receiver.current = new VideoReceiver(session.channel);
+        receiver.current.subscribe(setVideo);
       })
       .catch((err: unknown) => setError(String(err)));
-
     return () => {
       cancelled = true;
-      closePeer();
-      channel.current?.close();
+      receiver.current?.close();
     };
   }, []);
 
   useEffect(() => {
     let previous: { bytes: number; at: number } | null = null;
     const timer = setInterval(() => {
-      const peer = pc.current;
-      if (!peer) return;
-      peer
-        .getStats()
-        .then((report: Map<string, any>) => {
+      receiver.current
+        ?.stats()
+        ?.then((report) => {
           const { stats: next, bytes } = readStats(report, previous);
           previous = { bytes, at: Date.now() };
           setStats(next);
@@ -165,8 +109,7 @@ export function VideoTestScreen() {
       <View style={{ width: s(360), gap: s(10) }}>
         <Kicker>VIDEO TEST · PHASE 0</Kicker>
         <Text style={{ fontFamily: fonts.monoMedium, fontSize: s(56), letterSpacing: s(8), color: colors.ink }}>{code ?? '····'}</Text>
-        {line('channel', live)}
-        {line('peer', state)}
+        {line('video', video?.state ?? 'waiting')}
         {stats ? (
           <>
             {line('frame', `${stats.width}×${stats.height} @ ${stats.fps} fps`)}
@@ -183,7 +126,7 @@ export function VideoTestScreen() {
         {error ? <Text style={{ fontFamily: fonts.sans, fontSize: s(16), color: colors.pen }}>{error}</Text> : null}
       </View>
       <View style={{ flex: 1, backgroundColor: colors.ink }}>
-        {streamUrl ? <RTCView streamURL={streamUrl} objectFit="contain" style={{ flex: 1 }} /> : null}
+        {video?.streamUrl ? <RTCView streamURL={video.streamUrl} objectFit="contain" style={{ flex: 1 }} /> : null}
       </View>
     </View>
   );

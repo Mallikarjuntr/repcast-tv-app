@@ -51,19 +51,32 @@ export type SpotterEvent =
   | RtcSignal;
 
 /**
- * WebRTC set-up for the live camera video, sent both ways on the session channel. The phone
- * offers, the TV answers, and both trickle ICE candidates. Each side also receives its own
+ * WebRTC set-up for the live camera video, sent both ways on the session's `rtcChannel`. The
+ * phone offers, the TV answers, and both trickle ICE candidates. Each side also receives its own
  * messages back on the channel, so it ignores those with its own `from`.
  */
 export interface RtcSignal {
   type: 'rtc';
   from: 'phone' | 'tv';
-  /** The TV asks for a fresh offer when it (re)joins the channel. */
+  /**
+   * Which connection attempt this belongs to. Every offer starts a new one; the answer and
+   * candidates carry the offer's id, so leftovers from an older attempt are ignored.
+   */
+  link?: string;
+  /** The TV asks for a fresh offer when it (re)joins or its connection drops. */
   want?: 'offer';
   sdp?: { type: 'offer' | 'answer'; sdp: string };
   /** A trickled ICE candidate; null marks the end of candidates. */
   candidate?: { candidate: string; sdpMid: string | null; sdpMLineIndex: number | null } | null;
   at: number;
+}
+
+/**
+ * Video set-up has its own sub-channel, so the phone (which listens for the TV's answers) doesn't
+ * also receive its own pose stream back, and existing listeners on the session channel see no change.
+ */
+export function rtcChannel(sessionChannel: string): string {
+  return `${sessionChannel}/rtc`;
 }
 
 export function parseEvent(raw: string): SpotterEvent | null {
