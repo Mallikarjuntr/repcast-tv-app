@@ -155,14 +155,34 @@ async function loadLandmarker(): Promise<PoseLandmarker> {
   }
 }
 
+/**
+ * Test bench: `?src=<video url>` plays a recorded exercise clip in place of the camera, through the
+ * same pose model, rep engine and video link, so the TV can be tested without anyone exercising.
+ * The clip's host must allow CORS (Wikimedia Commons does).
+ */
+const clipUrl = new URLSearchParams(location.search).get('src');
+
+async function startClip(url: string): Promise<MediaStream> {
+  facing = 'environment'; // a recording isn't a mirror
+  ui.video.crossOrigin = 'anonymous';
+  ui.video.loop = true;
+  ui.video.src = url;
+  await ui.video.play();
+  return (ui.video as HTMLVideoElement & { captureStream(): MediaStream }).captureStream();
+}
+
 async function startCamera(): Promise<void> {
   stream?.getTracks().forEach((t) => t.stop());
-  stream = await navigator.mediaDevices.getUserMedia({
-    audio: false,
-    video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
-  });
-  ui.video.srcObject = stream;
-  await ui.video.play();
+  if (clipUrl) {
+    stream = await startClip(clipUrl);
+  } else {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: false,
+      video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
+    });
+    ui.video.srcObject = stream;
+    await ui.video.play();
+  }
   ui.overlay.width = ui.video.videoWidth;
   ui.overlay.height = ui.video.videoHeight;
   ui.stage.classList.toggle('mirrored', facing === 'user');
@@ -410,6 +430,8 @@ ui.pairForm.addEventListener('submit', (e) => {
 
 const codeFromQr = new URLSearchParams(location.search).get('code');
 if (codeFromQr && /^\d{4}$/.test(codeFromQr)) void linkToTv(codeFromQr);
+// A clip needs no camera permission, so the test bench starts by itself.
+if (clipUrl) ui.start.click();
 
 window.addEventListener('pagehide', () => {
   send({ type: 'bye', at: Date.now() });

@@ -1,5 +1,6 @@
 import { createSession, subscribe, type BodyPart, type LiveStatus, type Session } from '@spotter/shared';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPoseFeed, type PoseFeed } from './poseFeed';
 
 export type PairingState =
   | { phase: 'loading' }
@@ -14,9 +15,11 @@ export type PairingState =
     };
 
 /** Creates a pairing session, listens on its channel and tracks the phone's connection and framing. */
-export function usePairing(): { state: PairingState; newCode: () => void } {
+export function usePairing(): { state: PairingState; newCode: () => void; pose: PoseFeed } {
   const [state, setState] = useState<PairingState>({ phase: 'loading' });
   const [attempt, setAttempt] = useState(0);
+  // The phone's outline, for drawing over its video while the user gets into frame.
+  const pose = useRef(createPoseFeed()).current;
 
   useEffect(() => {
     let cancelled = false;
@@ -32,7 +35,8 @@ export function usePairing(): { state: PairingState; newCode: () => void } {
         const sub = subscribe(
           session.channel,
           (event) => {
-            if (event.type === 'hello') update(() => ({ phoneConnected: true }));
+            if (event.type === 'pose') pose.push({ p: event.p, aspect: event.aspect, mirrored: event.mirrored });
+            else if (event.type === 'hello') update(() => ({ phoneConnected: true }));
             else if (event.type === 'framing') update(() => ({ phoneConnected: true, framing: event.visible, sideOn: event.sideOn ?? false }));
             else if (event.type === 'bye') update(() => ({ phoneConnected: false, framing: null }));
           },
@@ -48,8 +52,8 @@ export function usePairing(): { state: PairingState; newCode: () => void } {
       cancelled = true;
       close?.();
     };
-  }, [attempt]);
+  }, [attempt, pose]);
 
   const newCode = useCallback(() => setAttempt((n) => n + 1), []);
-  return { state, newCode };
+  return { state, newCode, pose };
 }

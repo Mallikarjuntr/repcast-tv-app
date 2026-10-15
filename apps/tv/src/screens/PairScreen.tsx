@@ -1,13 +1,18 @@
 import { BODY_PARTS, config, type BodyPart } from '@spotter/shared';
+import { useState } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { FloorPlan } from '../components/FloorPlan';
 import { FocusButton } from '../components/FocusButton';
+import { LiveVideo } from '../components/LiveVideo';
 import { Cross, Tick } from '../components/Marks';
 import { QrCode } from '../components/QrCode';
 import { Headline, Kicker, PenNote } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { usePairing } from '../usePairing';
+import { useVideoReceiver } from '../useVideoReceiver';
+
+const NO_NOTES = { depth: false, knees: false, chest: false };
 
 const PART_LABEL: Record<BodyPart, string> = { head: 'Head', hips: 'Hips', knees: 'Knees', feet: 'Feet' };
 
@@ -36,9 +41,13 @@ function missingCue(missing: BodyPart[]): string {
 
 export function PairScreen({ onReady }: { onReady: (channel: string) => void }) {
   const s = useScale();
-  const { state, newCode } = usePairing();
+  const { state, newCode, pose } = usePairing();
+  const [panel, setPanel] = useState({ width: 0, height: 0 });
 
   const ready = state.phase === 'ready' ? state : null;
+  const video = useVideoReceiver(ready?.session.channel ?? null);
+  // Once the phone's picture arrives, the floor plan gives way to the user seeing themselves.
+  const showVideo = video.state === 'connected' && video.streamUrl !== null && panel.width > 0;
   const missing = ready?.framing ? BODY_PARTS.filter((p) => !ready.framing![p]) : null;
   const allVisible = missing !== null && missing.length === 0;
 
@@ -108,9 +117,16 @@ export function PairScreen({ onReady }: { onReady: (channel: string) => void }) 
       </View>
 
       <View style={{ flex: 1.25, gap: s(18) }}>
-        <Kicker>STEP 2 OF 2 · SET IT DOWN</Kicker>
-        <View style={{ flex: 1, backgroundColor: colors.paperDeep, borderWidth: s(1.5), borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' }}>
-          <FloorPlan width={s(640)} height={s(518)} />
+        <Kicker>{showVideo ? 'STEP 2 OF 2 · YOU, RIGHT NOW' : 'STEP 2 OF 2 · SET IT DOWN'}</Kicker>
+        <View
+          style={{ flex: 1, backgroundColor: colors.paperDeep, borderWidth: s(1.5), borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' }}
+          onLayout={(e) => setPanel({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
+        >
+          {showVideo ? (
+            <LiveVideo streamUrl={video.streamUrl!} getPose={pose.getPose} subscribePose={pose.subscribePose} notes={NO_NOTES} width={panel.width - s(3)} height={panel.height - s(3)} />
+          ) : (
+            <FloorPlan width={s(640)} height={s(518)} />
+          )}
         </View>
       </View>
     </View>

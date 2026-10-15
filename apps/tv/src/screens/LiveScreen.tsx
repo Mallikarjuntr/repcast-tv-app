@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { FocusButton } from '../components/FocusButton';
+import { LiveVideo } from '../components/LiveVideo';
 import { SetDot } from '../components/Marks';
 import { PoseFigure, type Annotations, type PoseFrame } from '../components/PoseFigure';
 import { Tally } from '../components/Tally';
@@ -9,6 +10,7 @@ import { Headline, Kicker, PenNote } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { useTVEventHandler, type TVRemoteEvent } from '../tv';
 import { useLiveWorkout, type RepNote, type WorkoutPlan } from '../useLiveWorkout';
+import { useVideoReceiver } from '../useVideoReceiver';
 
 /** How long the coach's red-pen marks stay on the outline after a rep. */
 const NOTE_MS = 4000;
@@ -98,6 +100,9 @@ export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan:
   const [elapsed, setElapsed] = useState(0);
   const [panel, setPanel] = useState({ width: 0, height: 0 });
   const w = useLiveWorkout(channel, plan, paused);
+  const video = useVideoReceiver(channel);
+  // The phone's picture with the skeleton on it; the drawn outline stands in whenever it drops.
+  const showVideo = video.state === 'connected' && video.streamUrl !== null && panel.width > 0;
   const finished = useRef(false);
 
   // Remote keys only reach the app while something on screen has focus, which the Pause
@@ -140,7 +145,7 @@ export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan:
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(28) }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(8) }}>
             <Lock size={s(18)} color={colors.pencil} />
-            <Text style={{ fontFamily: fonts.sans, fontSize: s(16), color: colors.pencil }}>Video stays on your phone</Text>
+            <Text style={{ fontFamily: fonts.sans, fontSize: s(16), color: colors.pencil }}>Video goes only from your phone to your TV — never to the cloud</Text>
           </View>
           <Text style={{ fontFamily: fonts.monoMedium, fontSize: s(28), color: colors.ink }}>{formatTime(elapsed)}</Text>
           {w.phase === 'work' ? (
@@ -178,15 +183,18 @@ export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan:
           style={{ flex: 1, alignSelf: 'stretch', backgroundColor: colors.paperDeep, borderWidth: s(1.5), borderColor: colors.ink }}
           onLayout={(e) => setPanel({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
         >
-          <View style={{ position: 'absolute', top: s(14), left: s(18) }}>
+          {showVideo ? (
+            <LiveVideo streamUrl={video.streamUrl!} getPose={w.getPose} subscribePose={w.subscribePose} notes={notes} width={panel.width - s(3)} height={panel.height - s(3)} />
+          ) : null}
+          <View style={{ position: 'absolute', top: s(14), left: s(18), zIndex: 2, backgroundColor: showVideo ? colors.paper : 'transparent', paddingHorizontal: showVideo ? s(8) : 0, paddingVertical: showVideo ? s(3) : 0 }}>
             <Kicker size={14}>YOU, RIGHT NOW</Kicker>
           </View>
           {noRep ? (
-            <View style={{ position: 'absolute', top: s(36), right: s(22), borderWidth: s(3), borderColor: colors.pen, paddingHorizontal: s(14), paddingVertical: s(4), transform: [{ rotate: '-8deg' }], zIndex: 2 }}>
+            <View style={{ position: 'absolute', top: s(36), right: s(22), borderWidth: s(3), borderColor: colors.pen, paddingHorizontal: s(14), paddingVertical: s(4), transform: [{ rotate: '-8deg' }], zIndex: 2, backgroundColor: showVideo ? colors.paper : 'transparent' }}>
               <Text style={{ fontFamily: fonts.monoMedium, fontSize: s(26), letterSpacing: s(4), color: colors.pen }}>NO REP</Text>
             </View>
           ) : null}
-          <LivePose getPose={w.getPose} subscribePose={w.subscribePose} notes={notes} width={panel.width} height={panel.height} />
+          {showVideo ? null : <LivePose getPose={w.getPose} subscribePose={w.subscribePose} notes={notes} width={panel.width} height={panel.height} />}
         </View>
       </View>
 

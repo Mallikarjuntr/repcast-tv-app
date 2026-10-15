@@ -1,6 +1,6 @@
 # Spotter
 
-**Your living-room spotter.** A Fire TV fitness coach that checks your form through the phone or webcam you already own — and marks it up like a coach with a red pen. Video never leaves your device.
+**Your living-room spotter.** A Fire TV fitness coach that checks your form through the phone or webcam you already own — and marks it up like a coach with a red pen. Video goes only from your phone to your TV — never to the cloud.
 
 - **Core mode (free):** guided workouts, timers, tempo-based rep tracking, streaks and progress — no camera needed.
 - **Smart coaching:** optional posture analysis on every rep using an existing phone or webcam, plus an AI coach's note after each session.

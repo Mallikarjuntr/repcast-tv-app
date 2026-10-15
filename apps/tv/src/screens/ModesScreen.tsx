@@ -140,7 +140,7 @@ export function ModesScreen({
       </View>
 
       <View style={{ flexDirection: 'row', gap: s(36) }}>
-        <Kicker size={14}>VIDEO NEVER LEAVES YOUR DEVICE</Kicker>
+        <Kicker size={14}>VIDEO GOES ONLY FROM YOUR PHONE TO YOUR TV — NEVER TO THE CLOUD</Kicker>
         <Kicker size={14}>MANAGE YOUR PLAN IN YOUR AMAZON ACCOUNT</Kicker>
       </View>
     </View>
