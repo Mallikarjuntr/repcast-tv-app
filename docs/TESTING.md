@@ -72,7 +72,44 @@ Tested on a **Fire TV Stick 3rd gen (AFTSSS)**: Fire OS 7.7.1.7 (Android 9, API 
 
 - **3D trainer (Follow along):** each move plays a pre-rendered loop of a 3D trainer drawn in the app's style (`tools/trainer`). On the stick the follow-along screen drops from ~55% slow frames with the drawn figure to **~2% (median 8 ms)** with the trainer video, because the stick decodes H.264 in hardware. The trainer holds still during the coach's intro and stays on the beat (resynced if it drifts > 0.15 s). Screenshots: `docs/screenshots/fire-tv/6-9`.
 
+## 5. Live video from the phone (WebRTC)
+
+In Smart coaching the TV shows the phone's camera with the user's skeleton drawn on it. The video and the pose points go straight from phone to TV over WebRTC on the home Wi-Fi; only the connection set-up messages use the AppSync Events channel (its `/rtc` sub-channel). All numbers below were measured on the Fire TV Stick 3rd gen.
+
+**Go / no-go first.** Before touching any screen, a hidden test screen (`spotter://video-test`) received a test pattern from a computer on the same Wi-Fi, to check the stick could afford live video:
+
+| Measure | Target | Result |
+|---|---|---|
+| Frame rate (854×480) | ≥ 15 fps | 22–24 fps |
+| Decoding | hardware | H.264 in hardware (`OMX.MTK.VIDEO.DECODER.AVC`) |
+| Route | direct on the Wi-Fi | yes (host → peer-reflexive, UDP), round trip 6–16 ms |
+| App memory | < 250 MB | 96–118 MB over 10 minutes |
+| Stability | no crash or low-memory kill in 10 min | none; free memory steady at ~245 MB |
+| Frames dropped | — | 2.6% (mostly one 30-second burst) |
+| APK size | — | 48.6 → 66.9 MB (both ABIs) |
+
+**Connection tests.** The sender dropping and coming back (TV shows "reconnecting" and keeps the last frame, then a fresh connection), the phone page reloading, and set-up messages from older attempts arriving late. A real phone's camera has also been seen on the TV (before the skeleton was added); a full real-phone workout with the skeleton is still to be run.
+
+**End to end without exercising.** The camera page's `?src=<video url>` plays a recorded clip instead of the camera through the *same* pipeline (pose model, rep engine, video link). A headless Chrome on a computer ran it with the openly licensed *Squat – exercise demonstration video* (Wikimedia Commons, CC BY 3.0, 1280×720), and the TV was driven through the real flow: Home → Start coaching → Pair → Start workout.
+
+- The Pair screen switches from the floor plan to the live picture once it arrives, so the user sees themselves while getting into frame.
+- The skeleton stays on the body through the squat (checked on frames at the top, on the way down, at the bottom and on the way up). It is mapped straight onto the displayed video and mirrored with it for a front camera.
+- A full 3 × 12 workout ran to the receipt (36 reps, all counted).
+
+**Smoothness.** Pose points first came over AppSync (~12 a second) and the skeleton was redrawn by React on each one. They now come over a WebRTC data channel on the same connection as the video (unordered, never resent, one per video frame — ~20 a second), each held back 80 ms so it lands with its video frame (the picture also passes the phone's encoder, a ~15 ms jitter buffer and ~90 ms of hardware decoding on the stick). The bones are native-animated views, so a new pose changes transforms without a React render. Live screen, same test:
+
+| | Redraw per pose | Native-animated skeleton |
+|---|---|---|
+| Pose updates | ~12/s | ~20/s |
+| Frames over 16 ms | 57% | 43% |
+| Frame time median / p90 / p99 | 18 / 29 / 38 ms | 16 / 21 / 29 ms |
+| App memory | 145–161 MB | 138–140 MB |
+| App CPU (of 4 cores = 400%) | ~103% | ~80–97% |
+
+Not yet measured: glass-to-glass latency (an adb screenshot takes about a second, too slow to time it; the stream's own stats put it around 150–200 ms), and a real phone running the pose model and the video encoder at the same time for a whole workout.
+
 ## Known limits
 
 - **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other. Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.
 - Very low light and loose clothing reduce pose accuracy (MediaPipe limitation).
+- **Live video needs the phone and TV on the same network.** There is no relay server (so the video never touches the cloud); Wi-Fi that stops devices from seeing each other, such as many office and guest networks, blocks it. The TV then shows the drawn outline instead, and reps still count.
