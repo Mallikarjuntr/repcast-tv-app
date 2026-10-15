@@ -1,4 +1,4 @@
-import { subscribe, type LiveStatus } from '@spotter/shared';
+import { subscribe, type FramingHint, type LiveStatus } from '@spotter/shared';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PoseFrame } from './components/PoseFigure';
 
@@ -43,6 +43,8 @@ export interface LiveWorkout {
   skipRest: () => void;
   /** Every attempt, counted or not, for the summary. */
   history: RepNote[];
+  /** The phone's advice for staying in frame (e.g. "step-back"), or null when all is well. */
+  hint: FramingHint | null;
 }
 
 /**
@@ -55,6 +57,7 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
   const [repsInSet, setRepsInSet] = useState(0);
   const [lastRep, setLastRep] = useState<RepNote | null>(null);
   const [live, setLive] = useState<LiveStatus>('connecting');
+  const [hint, setHint] = useState<FramingHint | null>(null);
   const [restEndsAt, setRestEndsAt] = useState(0);
   const [now, setNow] = useState(Date.now());
   const pose = useRef<{ frame: PoseFrame; at: number } | null>(null);
@@ -68,7 +71,9 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
     const sub = subscribe(
       channel,
       (event) => {
-        if (event.type === 'pose') {
+        if (event.type === 'framing') {
+          setHint(event.hint ?? null);
+        } else if (event.type === 'pose') {
           pose.current = { frame: { p: event.p, aspect: event.aspect, mirrored: event.mirrored }, at: Date.now() };
           poseListeners.current.forEach((listener) => listener());
         } else if (event.type === 'rep') {
@@ -145,5 +150,6 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
     live,
     skipRest: startNextSet,
     history: history.current,
+    hint,
   };
 }

@@ -1,0 +1,69 @@
+import type { FramingHint } from '@spotter/shared';
+import { POINTS, type PointName } from 'spotter-movement';
+
+/** A pose landmark, normalised to the camera frame (as MediaPipe gives it, never mirrored). */
+export interface Point {
+  x: number;
+  y: number;
+  visibility?: number;
+}
+
+const MIN_VISIBILITY = 0.5;
+/** Hips this close to a side edge: ask the person to move towards the middle. */
+const EDGE = 0.2;
+/** A torso shorter than this (fraction of the frame height) is too far away to judge well. */
+const MIN_TORSO = 0.1;
+
+const seen = (pose: Point[], name: PointName) => (pose[POINTS[name]]?.visibility ?? 0) >= MIN_VISIBILITY;
+
+function mean(values: number[]): number | null {
+  return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+}
+
+/**
+ * Whether everything this exercise needs is in view, and what to say if not. Only the exercise's own
+ * points gate it (a squat needs hips and knees; hidden feet are fine), so people aren't sent back
+ * and forth for parts the coach doesn't use.
+ *
+ * Directions are the person's own: they face the phone, so someone on the left of the camera image
+ * is standing to their own right and should move to their left.
+ */
+export function framing(pose: Point[] | undefined, required: readonly PointName[], sideOn: boolean): { ready: boolean; hint?: FramingHint } {
+  const visible = pose ? (Object.keys(POINTS) as PointName[]).filter((name) => seen(pose, name)) : [];
+  if (!pose || visible.length < 4) return { ready: false, hint: 'step-in' };
+
+  const x = (name: PointName) => pose[POINTS[name]]!.x;
+  const y = (name: PointName) => pose[POINTS[name]]!.y;
+  const hips = (['leftHip', 'rightHip'] as const).filter((n) => seen(pose, n));
+  const centre = mean((hips.length ? hips : visible).map(x))!;
+  const ready = required.every((name) => seen(pose, name));
+
+  if (centre < EDGE) return { ready, hint: 'move-left' };
+  if (centre > 1 - EDGE) return { ready, hint: 'move-right' };
+  // Centred but something the exercise needs is cut off: almost always standing too close.
+  if (!ready) return { ready, hint: 'step-back' };
+
+  const shoulders = mean((['leftShoulder', 'rightShoulder'] as const).filter((n) => seen(pose, n)).map(y));
+  const hipY = mean(hips.map(y));
+  if (shoulders !== null && hipY !== null && Math.abs(hipY - shoulders) < MIN_TORSO) return { ready, hint: 'come-closer' };
+  if (sideOn) return { ready, hint: 'turn-phone' };
+  return { ready };
+}
+
+/** Holds a hint back until it has been true for a moment, so a stumble or a fast rep doesn't flash advice. */
+export class SteadyHint {
+  private candidate: FramingHint | undefined;
+  private since = 0;
+  private current: FramingHint | undefined;
+
+  constructor(private readonly holdMs = 1000) {}
+
+  update(hint: FramingHint | undefined, now: number): FramingHint | undefined {
+    if (hint !== this.candidate) {
+      this.candidate = hint;
+      this.since = now;
+    }
+    if (hint === undefined || now - this.since >= this.holdMs) this.current = hint;
+    return this.current;
+  }
+}

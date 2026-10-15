@@ -1,6 +1,7 @@
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
 import { BODY_PARTS, findSession, openChannel, POSE_SOURCE_INDEX, type BodyPart, type LiveChannel, type SpotterEvent } from '@spotter/shared';
 import { isSideOn, RepDetector, squat, type PointName, type RepResult, type RepUpdate } from 'spotter-movement';
+import { framing, SteadyHint } from './framing';
 import { VideoLink } from './video-link';
 
 const MODEL_URL = {
@@ -63,6 +64,7 @@ let tv: LiveChannel | null = null;
 const video = new URLSearchParams(location.search).get('video') === 'off' ? null : new VideoLink();
 let lastFraming = '';
 let lastFramingAt = 0;
+const steadyHint = new SteadyHint();
 let lastPoseAt = 0;
 
 /** Important messages (hello, reps) fall back to HTTPS if the socket is down. */
@@ -120,12 +122,14 @@ function reportFraming(pose: NormalizedLandmark[] | undefined, now: number): voi
     BODY_PARTS.map((part) => [part, !!pose && PART_POINTS[part].every((i) => (pose[i]?.visibility ?? 0) >= 0.5)]),
   ) as Record<BodyPart, boolean>;
   const sideOn = !!pose && isSideOn({ t: now, landmarks: pose, aspect: ui.video.videoWidth / ui.video.videoHeight }, 0.5) === true;
-  const key = JSON.stringify({ visible, sideOn });
+  const view = framing(pose, squat.required, sideOn);
+  const hint = steadyHint.update(view.hint, now);
+  const key = JSON.stringify({ visible, sideOn, ready: view.ready, hint });
   const changed = key !== lastFraming && now - lastFramingAt >= FRAMING_MIN_GAP_MS;
   if (changed || now - lastFramingAt >= FRAMING_HEARTBEAT_MS) {
     lastFraming = key;
     lastFramingAt = now;
-    send({ type: 'framing', visible, sideOn, at: Date.now() });
+    send({ type: 'framing', visible, sideOn, ready: view.ready, hint, at: Date.now() });
   }
 }
 

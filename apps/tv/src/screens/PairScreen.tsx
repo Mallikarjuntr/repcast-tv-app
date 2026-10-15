@@ -1,5 +1,5 @@
 import { BODY_PARTS, config, type BodyPart } from '@spotter/shared';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { FloorPlan } from '../components/FloorPlan';
@@ -11,7 +11,10 @@ import { Headline, Kicker, PenNote } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { latestOf } from '../poseFeed';
 import { usePairing } from '../usePairing';
+import { useSpokenGuidance } from '../useSpokenGuidance';
 import { useVideoReceiver } from '../useVideoReceiver';
+import { say } from '../voice';
+import { HINT_LINES, PHONE_LINKED_LINE, READY_LINE } from '../voiceLines';
 
 const NO_NOTES = { depth: false, knees: false, chest: false };
 
@@ -35,6 +38,11 @@ function StatusRow({ done, children }: { done: boolean; children: string }) {
   );
 }
 
+/** A spoken line as a handwritten note: lower-case start, no full stop. */
+function penNote(line: string): string {
+  return `${line.charAt(0).toLowerCase()}${line.slice(1)}`.replace(/\.$/, '');
+}
+
 function missingCue(missing: BodyPart[]): string {
   if (missing.includes('head') || missing.includes('hips')) return 'step into the middle of the frame';
   return `step back a little — I can't see your ${missing.map((p) => PART_LABEL[p].toLowerCase()).join(' and ')}`;
@@ -51,7 +59,16 @@ export function PairScreen({ onReady }: { onReady: (channel: string) => void }) 
   const showVideo = video.state === 'connected' && video.streamUrl !== null && panel.width > 0;
   const videoPose = useMemo(() => latestOf(video.pose, pose), [video.pose, pose]);
   const missing = ready?.framing ? BODY_PARTS.filter((p) => !ready.framing![p]) : null;
-  const allVisible = missing !== null && missing.length === 0;
+  // The phone knows what this exercise needs (squats don't need feet); older phones only send the checklist.
+  const allVisible = ready?.framingReady ?? (missing !== null && missing.length === 0);
+  const hint = ready?.phoneConnected ? ready.hint : null;
+  const phoneConnected = ready?.phoneConnected ?? false;
+
+  useEffect(() => {
+    if (phoneConnected) say(PHONE_LINKED_LINE);
+  }, [phoneConnected]);
+  // Spoken help to get into frame, then a go-ahead once the coach can see what it needs.
+  useSpokenGuidance(hint ? HINT_LINES[hint] : allVisible && ready?.framing ? READY_LINE : null, phoneConnected);
 
   return (
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.paper, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(64) }}>
@@ -92,12 +109,13 @@ export function PairScreen({ onReady }: { onReady: (channel: string) => void }) 
                 {BODY_PARTS.map((part) => (
                   <View key={part} style={{ flexDirection: 'row', alignItems: 'center', gap: s(4) }}>
                     {ready.framing![part] ? <Tick size={s(22)} /> : <Cross size={s(22)} />}
-                    <Text style={{ fontFamily: fonts.sans, fontSize: s(18), color: ready.framing![part] ? colors.ink : colors.pen }}>{PART_LABEL[part]}</Text>
+                    {/* A part the exercise can do without (e.g. feet for squats) isn't marked as a problem. */}
+                    <Text style={{ fontFamily: fonts.sans, fontSize: s(18), color: ready.framing![part] ? colors.ink : allVisible ? colors.pencil : colors.pen }}>{PART_LABEL[part]}</Text>
                   </View>
                 ))}
               </View>
               <PenNote arrow={false} size={24} tilt={-1.5}>
-                {!allVisible ? missingCue(missing) : ready.sideOn ? 'turn the phone about 45° — from the side I can’t see both legs' : 'I can see all of you — ready when you are'}
+                {hint ? penNote(HINT_LINES[hint]) : !allVisible ? missingCue(missing) : ready.sideOn ? 'turn the phone about 45° — from the side I can’t see both legs' : 'I can see you — ready when you are'}
               </PenNote>
             </>
           ) : (

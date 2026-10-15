@@ -22,3 +22,6 @@ export const TRAINER_CLIPS: Record<string, number> = {
   'cool-down': require('../assets/trainer/reach.mp4'),
   'side-bend': require('../assets/trainer/side-bend.mp4'),
 };
+
+/** Shown during rests: the trainer stands at ease, breathing, so the screen never looks like work. */
+export const REST_CLIP: number = require('../assets/trainer/rest.mp4');

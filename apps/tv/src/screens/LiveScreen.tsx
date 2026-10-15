@@ -11,7 +11,10 @@ import { colors, fonts, useScale } from '../theme';
 import { useTVEventHandler, type TVRemoteEvent } from '../tv';
 import { useLiveWorkout, type RepNote, type WorkoutPlan } from '../useLiveWorkout';
 import { latestOf } from '../poseFeed';
+import { useSpokenGuidance } from '../useSpokenGuidance';
 import { useVideoReceiver } from '../useVideoReceiver';
+import { hush, say } from '../voice';
+import { coachIntroLine, countLine, FINISH_LINE, HINT_LINES, NO_REP_LINE, restLine, setIntroLine } from '../voiceLines';
 
 /** How long the coach's red-pen marks stay on the outline after a rep. */
 const NOTE_MS = 4000;
@@ -117,6 +120,33 @@ export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan:
     else if (evt.eventType === 'play') setPaused(false);
   }, []);
   useTVEventHandler(onRemote);
+
+  // The coach's voice, on the TV. Counts and verdicts come from the phone's engine; the lines are
+  // pre-recorded (tools/voice). A fix follows its count ("seven … push your knees out").
+  useEffect(() => {
+    say(coachIntroLine(plan.name, plan.reps));
+    return () => hush();
+  }, [plan.name, plan.reps]);
+  useEffect(() => {
+    const rep = w.lastRep;
+    if (!rep) return;
+    if (!rep.counted) {
+      say(NO_REP_LINE);
+      if (rep.cues[0]) say(rep.cues[0], { after: true });
+    } else {
+      say(countLine(rep.count));
+      if (rep.cues[0]) say(rep.cues[0], { after: true });
+    }
+  }, [w.lastRep]);
+  useEffect(() => {
+    if (w.phase === 'rest') say(restLine(`set ${w.setIndex + 2}`), { after: true });
+    else if (w.phase === 'done') say(FINISH_LINE, { after: true });
+    else if (w.setIndex > 0) say(setIntroLine({ kind: 'reps', reps: plan.reps, cues: { start: '' } }, w.setIndex));
+  }, [w.phase, w.setIndex, plan.reps]);
+  useEffect(() => {
+    if (paused) hush();
+  }, [paused]);
+  useSpokenGuidance(w.hint ? HINT_LINES[w.hint] : null, w.phase === 'work' && !paused);
 
   useEffect(() => {
     if (paused || w.phase === 'done') return;

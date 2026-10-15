@@ -4,7 +4,7 @@ import { FocusButton } from '../components/FocusButton';
 import { SetDot } from '../components/Marks';
 import { BeatBar, DemoFigure } from '../components/DemoFigure';
 import { TrainerVideo, type TrainerPosition } from '../components/TrainerVideo';
-import { TRAINER_CLIPS } from '../trainerClips';
+import { REST_CLIP, TRAINER_CLIPS } from '../trainerClips';
 import { Tally } from '../components/Tally';
 import { Headline, Kicker, PenNote } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
@@ -55,8 +55,9 @@ export function FollowScreen({ session, onFinish }: { session: Session; onFinish
   const step = w.step;
   const resting = w.phase === 'rest';
   const sets = step.kind === 'reps' ? step.sets : 1;
-  // While resting, the panel previews the next move on a slow loop.
-  const shown = resting && w.upcoming ? w.upcoming : step;
+  // While resting the trainer stands at ease; the next move is named on a card, not performed.
+  const shown = step;
+  const upcoming = resting ? w.upcoming : null;
   const { motion } = w;
   const position = useCallback(() => {
     if (resting) return (Math.sin((Date.now() / 3000) * Math.PI * 2) + 1) / 2;
@@ -65,7 +66,7 @@ export function FollowScreen({ session, onFinish }: { session: Session; onFinish
   }, [motion, resting, step]);
   const holdStill = !resting && step.kind === 'timed' && step.cycle === 0;
   // The 3D trainer when this move has a clip; it waits during the intro, then follows the beat.
-  const clip = TRAINER_CLIPS[shown.id];
+  const clip = resting ? REST_CLIP : TRAINER_CLIPS[shown.id];
   const trainerPosition = useCallback((): TrainerPosition => {
     if (resting) return null;
     const { beat } = motion();
@@ -140,7 +141,7 @@ export function FollowScreen({ session, onFinish }: { session: Session; onFinish
           onLayout={(e) => setPanel({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
         >
           <View style={{ position: 'absolute', top: s(14), left: s(18), right: s(18), flexDirection: 'row', justifyContent: 'space-between', zIndex: 2 }}>
-            <Kicker size={14}>{resting ? `UP NEXT · ${shown.name.toUpperCase()}` : step.kind === 'reps' ? 'FOLLOW THE BEAT' : 'LIKE THIS'}</Kicker>
+            <Kicker size={14}>{resting ? 'REST · BREATHE' : step.kind === 'reps' ? 'FOLLOW THE BEAT' : 'LIKE THIS'}</Kicker>
             {step.kind === 'reps' && w.phase === 'work' ? (
               <Text style={{ fontFamily: fonts.hand, fontSize: s(30), lineHeight: s(40), color: w.half === 'down' ? colors.pen : colors.ink }}>
                 {w.half === 'down' ? 'down…' : 'up!'}
@@ -149,7 +150,7 @@ export function FollowScreen({ session, onFinish }: { session: Session; onFinish
           </View>
           {clip !== undefined ? (
             <>
-              <TrainerVideo key={`${shown.id}-${resting ? 'preview' : 'live'}`} clip={clip} paused={paused} position={trainerPosition} />
+              <TrainerVideo key={resting ? 'rest' : `${shown.id}-live`} clip={clip} paused={paused} position={trainerPosition} />
               {onBeat ? <BeatBar position={depth} animate={!paused} /> : null}
             </>
           ) : (
@@ -163,6 +164,13 @@ export function FollowScreen({ session, onFinish }: { session: Session; onFinish
               depthBar={onBeat}
             />
           )}
+          {upcoming ? (
+            <View style={{ position: 'absolute', left: s(18), right: s(18), bottom: s(18), backgroundColor: colors.paper, borderWidth: s(1.5), borderColor: colors.ink, paddingHorizontal: s(18), paddingVertical: s(12), gap: s(4), zIndex: 2 }}>
+              <Kicker size={14}>UP NEXT</Kicker>
+              <Text style={{ fontFamily: fonts.display, fontSize: s(30), color: colors.ink }}>{upcoming.name}</Text>
+              <Text style={{ fontFamily: fonts.sans, fontSize: s(17), color: colors.inkSoft }}>{upcoming.why}</Text>
+            </View>
+          ) : null}
         </View>
       </View>
 

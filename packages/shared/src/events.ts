@@ -3,6 +3,9 @@ export type BodyPart = 'head' | 'hips' | 'knees' | 'feet';
 
 export const BODY_PARTS: readonly BodyPart[] = ['head', 'hips', 'knees', 'feet'];
 
+/** Spoken and shown guidance for getting into frame, most important first. */
+export type FramingHint = 'step-in' | 'step-back' | 'come-closer' | 'move-left' | 'move-right' | 'turn-phone';
+
 /**
  * Points streamed for the TV's live outline, in this order (MediaPipe Pose indices in brackets):
  * nose(0), shoulders(11,12), elbows(13,14), wrists(15,16), hips(23,24), knees(25,26), ankles(27,28).
@@ -20,6 +23,10 @@ export type SpotterEvent =
       visible: Record<BodyPart, boolean>;
       /** The phone sees the person side-on, so one leg hides the other. */
       sideOn?: boolean;
+      /** Everything the current exercise needs is in view (other parts, e.g. feet for squats, may be missing). */
+      ready?: boolean;
+      /** What the person should do to be seen well, from their point of view; absent when nothing. */
+      hint?: FramingHint;
       at: number;
     }
   | {

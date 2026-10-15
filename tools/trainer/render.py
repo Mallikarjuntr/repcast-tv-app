@@ -50,6 +50,8 @@ CLIPS = {
     'knee-plank': {'fbx': 'Plank', 'pose': 'knee-plank', 'yaw': SIDE_YAW, 'target_z': 0.6, 'shadow': (1.0, 0.22)},
     'reach': {'fbx': 'Idle', 'pose': 'reach', 'yaw': FRONT_YAW, 'scale': TALL_SCALE, 'target_z': 1.0},
     'side-bend': {'fbx': 'Idle', 'pose': 'side-bend', 'yaw': 0, 'scale': TALL_SCALE, 'target_z': 1.0},
+    # Shown during rests: the trainer stands at ease, breathing (Mixamo's idle loop, whole and at its own speed).
+    'rest': {'fbx': 'Idle', 'segments': 'whole', 'yaw': FRONT_YAW},
 }
 
 
@@ -116,6 +118,9 @@ def render_clip(name, spec, mixamo_dir, out_dir):
     if 'pose' in spec:
         scene.frame_set(1)
         frames = poses.build(spec['pose'], arm)
+    elif spec['segments'] == 'whole':
+        start, end = (round(f) for f in arm.animation_data.action.frame_range)
+        frames = retime(arm, [(start, end, end - start)])
     else:
         frames = retime(arm, spec['segments'])
     style.apply(scene)

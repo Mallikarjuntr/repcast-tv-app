@@ -1,5 +1,6 @@
-// Everything the coach says aloud in a follow-along workout. Kept free of imports so
-// tools/voice/phrases.mjs can list every line for pre-recording with Amazon Polly.
+// Everything the coach says aloud, in follow-along and camera-coached workouts. Kept free of
+// runtime imports so tools/voice/phrases.mjs can list every line for pre-recording with Amazon Polly.
+import type { FramingHint } from '@spotter/shared';
 
 const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen', 'twenty'];
 
@@ -21,6 +22,37 @@ export function setIntroLine(step: { kind: 'reps'; reps: number; cues: { start: 
 export function restLine(next: string): string {
   return `Rest. Next, ${next.toLowerCase()}.`;
 }
+
+/** Camera coaching: said at the start of the first set (later sets use setIntroLine). */
+export function coachIntroLine(name: string, reps: number): string {
+  const count = countLine(reps);
+  return `${name}. ${count.charAt(0).toUpperCase()}${count.slice(1)} reps. At your own pace.`;
+}
+
+/** Said before the reason when an attempt doesn't count. */
+export const NO_REP_LINE = 'No rep.';
+
+/** Said once when the phone links on the pairing screen. */
+export const PHONE_LINKED_LINE = 'Phone connected. Now step into view.';
+
+/** Said when everything the exercise needs is in view. */
+export const READY_LINE = "I can see you. Press start when you're ready.";
+
+/** Getting into frame, from the person's own point of view (the phone works out which way). */
+export const HINT_LINES: Record<FramingHint, string> = {
+  'step-in': "I can't see you. Step into view of the phone.",
+  'step-back': 'Step back a little.',
+  'come-closer': 'Come a little closer.',
+  'move-left': 'Move a little to your left.',
+  'move-right': 'Move a little to your right.',
+  'turn-phone': 'Turn the phone about forty-five degrees, so I can see both legs.',
+};
+
+/**
+ * Rep advice the movement engine gives for any exercise (spotter-movement rep-detector.ts); each
+ * exercise's own cues are read from its definition by tools/voice/phrases.mjs. Keep in sync.
+ */
+export const ENGINE_CUES = ['The camera moved — keep the phone still', 'Finish each rep standing tall'];
 
 /** Stable id for a spoken line, used as its audio file name. */
 export function voiceId(text: string): string {
