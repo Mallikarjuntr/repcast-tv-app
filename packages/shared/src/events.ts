@@ -47,7 +47,24 @@ export type SpotterEvent =
       cues: string[];
       at: number;
     }
-  | { type: 'bye'; at: number };
+  | { type: 'bye'; at: number }
+  | RtcSignal;
+
+/**
+ * WebRTC set-up for the live camera video, sent both ways on the session channel. The phone
+ * offers, the TV answers, and both trickle ICE candidates. Each side also receives its own
+ * messages back on the channel, so it ignores those with its own `from`.
+ */
+export interface RtcSignal {
+  type: 'rtc';
+  from: 'phone' | 'tv';
+  /** The TV asks for a fresh offer when it (re)joins the channel. */
+  want?: 'offer';
+  sdp?: { type: 'offer' | 'answer'; sdp: string };
+  /** A trickled ICE candidate; null marks the end of candidates. */
+  candidate?: { candidate: string; sdpMid: string | null; sdpMLineIndex: number | null } | null;
+  at: number;
+}
 
 export function parseEvent(raw: string): SpotterEvent | null {
   try {

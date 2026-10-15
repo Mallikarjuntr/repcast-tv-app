@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Spotter video test</title>
+    <style>
+      body { margin: 0; padding: 16px; background: #efe8da; color: #1d1b17; font: 15px/1.4 ui-monospace, Menlo, monospace; }
+      form, fieldset { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 0 0 12px; border: 0; padding: 0; }
+      input, select, button { font: inherit; padding: 6px 10px; }
+      canvas, video { max-width: 100%; background: #1d1b17; display: block; }
+      pre { white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <h1>Video test · Phase 0</h1>
+    <p>Sends a test picture (or a camera) to the TV's hidden video-test screen over WebRTC. Not part of the product.</p>
+    <form id="link">
+      <label>TV code <input id="code" inputmode="numeric" maxlength="4" size="5" /></label>
+      <fieldset>
+        <label>Source <select id="source"><option value="pattern">test pattern</option><option value="camera">camera</option></select></label>
+        <label>Size <select id="size"><option>640x360</option><option>854x480</option><option>1280x720</option></select></label>
+        <label>FPS <input id="fps" type="number" value="24" min="5" max="30" size="3" /></label>
+        <label>kbps <input id="kbps" type="number" value="1000" min="200" max="4000" step="100" size="5" /></label>
+      </fieldset>
+      <button type="submit">Link and send</button>
+    </form>
+    <canvas id="pattern" width="640" height="360"></canvas>
+    <pre id="status">Not linked.</pre>
+    <script type="module" src="./src/video-test.ts"></script>
+  </body>
+</html>

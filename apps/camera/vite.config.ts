@@ -10,6 +10,7 @@ export default defineConfig({
       input: {
         main: resolve(import.meta.dirname, 'index.html'),
         replay: resolve(import.meta.dirname, 'replay.html'),
+        videoTest: resolve(import.meta.dirname, 'video-test.html'),
       },
     },
   },

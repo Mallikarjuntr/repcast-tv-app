@@ -6,7 +6,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { BackHandler, View } from 'react-native';
+import { BackHandler, Linking, View } from 'react-native';
 import { HomeScreen } from './src/screens/HomeScreen';
 import { ModesScreen } from './src/screens/ModesScreen';
 import { FollowDoneScreen } from './src/screens/FollowDoneScreen';
@@ -15,6 +15,7 @@ import { ReceiptScreen } from './src/screens/ReceiptScreen';
 import { LiveScreen } from './src/screens/LiveScreen';
 import { PairScreen } from './src/screens/PairScreen';
 import { SwapScreen } from './src/screens/SwapScreen';
+import { VideoTestScreen } from './src/screens/VideoTestScreen';
 import { freeCoachSessionsLeft, loadSessions, loadSwaps, saveSession, saveSwaps, streakDays, weekView, type SessionRecord } from './src/storage';
 import { spotterNote, summarize, type WorkoutSummary } from './src/summary';
 import { useCoachNote } from './src/useCoachNote';
@@ -32,7 +33,8 @@ type Screen =
   | { name: 'follow' }
   | { name: 'swap' }
   | { name: 'followDone'; result: FollowResult }
-  | { name: 'receipt'; receipt: CoachReceiptData };
+  | { name: 'receipt'; receipt: CoachReceiptData }
+  | { name: 'videoTest' };
 
 interface CoachReceiptData {
   summary: WorkoutSummary;
@@ -87,6 +89,10 @@ export default function App() {
   const today = useMemo(() => applySwaps(LEGS_GENTLY, swaps), [swaps]);
 
   useEffect(() => {
+    // Hidden Phase 0 spike: adb shell am start -a android.intent.action.VIEW -d spotter://video-test
+    void Linking.getInitialURL().then((url) => {
+      if (url?.startsWith('spotter://video-test')) setHistory([{ name: 'videoTest' }]);
+    });
     void loadSessions().then(setSessions);
     void loadSwaps().then(setSwaps);
   }, []);
@@ -158,6 +164,7 @@ export default function App() {
           onNoCamera={() => go({ name: 'follow' })}
         />
       )}
+      {screen.name === 'videoTest' && <VideoTestScreen />}
       {screen.name === 'swap' && <SwapScreen base={LEGS_GENTLY} swaps={swaps} onDone={finishSwaps} />}
       {screen.name === 'modes' && (
         <ModesScreen

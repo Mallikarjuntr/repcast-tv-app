@@ -46,6 +46,7 @@
     "orientation": "landscape",
     "userInterfaceStyle": "light",
     "backgroundColor": "#EFE8DA",
-    "icon": "./assets/images/icon.png"
+    "icon": "./assets/images/icon.png",
+    "scheme": "spotter"
   }
 }
