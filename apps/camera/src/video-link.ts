@@ -1,9 +1,11 @@
-import { openChannel, rtcChannel, type LiveChannel, type RtcSignal } from '@spotter/shared';
+import { openChannel, rtcChannel, type LiveChannel, type RtcSignal, type SpotterEvent } from '@spotter/shared';
 
 const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
 /** A dropped connection gets this long to recover by itself before the phone offers again. */
 const RECOVER_MS = 5000;
 const RETRY_MS = 1000;
+/** Pose frames queued beyond this are dropped: a late outline is worse than a missing one. */
+const MAX_BUFFERED_BYTES = 8_000;
 
 export interface VideoLinkOptions {
   /** Video sent to the TV is scaled down to about this height (MediaPipe keeps the full frame). */
@@ -23,6 +25,9 @@ export class VideoLink {
   private live = false;
   private pc: RTCPeerConnection | null = null;
   private sender: RTCRtpSender | null = null;
+  /** Pose frames ride the same connection as the video, so the skeleton keeps pace with the picture. */
+  private poses: RTCDataChannel | null = null;
+  private lastPoseAt = 0;
   private link = '';
   /** TV candidates can arrive before its answer; they wait here until it is applied. */
   private pending: RTCIceCandidateInit[] = [];
@@ -58,6 +63,20 @@ export class VideoLink {
     }
   }
 
+  /**
+   * Sends a pose frame straight to the TV. Returns false when the direct link isn't open, so the
+   * caller can fall back to the session channel.
+   */
+  sendPose(event: Extract<SpotterEvent, { type: 'pose' }>): boolean {
+    if (this.poses?.readyState !== 'open') return false;
+    // One outline per video frame: more would only make the TV redraw for nothing.
+    const now = performance.now();
+    if (now - this.lastPoseAt < 1000 / this.options.maxFramerate) return true;
+    this.lastPoseAt = now;
+    if (this.poses.bufferedAmount < MAX_BUFFERED_BYTES) this.poses.send(JSON.stringify(event));
+    return true;
+  }
+
   /** WebRTC stats of the current connection, for test benches. */
   stats(): Promise<RTCStatsReport> | undefined {
     return this.pc?.getStats();
@@ -68,6 +87,7 @@ export class VideoLink {
     this.pc?.close();
     this.pc = null;
     this.sender = null;
+    this.poses = null;
     this.channel?.close();
     this.channel = null;
     this.live = false;
@@ -116,6 +136,8 @@ export class VideoLink {
     const transceiver = pc.addTransceiver(this.track, { direction: 'sendonly', streams: [new MediaStream([this.track])] });
     this.sender = transceiver.sender;
     preferH264(transceiver);
+    // Unordered and never resent: only the newest pose matters.
+    this.poses = pc.createDataChannel('pose', { ordered: false, maxRetransmits: 0 });
     pc.onicecandidate = (e) =>
       this.signal({ candidate: e.candidate ? { candidate: e.candidate.candidate, sdpMid: e.candidate.sdpMid, sdpMLineIndex: e.candidate.sdpMLineIndex } : null });
     pc.onconnectionstatechange = () => {

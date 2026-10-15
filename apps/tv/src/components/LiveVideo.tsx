@@ -1,6 +1,6 @@
 import { POSE_POINTS, type PosePoint } from '@spotter/shared';
-import { memo, useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { memo, useEffect, useRef, useState } from 'react';
+import { Animated, View } from 'react-native';
 import { RTCView } from 'react-native-webrtc';
 import { colors } from '../theme';
 import { CoachMarks, type Annotations, type Pt } from './CoachMarks';
@@ -50,31 +50,36 @@ export function placeOnVideo(frame: PoseFrame, width: number, height: number): R
   ) as Record<PosePoint, Pt>;
 }
 
-/** Highlighter bones with an ink edge, so they read on any picture. */
-function Bone({ a, b, stroke }: { a: { x: number; y: number }; b: { x: number; y: number }; stroke: number }) {
-  const length = Math.hypot(b.x - a.x, b.y - a.y) + stroke;
-  return (
-    <View
-      style={{
-        position: 'absolute',
-        left: (a.x + b.x) / 2 - length / 2,
-        top: (a.y + b.y) / 2 - stroke / 2,
-        width: length,
-        height: stroke,
-        borderRadius: stroke / 2,
-        backgroundColor: colors.highlighter,
-        borderWidth: Math.max(1, stroke * 0.18),
-        borderColor: colors.ink,
-        transform: [{ rotate: `${Math.atan2(b.y - a.y, b.x - a.x)}rad` }],
-      }}
-    />
-  );
+/** Bones are drawn this long and stretched with scaleX, so a new pose only changes transforms. */
+const BONE_BASE = 400;
+const HEAD_BASE = 40;
+
+interface Part {
+  x: Animated.Value;
+  y: Animated.Value;
+  angle: Animated.Value;
+  scale: Animated.Value;
+  opacity: Animated.Value;
+  rotate: Animated.AnimatedInterpolation<string>;
+}
+
+function makePart(): Part {
+  const angle = new Animated.Value(0);
+  return {
+    x: new Animated.Value(0),
+    y: new Animated.Value(0),
+    angle,
+    scale: new Animated.Value(0),
+    opacity: new Animated.Value(0),
+    rotate: angle.interpolate({ inputRange: [-10, 10], outputRange: ['-10rad', '10rad'] }),
+  };
 }
 
 /**
- * The skeleton over the video. It subscribes to outlines itself and redraws on each one, so the
- * screen around it doesn't re-render ~12 times a second. Drawn with native views, not SVG (the
- * Fire TV Stick can't afford re-uploading an SVG bitmap every frame).
+ * The skeleton over the video. Each pose (about 20 a second) only sets animated values that the
+ * native side applies directly, so nothing re-renders in React per frame: on a Fire TV Stick a
+ * React redraw per pose kept the app at ~100% CPU. Native views, not SVG (the stick can't afford
+ * re-uploading an SVG bitmap every frame). The red-pen marks re-render, but only while showing.
  */
 const Skeleton = memo(function Skeleton({
   getPose,
@@ -91,46 +96,105 @@ const Skeleton = memo(function Skeleton({
   height: number;
   onMirrored: (mirrored: boolean) => void;
 }) {
+  const bones = useRef(BONES.map(makePart)).current;
+  const head = useRef(makePart()).current;
+  const [aspect, setAspect] = useState<number | null>(() => getPose()?.frame.aspect ?? null);
   const [, setTick] = useState(0);
-  useEffect(() => subscribePose(() => setTick((t) => (t + 1) % 1_000_000)), [subscribePose]);
-  useEffect(() => {
-    const timer = setInterval(() => setTick((t) => (t + 1) % 1_000_000), 500);
-    return () => clearInterval(timer);
-  }, []);
+  const anyNote = notes.depth || notes.knees || notes.chest;
+  const marks = useRef(anyNote);
+  marks.current = anyNote;
+  const box = aspect ? fitContain(width, height, aspect) : null;
+  const stroke = box ? Math.max(4, box.h * 0.014) : 4;
 
-  const latest = getPose();
   useEffect(() => {
-    if (latest) onMirrored(latest.frame.mirrored);
-  }, [latest?.frame.mirrored, onMirrored]);
-  if (!latest || Date.now() - latest.at > STALE_MS || width === 0) return null;
+    // One native-driven step makes every value native; from then on setValue goes straight to the UI side.
+    const all = [...bones, head].flatMap((part) => [part.x, part.y, part.angle, part.scale, part.opacity]);
+    Animated.parallel(all.map((value) => Animated.timing(value, { toValue: 0, duration: 0, useNativeDriver: true }))).start();
+  }, [bones, head]);
 
-  const pts = placeOnVideo(latest.frame, width, height);
-  const box = fitContain(width, height, latest.frame.aspect);
-  const stroke = Math.max(4, box.h * 0.014);
-  const shoulderWidth = pts.lShoulder && pts.rShoulder ? Math.abs(pts.lShoulder.x - pts.rShoulder.x) : box.w * 0.08;
-  const headR = Math.max(8, shoulderWidth * 0.32);
+  useEffect(() => {
+    const hide = () => {
+      bones.forEach((part) => part.opacity.setValue(0));
+      head.opacity.setValue(0);
+    };
+    const draw = () => {
+      const latest = getPose();
+      if (!latest || Date.now() - latest.at > STALE_MS || width === 0) return hide();
+      const { frame } = latest;
+      setAspect(frame.aspect);
+      onMirrored(frame.mirrored);
+      const pts = placeOnVideo(frame, width, height);
+      const lineWidth = Math.max(4, fitContain(width, height, frame.aspect).h * 0.014);
+      BONES.forEach(([from, to], i) => {
+        const part = bones[i]!;
+        const pa = pts[from];
+        const pb = pts[to];
+        if (!pa || !pb) return part.opacity.setValue(0);
+        part.x.setValue((pa.x + pb.x) / 2 - BONE_BASE / 2);
+        part.y.setValue((pa.y + pb.y) / 2 - lineWidth / 2);
+        part.angle.setValue(Math.atan2(pb.y - pa.y, pb.x - pa.x));
+        part.scale.setValue((Math.hypot(pb.x - pa.x, pb.y - pa.y) + lineWidth) / BONE_BASE);
+        part.opacity.setValue(1);
+      });
+      if (pts.nose) {
+        const shoulderWidth = pts.lShoulder && pts.rShoulder ? Math.abs(pts.lShoulder.x - pts.rShoulder.x) : width * 0.08;
+        const headR = Math.max(8, shoulderWidth * 0.32);
+        head.x.setValue(pts.nose.x - HEAD_BASE / 2);
+        head.y.setValue(pts.nose.y - HEAD_BASE / 2);
+        head.scale.setValue((headR * 2) / HEAD_BASE);
+        head.opacity.setValue(1);
+      } else {
+        head.opacity.setValue(0);
+      }
+      if (marks.current) setTick((t) => (t + 1) % 1_000_000);
+    };
+    draw();
+    const unsubscribe = subscribePose(draw);
+    const timer = setInterval(draw, 500);
+    return () => {
+      unsubscribe();
+      clearInterval(timer);
+    };
+  }, [getPose, subscribePose, width, height, onMirrored, bones, head]);
+
+  const latest = anyNote ? getPose() : null;
+  const pts = latest && Date.now() - latest.at <= STALE_MS ? placeOnVideo(latest.frame, width, height) : null;
+  const shoulderWidth = pts?.lShoulder && pts.rShoulder ? Math.abs(pts.lShoulder.x - pts.rShoulder.x) : width * 0.08;
   return (
     <View style={{ position: 'absolute', left: 0, top: 0, width, height }} pointerEvents="none">
-      {BONES.map(([a, b]) => {
-        const pa = pts[a];
-        const pb = pts[b];
-        return pa && pb ? <Bone key={`${a}-${b}`} a={pa} b={pb} stroke={stroke} /> : null;
-      })}
-      {pts.nose ? (
-        <View
+      {bones.map((part, i) => (
+        <Animated.View
+          key={i}
           style={{
             position: 'absolute',
-            left: pts.nose.x - headR,
-            top: pts.nose.y - headR,
-            width: headR * 2,
-            height: headR * 2,
-            borderRadius: headR,
-            borderWidth: stroke * 0.7,
-            borderColor: colors.highlighter,
+            left: 0,
+            top: 0,
+            width: BONE_BASE,
+            height: stroke,
+            borderRadius: stroke / 2,
+            backgroundColor: colors.highlighter,
+            borderWidth: Math.max(1, stroke * 0.18),
+            borderColor: colors.ink,
+            opacity: part.opacity,
+            transform: [{ translateX: part.x }, { translateY: part.y }, { rotate: part.rotate }, { scaleX: part.scale }],
           }}
         />
-      ) : null}
-      <CoachMarks pts={pts} notes={notes} width={width} height={height} headR={headR} shoulderWidth={shoulderWidth} />
+      ))}
+      <Animated.View
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          width: HEAD_BASE,
+          height: HEAD_BASE,
+          borderRadius: HEAD_BASE / 2,
+          borderWidth: Math.max(2, stroke * 0.5),
+          borderColor: colors.highlighter,
+          opacity: head.opacity,
+          transform: [{ translateX: head.x }, { translateY: head.y }, { scale: head.scale }],
+        }}
+      />
+      {pts ? <CoachMarks pts={pts} notes={notes} width={width} height={height} headR={Math.max(8, shoulderWidth * 0.32)} shoulderWidth={shoulderWidth} /> : null}
     </View>
   );
 });

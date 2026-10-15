@@ -27,6 +27,8 @@ interface Stats {
   decodeMs: number;
   rttMs: number;
   route: string;
+  /** Pose frames received on the data channel so far. */
+  poses: number;
 }
 
 function readStats(report: Map<string, any>, previous: { bytes: number; at: number } | null): { stats: Stats; bytes: number } {
@@ -38,6 +40,7 @@ function readStats(report: Map<string, any>, previous: { bytes: number; at: numb
   const local = pair && all.find((r) => r.id === pair.localCandidateId);
   const remote = pair && all.find((r) => r.id === pair.remoteCandidateId);
   const bytes = inbound.bytesReceived ?? 0;
+  const poses = all.find((r) => r.type === 'data-channel' && r.label === 'pose');
   const seconds = previous ? (Date.now() - previous.at) / 1000 : 0;
   return {
     bytes,
@@ -53,6 +56,7 @@ function readStats(report: Map<string, any>, previous: { bytes: number; at: numb
       jitterBufferMs: inbound.jitterBufferEmittedCount ? Math.round((inbound.jitterBufferDelay / inbound.jitterBufferEmittedCount) * 1000) : 0,
       decodeMs: inbound.framesDecoded ? Math.round((inbound.totalDecodeTime / inbound.framesDecoded) * 1000) : 0,
       rttMs: pair?.currentRoundTripTime != null ? Math.round(pair.currentRoundTripTime * 1000) : 0,
+      poses: poses?.messagesReceived ?? 0,
       route: local && remote ? `${local.candidateType} → ${remote.candidateType} (${remote.protocol ?? ''})` : '?',
     },
   };
@@ -121,6 +125,7 @@ export function VideoTestScreen() {
             {line('jitterbuf', `${stats.jitterBufferMs} ms`)}
             {line('rtt', `${stats.rttMs} ms`)}
             {line('route', stats.route)}
+            {line('poses', String(stats.poses))}
           </>
         ) : null}
         {error ? <Text style={{ fontFamily: fonts.sans, fontSize: s(16), color: colors.pen }}>{error}</Text> : null}

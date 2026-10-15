@@ -10,6 +10,7 @@ import { Headline, Kicker, PenNote } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { useTVEventHandler, type TVRemoteEvent } from '../tv';
 import { useLiveWorkout, type RepNote, type WorkoutPlan } from '../useLiveWorkout';
+import { latestOf } from '../poseFeed';
 import { useVideoReceiver } from '../useVideoReceiver';
 
 /** How long the coach's red-pen marks stay on the outline after a rep. */
@@ -103,6 +104,8 @@ export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan:
   const video = useVideoReceiver(channel);
   // The phone's picture with the skeleton on it; the drawn outline stands in whenever it drops.
   const showVideo = video.state === 'connected' && video.streamUrl !== null && panel.width > 0;
+  const { getPose, subscribePose } = w;
+  const videoPose = useMemo(() => latestOf(video.pose, { getPose, subscribePose }), [video.pose, getPose, subscribePose]);
   const finished = useRef(false);
 
   // Remote keys only reach the app while something on screen has focus, which the Pause
@@ -184,7 +187,7 @@ export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan:
           onLayout={(e) => setPanel({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
         >
           {showVideo ? (
-            <LiveVideo streamUrl={video.streamUrl!} getPose={w.getPose} subscribePose={w.subscribePose} notes={notes} width={panel.width - s(3)} height={panel.height - s(3)} />
+            <LiveVideo streamUrl={video.streamUrl!} getPose={videoPose.getPose} subscribePose={videoPose.subscribePose} notes={notes} width={panel.width - s(3)} height={panel.height - s(3)} />
           ) : null}
           <View style={{ position: 'absolute', top: s(14), left: s(18), zIndex: 2, backgroundColor: showVideo ? colors.paper : 'transparent', paddingHorizontal: showVideo ? s(8) : 0, paddingVertical: showVideo ? s(3) : 0 }}>
             <Kicker size={14}>YOU, RIGHT NOW</Kicker>

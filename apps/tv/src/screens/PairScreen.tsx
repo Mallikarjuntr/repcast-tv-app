@@ -1,5 +1,5 @@
 import { BODY_PARTS, config, type BodyPart } from '@spotter/shared';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { FloorPlan } from '../components/FloorPlan';
@@ -9,6 +9,7 @@ import { Cross, Tick } from '../components/Marks';
 import { QrCode } from '../components/QrCode';
 import { Headline, Kicker, PenNote } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
+import { latestOf } from '../poseFeed';
 import { usePairing } from '../usePairing';
 import { useVideoReceiver } from '../useVideoReceiver';
 
@@ -48,6 +49,7 @@ export function PairScreen({ onReady }: { onReady: (channel: string) => void }) 
   const video = useVideoReceiver(ready?.session.channel ?? null);
   // Once the phone's picture arrives, the floor plan gives way to the user seeing themselves.
   const showVideo = video.state === 'connected' && video.streamUrl !== null && panel.width > 0;
+  const videoPose = useMemo(() => latestOf(video.pose, pose), [video.pose, pose]);
   const missing = ready?.framing ? BODY_PARTS.filter((p) => !ready.framing![p]) : null;
   const allVisible = missing !== null && missing.length === 0;
 
@@ -123,7 +125,7 @@ export function PairScreen({ onReady }: { onReady: (channel: string) => void }) 
           onLayout={(e) => setPanel({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
         >
           {showVideo ? (
-            <LiveVideo streamUrl={video.streamUrl!} getPose={pose.getPose} subscribePose={pose.subscribePose} notes={NO_NOTES} width={panel.width - s(3)} height={panel.height - s(3)} />
+            <LiveVideo streamUrl={video.streamUrl!} getPose={videoPose.getPose} subscribePose={videoPose.subscribePose} notes={NO_NOTES} width={panel.width - s(3)} height={panel.height - s(3)} />
           ) : (
             <FloorPlan width={s(640)} height={s(518)} />
           )}

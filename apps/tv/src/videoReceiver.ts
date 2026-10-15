@@ -1,10 +1,17 @@
-import { openChannel, rtcChannel, type LiveChannel, type RtcSignal } from '@spotter/shared';
+import { openChannel, parseEvent, rtcChannel, type LiveChannel, type RtcSignal } from '@spotter/shared';
 import { MediaStream, RTCIceCandidate, RTCPeerConnection, RTCSessionDescription, type MediaStreamTrack } from 'react-native-webrtc';
+import { createPoseFeed, type PoseFeed } from './poseFeed';
 
 const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
 /** A dropped connection gets this long to recover by itself before the TV asks for a new offer. */
 const RECOVER_MS = 5000;
 const RETRY_MS = 1000;
+/**
+ * Pose frames reach the TV sooner than the picture they belong to: the video also goes through the
+ * phone's encoder, the jitter buffer (~15 ms) and the stick's hardware decoder (~90 ms), the pose
+ * only through MediaPipe and the network. Holding poses back this long keeps the skeleton on the body.
+ */
+export const POSE_DELAY_MS = 80;
 
 type Candidate = NonNullable<RtcSignal['candidate']>;
 
@@ -29,6 +36,8 @@ export class VideoReceiver {
   private retry: ReturnType<typeof setTimeout> | undefined;
   private listeners = new Set<(snapshot: VideoSnapshot) => void>();
   private current: VideoSnapshot = { state: 'waiting', streamUrl: null };
+  /** Pose frames from the phone's data channel, every camera frame, timed to match the video. */
+  readonly pose: PoseFeed = createPoseFeed();
 
   constructor(sessionChannel: string) {
     this.channel = openChannel(rtcChannel(sessionChannel), {
@@ -106,6 +115,17 @@ export class VideoReceiver {
       // A sender that names no stream still sends a track; wrap it so RTCView can show it.
       const stream = streams[0] ?? (track ? new MediaStream([track]) : null);
       if (stream && pc === this.pc) this.update({ streamUrl: stream.toURL() });
+    };
+    pc.ondatachannel = (event: unknown) => {
+      const channel = (event as { channel: { label: string; onmessage: ((message: unknown) => void) | null } }).channel;
+      if (channel.label !== 'pose') return;
+      channel.onmessage = (message: unknown) => {
+        if (pc !== this.pc) return;
+        const pose = parseEvent(String((message as { data: unknown }).data));
+        if (pose?.type !== 'pose') return;
+        const frame = { p: pose.p, aspect: pose.aspect, mirrored: pose.mirrored };
+        setTimeout(() => this.pose.push(frame), POSE_DELAY_MS);
+      };
     };
     pc.onicecandidate = (event: unknown) => {
       const c = (event as { candidate: RTCIceCandidate | null }).candidate;

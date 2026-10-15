@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPoseFeed, type PoseFeed } from './poseFeed';
 import { VideoReceiver, type VideoSnapshot } from './videoReceiver';
 
 /** After the last screen lets go, the link stays up this long, so Pair → Live doesn't reconnect. */
@@ -7,13 +8,15 @@ const RELEASE_MS = 5000;
 const shared = new Map<string, { receiver: VideoReceiver; users: number; release?: ReturnType<typeof setTimeout> }>();
 
 const NO_VIDEO: VideoSnapshot = { state: 'waiting', streamUrl: null };
+const NO_POSE = createPoseFeed();
 
 /**
  * The phone's live camera for a session. Screens on the same session share one VideoReceiver,
  * so moving from pairing to the workout keeps the picture without a new connection.
  */
-export function useVideoReceiver(channel: string | null): VideoSnapshot {
+export function useVideoReceiver(channel: string | null): VideoSnapshot & { pose: PoseFeed } {
   const [snapshot, setSnapshot] = useState<VideoSnapshot>(NO_VIDEO);
+  const [pose, setPose] = useState<PoseFeed>(NO_POSE);
 
   useEffect(() => {
     if (!channel) return;
@@ -26,6 +29,7 @@ export function useVideoReceiver(channel: string | null): VideoSnapshot {
     clearTimeout(held.release);
     held.users += 1;
     setSnapshot(held.receiver.snapshot);
+    setPose(held.receiver.pose);
     const unsubscribe = held.receiver.subscribe(setSnapshot);
     return () => {
       unsubscribe();
@@ -39,5 +43,5 @@ export function useVideoReceiver(channel: string | null): VideoSnapshot {
     };
   }, [channel]);
 
-  return channel ? snapshot : NO_VIDEO;
+  return channel ? { ...snapshot, pose } : { ...NO_VIDEO, pose: NO_POSE };
 }

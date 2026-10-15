@@ -27,3 +27,20 @@ export function createPoseFeed(): PoseFeed {
     },
   };
 }
+
+export type PoseSource = Pick<PoseFeed, 'getPose' | 'subscribePose'>;
+
+/** Whichever source has the newest frame: the direct video link when it's up, else the session channel. */
+export function latestOf(...sources: PoseSource[]): PoseSource {
+  return {
+    getPose: () =>
+      sources.reduce<ReturnType<PoseFeed['getPose']>>((best, source) => {
+        const pose = source.getPose();
+        return pose && (!best || pose.at > best.at) ? pose : best;
+      }, null),
+    subscribePose: (listener) => {
+      const offs = sources.map((source) => source.subscribePose(listener));
+      return () => offs.forEach((off) => off());
+    },
+  };
+}

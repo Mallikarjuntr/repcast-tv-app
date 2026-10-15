@@ -70,17 +70,26 @@ function send(event: SpotterEvent): void {
   tv?.send(event, true);
 }
 
-/** Streams the body outline to the TV; frames are simply dropped while the socket reconnects. */
+/**
+ * Streams the body outline to the TV: every frame over the direct video link when it is up,
+ * otherwise about 12 a second over the session channel (dropped while that socket reconnects).
+ */
 function streamPose(pose: NormalizedLandmark[] | undefined, now: number): void {
-  if (!tv || !pose || now - lastPoseAt < POSE_INTERVAL_MS) return;
+  if (!tv || !pose) return;
+  const direct = video?.sendPose(poseEvent(pose)) ?? false;
+  if (direct || now - lastPoseAt < POSE_INTERVAL_MS) return;
   lastPoseAt = now;
+  tv.send(poseEvent(pose));
+}
+
+function poseEvent(pose: NormalizedLandmark[]): Extract<SpotterEvent, { type: 'pose' }> {
   const p: number[] = [];
   for (const i of POSE_SOURCE_INDEX) {
     const lm = pose[i];
     const seen = lm && (lm.visibility ?? 0) >= 0.5;
     p.push(seen ? Math.round(lm.x * 1000) / 1000 : -1, seen ? Math.round(lm.y * 1000) / 1000 : -1);
   }
-  tv.send({ type: 'pose', p, aspect: ui.video.videoWidth / ui.video.videoHeight, mirrored: facing === 'user', at: Date.now() });
+  return { type: 'pose', p, aspect: ui.video.videoWidth / ui.video.videoHeight, mirrored: facing === 'user', at: Date.now() };
 }
 
 async function linkToTv(code: string): Promise<void> {
