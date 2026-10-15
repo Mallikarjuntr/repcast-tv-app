@@ -22,7 +22,7 @@ const PRAISE = ['Good depth.', 'Nice and steady.', "That's it — smooth."];
 
 function coachLine(plan: WorkoutPlan, phase: string, rep: RepNote | null): string {
   if (phase === 'rest') return 'Good set. Breathe — shake out your legs.';
-  if (!rep) return "Stand tall, then squat when you're ready.";
+  if (!rep) return `Start your ${plan.name.toLowerCase()} when you're ready.`;
   if (!rep.counted) return `No rep — ${rep.cues[0] ?? "that one doesn't count"}.`;
   if (rep.cues.length > 0) return `${rep.cues[0]}.`;
   const left = plan.reps - rep.count;
@@ -98,7 +98,18 @@ function PoseWaiting({ lostSight }: { lostSight: boolean }) {
   );
 }
 
-export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan: WorkoutPlan; onFinish: (history: RepNote[], seconds: number) => void }) {
+export function LiveScreen({
+  channel,
+  plan,
+  next = null,
+  onFinish,
+}: {
+  channel: string;
+  plan: WorkoutPlan;
+  /** The next move's name in a multi-move session; null when this is the last. */
+  next?: string | null;
+  onFinish: (history: RepNote[], seconds: number) => void;
+}) {
   const s = useScale();
   const [paused, setPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -139,10 +150,10 @@ export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan:
     }
   }, [w.lastRep]);
   useEffect(() => {
-    if (w.phase === 'rest') say(restLine(`set ${w.setIndex + 2}`), { after: true });
-    else if (w.phase === 'done') say(FINISH_LINE, { after: true });
+    if (w.phase === 'rest') say(restLine(w.restBeforeNextMove && next ? next : `set ${w.setIndex + 2}`), { after: true });
+    else if (w.phase === 'done' && !next) say(FINISH_LINE, { after: true });
     else if (w.setIndex > 0) say(setIntroLine({ kind: 'reps', reps: plan.reps, cues: { start: '' } }, w.setIndex));
-  }, [w.phase, w.setIndex, plan.reps]);
+  }, [w.phase, w.setIndex, w.restBeforeNextMove, next, plan.reps]);
   useEffect(() => {
     if (paused) hush();
   }, [paused]);
@@ -191,7 +202,7 @@ export function LiveScreen({ channel, plan, onFinish }: { channel: string; plan:
         <View style={{ flex: 1.15, gap: s(12) }}>
           {w.phase === 'rest' ? (
             <View style={{ gap: s(14) }}>
-              <Kicker>REST · NEXT IS SET {w.setIndex + 2} OF {plan.sets}</Kicker>
+              <Kicker>{w.restBeforeNextMove && next ? `REST · NEXT: ${next.toUpperCase()}` : `REST · NEXT IS SET ${w.setIndex + 2} OF ${plan.sets}`}</Kicker>
               <Text style={{ fontFamily: fonts.displayBold, fontSize: s(300), lineHeight: s(260), letterSpacing: -s(14), color: colors.ink }}>
                 {String(w.restLeftSeconds).padStart(2, '0')}
               </Text>

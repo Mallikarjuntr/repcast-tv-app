@@ -31,6 +31,8 @@ export type Step =
       restSeconds: number;
       /** Spoken at the start of the set, then the down and up cues alternate on screen. */
       cues: { start: string; down: string; up: string };
+      /** The spotter-movement exercise that judges this move on camera; without one it is followed, not judged. */
+      engine?: string;
     })
   | (StepBase & {
       kind: 'timed';
@@ -96,6 +98,27 @@ const KNEE_PLANK: Keyframe = [0.17, 0.47, 0.25, 0.5, 0.26, 0.5, 0.25, 0.6, 0.26,
 // Forearm plank: elbows under shoulders, forearms flat on the floor.
 const FOREARM_PLANK: Keyframe = [0.19, 0.56, 0.27, 0.59, 0.28, 0.59, 0.27, 0.69, 0.28, 0.69, 0.17, 0.7, 0.18, 0.7, 0.46, 0.617, 0.47, 0.617, 0.65, 0.644, 0.66, 0.644, 0.83, 0.67, 0.84, 0.67];
 
+// Warm-up shapes (front view): arms straight out to the sides, and lifted a little.
+const ARMS_OUT: Keyframe = [0.5, 0.21, 0.42, 0.3, 0.58, 0.3, 0.31, 0.3, 0.69, 0.3, 0.2, 0.29, 0.8, 0.29, 0.45, 0.5, 0.55, 0.5, 0.43, 0.69, 0.57, 0.69, 0.44, 0.87, 0.56, 0.87];
+const ARMS_OUT_UP: Keyframe = [0.5, 0.21, 0.42, 0.3, 0.58, 0.3, 0.31, 0.27, 0.69, 0.27, 0.21, 0.22, 0.79, 0.22, 0.45, 0.5, 0.55, 0.5, 0.43, 0.69, 0.57, 0.69, 0.44, 0.87, 0.56, 0.87];
+// Hips pushed to one side (hands on hips); a torso turned to one side; one heel kicked up behind.
+const HIPS_LEFT: Keyframe = [0.49, 0.21, 0.41, 0.3, 0.57, 0.3, 0.38, 0.42, 0.62, 0.42, 0.43, 0.5, 0.59, 0.5, 0.42, 0.5, 0.52, 0.5, 0.42, 0.69, 0.56, 0.69, 0.44, 0.87, 0.56, 0.87];
+const HIPS_RIGHT = mirror(HIPS_LEFT);
+const TWIST_LEFT: Keyframe = [0.48, 0.21, 0.45, 0.3, 0.57, 0.3, 0.42, 0.38, 0.55, 0.4, 0.47, 0.36, 0.6, 0.37, 0.45, 0.5, 0.55, 0.5, 0.43, 0.69, 0.57, 0.69, 0.44, 0.87, 0.56, 0.87];
+const TWIST_RIGHT = mirror(TWIST_LEFT);
+const KICK_LEFT: Keyframe = [0.5, 0.21, 0.42, 0.3, 0.58, 0.3, 0.4, 0.4, 0.6, 0.38, 0.43, 0.46, 0.58, 0.48, 0.45, 0.5, 0.55, 0.5, 0.44, 0.69, 0.57, 0.69, 0.45, 0.6, 0.56, 0.87];
+const KICK_RIGHT = mirror(KICK_LEFT);
+// Up on the toes.
+const TOES: Keyframe = STAND.map((v, i) => (i % 2 === 1 && i < 23 ? v - 0.03 : v));
+// Push-up, side view: bottom of the rep, chest near the floor (top is the plank).
+const PUSH_DOWN: Keyframe = [0.17, 0.59, 0.25, 0.62, 0.26, 0.62, 0.31, 0.66, 0.32, 0.66, 0.25, 0.7, 0.26, 0.7, 0.45, 0.635, 0.46, 0.635, 0.64, 0.65, 0.65, 0.65, 0.82, 0.665, 0.83, 0.665];
+const KNEE_PUSH_DOWN: Keyframe = [0.17, 0.59, 0.25, 0.62, 0.26, 0.62, 0.31, 0.66, 0.32, 0.66, 0.25, 0.7, 0.26, 0.7, 0.47, 0.65, 0.48, 0.65, 0.7, 0.69, 0.71, 0.69, 0.84, 0.6, 0.85, 0.6];
+// Glute bridge, side view, lying on the back: hips down, and lifted into one line with the knees.
+const BRIDGE_DOWN: Keyframe = [0.15, 0.72, 0.25, 0.74, 0.26, 0.74, 0.35, 0.76, 0.36, 0.76, 0.45, 0.77, 0.46, 0.77, 0.45, 0.75, 0.46, 0.75, 0.6, 0.6, 0.61, 0.6, 0.68, 0.76, 0.69, 0.76];
+const BRIDGE_UP: Keyframe = BRIDGE_DOWN.map((v, i) => (i === 15 || i === 17 ? 0.66 : v));
+// Wall sit: thighs level, back straight against the wall.
+const WALL_SIT_POSE: Keyframe = [0.5, 0.36, 0.42, 0.45, 0.58, 0.45, 0.41, 0.56, 0.59, 0.56, 0.43, 0.64, 0.57, 0.64, 0.45, 0.67, 0.55, 0.67, 0.39, 0.69, 0.61, 0.69, 0.44, 0.87, 0.56, 0.87];
+
 const MARCH: Step = {
   kind: 'timed', id: 'march', name: 'March on the spot', phrase: 'a march on the spot', why: 'Warms you up without any impact.',
   seconds: 40, cue: 'March on the spot — easy pace, arms swinging', cycle: 1.2, demo: { a: MARCH_L, b: MARCH_R, aspect: FRONT },
@@ -110,54 +133,107 @@ const HIGH_KNEES: Step = {
 };
 
 const SQUATS: Step = {
-  kind: 'reps', id: 'squat', name: 'Squats', phrase: 'squats', why: 'The classic — hips back, chest up.',
+  kind: 'reps', id: 'squat', engine: 'squat', name: 'Squats', phrase: 'squats', why: 'The classic — hips back, chest up.',
   sets: 3, reps: 12, beat: { down: 2, up: 1.5 }, restSeconds: 30,
   cues: { start: 'Squats. Twelve reps. Follow the beat.', down: 'sit back… chest up', up: 'drive up through your heels' },
   demo: { a: STAND, b: SQUAT, aspect: FRONT },
 };
 const HALF_SQUATS: Step = {
-  kind: 'reps', id: 'half-squat', name: 'Half squats', phrase: 'half squats', why: 'Only halfway down — kinder to tight knees.',
+  kind: 'reps', id: 'half-squat', engine: 'half-squat', name: 'Half squats', phrase: 'half squats', why: 'Only halfway down — kinder to tight knees.',
   sets: 3, reps: 12, beat: { down: 1.5, up: 1.5 }, restSeconds: 30,
   cues: { start: 'Half squats. Twelve reps. Only go halfway.', down: 'halfway down… chest up', up: 'stand tall' },
   demo: { a: STAND, b: STAND.map((v, i) => v + (SQUAT[i]! - v) * 0.5), aspect: FRONT },
 };
 const SUMO_SQUATS: Step = {
-  kind: 'reps', id: 'sumo-squat', name: 'Sumo squats', phrase: 'sumo squats', why: 'Wide feet, toes out — more inner thigh, less back.',
+  kind: 'reps', id: 'sumo-squat', engine: 'sumo-squat', name: 'Sumo squats', phrase: 'sumo squats', why: 'Wide feet, toes out — more inner thigh, less back.',
   sets: 3, reps: 12, beat: { down: 2, up: 1.5 }, restSeconds: 30,
   cues: { start: 'Sumo squats. Twelve reps. Feet wide, toes out.', down: 'knees out over your toes', up: 'squeeze up to standing' },
   demo: { a: SUMO_TOP, b: SUMO, aspect: FRONT },
 };
 
 const LUNGES: Step = {
-  kind: 'reps', id: 'lunge', name: 'Lunges', phrase: 'lunges', why: 'One leg at a time — balance and strength.',
+  kind: 'reps', id: 'lunge', engine: 'lunge', name: 'Lunges', phrase: 'lunges', why: 'One leg at a time — balance and strength.',
   sets: 2, reps: 10, beat: { down: 2, up: 1.5 }, restSeconds: 30,
   cues: { start: 'Lunges. Ten reps. Swap legs whenever you like.', down: 'back knee towards the floor', up: 'push through the front heel' },
   demo: { a: STAND, b: LUNGE, aspect: FRONT },
 };
 const REVERSE_LUNGES: Step = {
-  kind: 'reps', id: 'reverse-lunge', name: 'Reverse lunges', phrase: 'reverse lunges', why: 'Step back, not forward — easier on the front knee.',
+  kind: 'reps', id: 'reverse-lunge', engine: 'reverse-lunge', name: 'Reverse lunges', phrase: 'reverse lunges', why: 'Step back, not forward — easier on the front knee.',
   sets: 2, reps: 10, beat: { down: 2, up: 1.5 }, restSeconds: 30,
   cues: { start: 'Reverse lunges. Ten reps. Step back, then return.', down: 'step back, knee down', up: 'drive back to standing' },
   demo: { a: STAND, b: LUNGE, aspect: FRONT },
 };
 const SPLIT_SQUATS: Step = {
-  kind: 'reps', id: 'split-squat', name: 'Split squats', phrase: 'split squats', why: 'Feet stay put — steadier if balance is tricky.',
+  kind: 'reps', id: 'split-squat', engine: 'split-squat', name: 'Split squats', phrase: 'split squats', why: 'Feet stay put — steadier if balance is tricky.',
   sets: 2, reps: 10, beat: { down: 2, up: 1.5 }, restSeconds: 30,
   cues: { start: 'Split squats. Ten reps. Feet stay where they are.', down: 'straight down, back knee low', up: 'up through the front foot' },
   demo: { a: STAND.map((v, i) => v + (LUNGE[i]! - v) * 0.15), b: LUNGE, aspect: FRONT },
 };
 
 const JUMPING_JACKS: Step = {
-  kind: 'reps', id: 'jumping-jack', name: 'Jumping jacks', phrase: 'jumping jacks', why: 'Gets the heart going fast.',
+  kind: 'reps', id: 'jumping-jack', engine: 'jumping-jack', name: 'Jumping jacks', phrase: 'jumping jacks', why: 'Gets the heart going fast.',
   sets: 2, reps: 20, beat: { down: 0.5, up: 0.5 }, restSeconds: 20,
   cues: { start: 'Jumping jacks. Twenty. Light on your feet.', down: 'arms up, feet wide', up: 'back together' },
   demo: { a: STAND, b: JACK_OPEN, aspect: FRONT },
 };
 const STEP_JACKS: Step = {
-  kind: 'reps', id: 'step-jack', name: 'Step jacks', phrase: 'step jacks', why: 'No jumping — quiet for the neighbours, easy on joints.',
+  kind: 'reps', id: 'step-jack', engine: 'step-jack', name: 'Step jacks', phrase: 'step jacks', why: 'No jumping — quiet for the neighbours, easy on joints.',
   sets: 2, reps: 20, beat: { down: 0.8, up: 0.8 }, restSeconds: 20,
   cues: { start: 'Step jacks. Twenty. Step out, arms up — no jumping.', down: 'step out, arms up', up: 'step in' },
   demo: { a: STAND, b: STEP_JACK, aspect: FRONT },
+};
+
+const BUTT_KICKS: Step = {
+  kind: 'timed', id: 'butt-kicks', name: 'Butt kicks', phrase: 'butt kicks', why: 'Heels to your seat — warms the backs of your legs.',
+  seconds: 30, cue: 'Heels up to your seat, quick and light', cycle: 0.8, demo: { a: KICK_LEFT, b: KICK_RIGHT, aspect: FRONT },
+};
+const ARM_CIRCLES: Step = {
+  kind: 'timed', id: 'arm-circles', name: 'Arm circles', phrase: 'arm circles', why: 'Loosens your shoulders before any pushing.',
+  seconds: 30, cue: 'Arms out wide, small circles — then bigger', cycle: 1.5, demo: { a: ARMS_OUT, b: ARMS_OUT_UP, aspect: FRONT },
+};
+const HIP_CIRCLES: Step = {
+  kind: 'timed', id: 'hip-circles', name: 'Hip circles', phrase: 'hip circles', why: 'Gentle on the joints, wakes up your hips.',
+  seconds: 30, cue: 'Hands on your hips, draw big slow circles', cycle: 3, demo: { a: HIPS_LEFT, b: HIPS_RIGHT, aspect: FRONT },
+};
+const TORSO_TWISTS: Step = {
+  kind: 'timed', id: 'torso-twist', name: 'Torso twists', phrase: 'torso twists', why: 'Turns your back and waist without any impact.',
+  seconds: 30, cue: 'Twist side to side, hips facing forward', cycle: 2, demo: { a: TWIST_LEFT, b: TWIST_RIGHT, aspect: FRONT },
+};
+
+const CURTSY_LUNGES: Step = {
+  kind: 'reps', id: 'curtsy-lunge', engine: 'curtsy-lunge', name: 'Curtsy lunges', phrase: 'curtsy lunges', why: 'Step back and across — works the sides of your hips.',
+  sets: 2, reps: 10, beat: { down: 2, up: 1.5 }, restSeconds: 30,
+  cues: { start: 'Curtsy lunges. Ten reps. Step back and across.', down: 'back and across, knee down', up: 'push back to standing' },
+  demo: { a: STAND, b: LUNGE, aspect: FRONT },
+};
+const CALF_RAISES: Step = {
+  kind: 'reps', id: 'calf-raise', name: 'Calf raises', phrase: 'calf raises', why: 'Up on your toes — ankles and calves, no impact.',
+  sets: 2, reps: 15, beat: { down: 1, up: 1 }, restSeconds: 20,
+  cues: { start: 'Calf raises. Fifteen reps. Up onto your toes.', down: 'rise up tall', up: 'lower slowly' },
+  demo: { a: STAND, b: TOES, aspect: FRONT },
+};
+const WALL_SIT: Step = {
+  kind: 'timed', id: 'wall-sit', name: 'Wall sit', phrase: 'a wall sit', why: 'A squat held against the wall — strength with no movement.',
+  seconds: 30, cue: 'Back against the wall, thighs level — hold', cycle: 0, demo: { a: WALL_SIT_POSE, b: WALL_SIT_POSE, aspect: FRONT },
+};
+
+const PUSH_UPS: Step = {
+  kind: 'reps', id: 'push-up', engine: 'push-up', name: 'Push-ups', phrase: 'push-ups', why: 'Chest, arms and core in one move.',
+  sets: 2, reps: 10, beat: { down: 1.5, up: 1.5 }, restSeconds: 30,
+  cues: { start: 'Push-ups. Ten reps. Phone on the floor, side-on.', down: 'chest towards the floor', up: 'push the floor away' },
+  demo: { a: PLANK, b: PUSH_DOWN, aspect: FRONT, fitBox: true },
+};
+const KNEE_PUSH_UPS: Step = {
+  kind: 'reps', id: 'knee-push-up', engine: 'knee-push-up', name: 'Knee push-ups', phrase: 'knee push-ups', why: 'Knees down — the same push, a lighter load.',
+  sets: 2, reps: 10, beat: { down: 1.5, up: 1.5 }, restSeconds: 30,
+  cues: { start: 'Knee push-ups. Ten reps. Phone on the floor, side-on.', down: 'chest towards the floor', up: 'push the floor away' },
+  demo: { a: KNEE_PLANK, b: KNEE_PUSH_DOWN, aspect: FRONT, fitBox: true },
+};
+const GLUTE_BRIDGES: Step = {
+  kind: 'reps', id: 'glute-bridge', engine: 'glute-bridge', name: 'Glute bridges', phrase: 'glute bridges', why: 'Lying down, kind to your back — strong glutes.',
+  sets: 2, reps: 12, beat: { down: 1.5, up: 1.5 }, restSeconds: 30,
+  cues: { start: 'Glute bridges. Twelve reps. Lie back, knees bent.', down: 'lift your hips, squeeze', up: 'lower slowly' },
+  demo: { a: BRIDGE_DOWN, b: BRIDGE_UP, aspect: FRONT, fitBox: true },
 };
 
 const PLANK_HOLD: Step = {
@@ -184,12 +260,19 @@ const SIDE_BENDS: Step = {
 
 /** The moves each step can be swapped for, the original first. Keyed by the original step's id. */
 export const SWAP_OPTIONS: Record<string, Step[]> = {
-  [MARCH.id]: [MARCH, STEP_TOUCH, HIGH_KNEES],
-  [SQUATS.id]: [SQUATS, HALF_SQUATS, SUMO_SQUATS],
-  [LUNGES.id]: [LUNGES, REVERSE_LUNGES, SPLIT_SQUATS],
+  [MARCH.id]: [MARCH, STEP_TOUCH, HIGH_KNEES, BUTT_KICKS],
+  [SQUATS.id]: [SQUATS, HALF_SQUATS, SUMO_SQUATS, WALL_SIT],
+  [LUNGES.id]: [LUNGES, REVERSE_LUNGES, SPLIT_SQUATS, CURTSY_LUNGES],
   [JUMPING_JACKS.id]: [JUMPING_JACKS, STEP_JACKS],
   [PLANK_HOLD.id]: [PLANK_HOLD, KNEE_PLANK_HOLD, FOREARM_PLANK_HOLD],
   [REACH_BREATHE.id]: [REACH_BREATHE, SIDE_BENDS],
+  [ARM_CIRCLES.id]: [ARM_CIRCLES, TORSO_TWISTS],
+  [PUSH_UPS.id]: [PUSH_UPS, KNEE_PUSH_UPS],
+  [GLUTE_BRIDGES.id]: [GLUTE_BRIDGES, WALL_SIT],
+  [WALL_SIT.id]: [WALL_SIT, HALF_SQUATS],
+  [HIP_CIRCLES.id]: [HIP_CIRCLES, STEP_TOUCH, MARCH],
+  [CURTSY_LUNGES.id]: [CURTSY_LUNGES, REVERSE_LUNGES, SPLIT_SQUATS],
+  [SIDE_BENDS.id]: [SIDE_BENDS, TORSO_TWISTS, REACH_BREATHE],
 };
 
 /** Chosen swaps: original step id → the id of the move used instead. */
@@ -227,6 +310,31 @@ export const LEGS_GENTLY: Session = {
   coachNote: "go slow on the way down —\nI'll do the counting.",
   steps: BASE_STEPS,
 };
+
+/** Upper body and core: pushing, bridging, holding — mostly on the floor, phone side-on. */
+const STRONG_STEADY_STEPS = [ARM_CIRCLES, PUSH_UPS, GLUTE_BRIDGES, WALL_SIT, PLANK_HOLD, REACH_BREATHE];
+export const STRONG_STEADY: Session = {
+  id: 'strong-steady',
+  title: 'Strong,\n',
+  titleItalic: 'steady.',
+  summary: describe(STRONG_STEADY_STEPS),
+  coachNote: "phone on the floor, side-on —\nI'll watch your line.",
+  steps: STRONG_STEADY_STEPS,
+};
+
+/** Hips and glutes with no jumping: kind to knees and to downstairs neighbours. */
+const HIPS_GLUTES_STEPS = [HIP_CIRCLES, GLUTE_BRIDGES, CURTSY_LUNGES, SUMO_SQUATS, CALF_RAISES, SIDE_BENDS];
+export const HIPS_GLUTES: Session = {
+  id: 'hips-glutes',
+  title: 'Hips &\n',
+  titleItalic: 'glutes.',
+  summary: describe(HIPS_GLUTES_STEPS),
+  coachNote: 'low impact today —\nno jumping at all.',
+  steps: HIPS_GLUTES_STEPS,
+};
+
+/** Every session, in the order they're offered. */
+export const SESSIONS: Session[] = [LEGS_GENTLY, STRONG_STEADY, HIPS_GLUTES];
 
 /** A keyframe between a and b at t (0..1). */
 export function blend(a: Keyframe, b: Keyframe, t: number): number[] {

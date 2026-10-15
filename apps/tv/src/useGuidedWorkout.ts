@@ -53,7 +53,7 @@ function ease(t: number): number {
  * changes (a rep, a second, a phase) instead of ten times a second — on a Fire TV Stick that was
  * the difference between a smooth and a stuttering workout.
  */
-export function useGuidedWorkout(session: Session, paused: boolean): GuidedWorkout {
+export function useGuidedWorkout(session: Session, paused: boolean, finalLine: string = FINISH_LINE): GuidedWorkout {
   const [stepIndex, setStepIndex] = useState(0);
   const [setIndex, setSetIndex] = useState(0);
   const [phase, setPhaseState] = useState<GuidedPhase>('work');
@@ -137,7 +137,7 @@ export function useGuidedWorkout(session: Session, paused: boolean): GuidedWorko
     const moreSets = s.kind === 'reps' && setIndex + 1 < s.sets;
     if (!moreSets && stepIndex + 1 >= session.steps.length) {
       setPhase('done');
-      say(FINISH_LINE);
+      if (finalLine) say(finalLine);
       return;
     }
     restMs.current = (s.kind === 'reps' ? s.restSeconds : 10) * 1000;
@@ -145,7 +145,7 @@ export function useGuidedWorkout(session: Session, paused: boolean): GuidedWorko
     setSecondsLeft(Math.ceil(restMs.current / 1000));
     setPhase('rest');
     say(restLine(moreSets ? `set ${setIndex + 2}` : session.steps[stepIndex + 1]!.name));
-  }, [restartClock, session.steps, setIndex, setPhase, setSecondsLeft, stepIndex]);
+  }, [finalLine, restartClock, session.steps, setIndex, setPhase, setSecondsLeft, stepIndex]);
 
   const advance = useCallback(() => {
     const s = session.steps[stepIndex]!;

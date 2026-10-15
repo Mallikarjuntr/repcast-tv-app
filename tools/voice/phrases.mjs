@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '..', '..', 'apps', 'tv', 'src');
-const { LEGS_GENTLY, SWAP_OPTIONS } = await import(join(src, 'workouts.ts'));
+const { SESSIONS, SWAP_OPTIONS } = await import(join(src, 'workouts.ts'));
 const { coachIntroLine, countLine, ENGINE_CUES, FINISH_LINE, HINT_LINES, MAX_SPOKEN_COUNT, NO_REP_LINE, PHONE_LINKED_LINE, READY_LINE, restLine, setIntroLine, voiceId } =
   await import(join(src, 'voiceLines.ts'));
 // The movement engine's exercise definitions hold each exercise's own advice.
@@ -21,22 +21,25 @@ const { EXERCISES } = await import(join(here, '..', '..', 'node_modules', 'spott
 const lines = new Set([FINISH_LINE]);
 for (let n = 1; n <= MAX_SPOKEN_COUNT; n++) lines.add(countLine(n));
 
-const base = LEGS_GENTLY.steps;
-base.forEach((original, i) => {
-  const options = SWAP_OPTIONS[original.id] ?? [original];
-  for (const step of options) {
-    if (step.kind === 'timed') lines.add(step.cue);
-    else for (let set = 0; set < step.sets; set++) lines.add(setIntroLine(step, set));
-    // Rests: before the next set of this move, or before whichever option of the next move is chosen.
-    if (step.kind === 'reps') for (let set = 2; set <= step.sets; set++) lines.add(restLine(`set ${set}`));
-    const next = base[i + 1];
-    if (next) for (const option of SWAP_OPTIONS[next.id] ?? [next]) lines.add(restLine(option.name));
-  }
-});
+for (const session of SESSIONS) {
+  const base = session.steps;
+  base.forEach((original, i) => {
+    const options = SWAP_OPTIONS[original.id] ?? [original];
+    for (const step of options) {
+      if (step.kind === 'timed') lines.add(step.cue);
+      else for (let set = 0; set < step.sets; set++) lines.add(setIntroLine(step, set));
+      // Rests: before the next set of this move, or before whichever option of the next move is chosen.
+      if (step.kind === 'reps') for (let set = 2; set <= step.sets; set++) lines.add(restLine(`set ${set}`));
+      const next = base[i + 1];
+      if (next) for (const option of SWAP_OPTIONS[next.id] ?? [next]) lines.add(restLine(option.name));
+    }
+  });
+}
 
 // Camera coaching.
 for (const line of [NO_REP_LINE, PHONE_LINKED_LINE, READY_LINE, ...Object.values(HINT_LINES), ...ENGINE_CUES]) lines.add(line);
-for (const options of Object.values(SWAP_OPTIONS)) for (const step of options) if (step.kind === 'reps') lines.add(coachIntroLine(step.name, step.reps));
+const everyStep = [...SESSIONS.flatMap((s) => s.steps), ...Object.values(SWAP_OPTIONS).flat()];
+for (const step of everyStep) if (step.kind === 'reps') lines.add(coachIntroLine(step.name, step.reps));
 for (const exercise of Object.values(EXERCISES)) {
   const cues = [exercise.depth?.cue, exercise.depth?.noRepCue, exercise.stance?.cue, ...(exercise.targets ?? []).map((t) => t.cue)];
   for (const check of exercise.checks ?? []) cues.push(check.cue, check.failCue);

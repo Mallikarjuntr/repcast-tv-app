@@ -1,6 +1,6 @@
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
-import { BODY_PARTS, findSession, openChannel, POSE_SOURCE_INDEX, type BodyPart, type LiveChannel, type SpotterEvent } from '@spotter/shared';
-import { isSideOn, RepDetector, squat, type PointName, type RepResult, type RepUpdate } from 'spotter-movement';
+import { BODY_PARTS, controlChannel, findSession, openChannel, POSE_SOURCE_INDEX, type BodyPart, type LiveChannel, type SpotterEvent } from '@spotter/shared';
+import { EXERCISES, isSideOn, RepDetector, squat, type PointName, type RepExercise, type RepResult, type RepUpdate } from 'spotter-movement';
 import { framing, SteadyHint } from './framing';
 import { VideoLink } from './video-link';
 
@@ -55,6 +55,7 @@ const ui = {
   flip: $<HTMLButtonElement>('flip'),
   pairStatus: $('pair-status'),
   pairForm: $<HTMLFormElement>('pair-form'),
+  statusTag: $('status-tag'),
   codeInput: $<HTMLInputElement>('code'),
 };
 
@@ -101,6 +102,13 @@ async function linkToTv(code: string): Promise<void> {
     const session = await findSession(code);
     tv?.close();
     tv = openChannel(session.channel);
+    // The TV says which exercise to judge as the session moves on.
+    control?.close();
+    control = openChannel(controlChannel(session.channel), {
+      onEvent: (event) => {
+        if (event.type === 'exercise') setExercise(event.id);
+      },
+    });
     video?.connect(session.channel);
     ui.pairStatus.className = 'pair-status linked';
     ui.pairStatus.textContent = `Linked to your TV · code ${code} ✓`;
@@ -122,7 +130,8 @@ function reportFraming(pose: NormalizedLandmark[] | undefined, now: number): voi
     BODY_PARTS.map((part) => [part, !!pose && PART_POINTS[part].every((i) => (pose[i]?.visibility ?? 0) >= 0.5)]),
   ) as Record<BodyPart, boolean>;
   const sideOn = !!pose && isSideOn({ t: now, landmarks: pose, aspect: ui.video.videoWidth / ui.video.videoHeight }, 0.5) === true;
-  const view = framing(pose, squat.required, sideOn);
+  // Floor exercises are filmed side-on on purpose, so that isn't a problem to fix there.
+  const view = framing(pose, exercise?.required ?? UNJUDGED_REQUIRED, sideOn && !exercise?.lying);
   const hint = steadyHint.update(view.hint, now);
   const key = JSON.stringify({ visible, sideOn, ready: view.ready, hint });
   const changed = key !== lastFraming && now - lastFramingAt >= FRAMING_MIN_GAP_MS;
@@ -134,7 +143,26 @@ function reportFraming(pose: NormalizedLandmark[] | undefined, now: number): voi
 }
 
 const modelKind = new URLSearchParams(location.search).get('model') === 'full' ? 'full' : 'lite';
-const detector = new RepDetector(squat);
+/** What the coach is judging now: squats until the TV says otherwise; null between judged moves. */
+let exercise: RepExercise | null = squat;
+let detector = new RepDetector(squat);
+/** TV → phone commands (which exercise to judge). */
+let control: LiveChannel | null = null;
+/** Between judged moves the coach only needs to see the person. */
+const UNJUDGED_REQUIRED: PointName[] = ['leftHip', 'rightHip'];
+
+function setExercise(id: string | null): void {
+  const next = id ? EXERCISES[id] : undefined;
+  const judged = next?.type === 'rep' ? next : null;
+  if (judged?.id === exercise?.id && (judged !== null) === (exercise !== null)) return;
+  exercise = judged;
+  if (judged) detector = new RepDetector(judged);
+  reps.length = 0;
+  ui.count.textContent = '0';
+  ui.log.replaceChildren();
+  ui.statusTag.textContent = judged ? judged.name.toUpperCase() : 'FOLLOWING ALONG';
+  setCue(judged ? `${judged.name} — when you're ready` : 'Follow the trainer on the TV');
+}
 const reps: RepResult[] = [];
 let landmarker: PoseLandmarker | null = null;
 let stream: MediaStream | null = null;
@@ -259,7 +287,7 @@ function onRep(rep: RepResult): void {
   reps.push(rep);
   send({
     type: 'rep',
-    exercise: squat.id,
+    exercise: exercise?.id ?? 'none',
     count: rep.count,
     counted: rep.counted,
     verdict: rep.verdict,
@@ -308,7 +336,7 @@ function render(update: RepUpdate): void {
   } else if (update.phase === 'down' && ui.cue.classList.contains('correction') === false && reps.length === 0) {
     setCue('Down…');
   } else if (update.phase === 'top' && reps.length === 0) {
-    setCue('Ready — squat when you are');
+    setCue(`Ready — ${exercise?.name.toLowerCase() ?? 'go'} when you are`);
   }
   ui.hint.textContent = sideOnSince !== null && performance.now() - sideOnSince > 2000
     ? 'Turn the phone about 45° — from the side I can’t see both legs'
@@ -332,7 +360,7 @@ function loop(): void {
       noPersonFrames = 0;
       const side = isSideOn({ t: now, landmarks: pose, aspect: video.videoWidth / video.videoHeight }, 0.5) === true;
       sideOnSince = side ? (sideOnSince ?? now) : null;
-      render(detector.update({ t: now, landmarks: pose, world: result.worldLandmarks[0], aspect: video.videoWidth / video.videoHeight }));
+      if (exercise) render(detector.update({ t: now, landmarks: pose, world: result.worldLandmarks[0], aspect: video.videoWidth / video.videoHeight }));
     } else if (++noPersonFrames > 15) {
       setCue("I can't see you yet — step into the frame", true);
     }
@@ -346,7 +374,7 @@ function loop(): void {
 function results(): string {
   return JSON.stringify(
     {
-      exercise: squat.id,
+      exercise: exercise?.id ?? 'none',
       model: modelKind,
       camera: facing,
       device: navigator.userAgent,

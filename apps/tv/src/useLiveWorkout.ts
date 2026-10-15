@@ -3,11 +3,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PoseFrame } from './components/PoseFigure';
 
 export interface WorkoutPlan {
+  /** The engine exercise id the phone judges (reps for any other exercise are ignored). */
   exercise: string;
   name: string;
   sets: number;
   reps: number;
   restSeconds: number;
+  /** A rest after the last set too, before the next move (in a multi-move session). */
+  restAfter?: number;
 }
 
 export interface RepNote {
@@ -45,6 +48,8 @@ export interface LiveWorkout {
   history: RepNote[];
   /** The phone's advice for staying in frame (e.g. "step-back"), or null when all is well. */
   hint: FramingHint | null;
+  /** This rest is the one after the last set, before the next move. */
+  restBeforeNextMove: boolean;
 }
 
 /**
@@ -59,6 +64,8 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
   const [live, setLive] = useState<LiveStatus>('connecting');
   const [hint, setHint] = useState<FramingHint | null>(null);
   const [restEndsAt, setRestEndsAt] = useState(0);
+  // The rest after the last set leads to 'done', not another set.
+  const finalRest = useRef(false);
   const [now, setNow] = useState(Date.now());
   const pose = useRef<{ frame: PoseFrame; at: number } | null>(null);
   const poseListeners = useRef(new Set<() => void>());
@@ -79,6 +86,8 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
         } else if (event.type === 'rep') {
           const s = state.current;
           if (s.phase !== 'work' || s.paused) return;
+          // A rep judged as another exercise (e.g. still in flight from the previous move) isn't this set's.
+          if (event.exercise !== plan.exercise) return;
           // Older phones send no `counted` flag; treat those as counted.
           const counted = event.counted ?? true;
           if (counted) {
@@ -98,7 +107,11 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
           history.current.push(note);
           setLastRep(note);
           if (note.count >= plan.reps) {
-            if (s.setIndex + 1 >= plan.sets) {
+            if (s.setIndex + 1 >= plan.sets && plan.restAfter) {
+              finalRest.current = true;
+              setPhase('rest');
+              setRestEndsAt(Date.now() + plan.restAfter * 1000);
+            } else if (s.setIndex + 1 >= plan.sets) {
               setPhase('done');
             } else {
               setPhase('rest');
@@ -110,7 +123,7 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
       setLive,
     );
     return () => sub.close();
-  }, [channel, plan.reps, plan.sets, plan.restSeconds]);
+  }, [channel, plan.exercise, plan.reps, plan.sets, plan.restSeconds, plan.restAfter]);
 
   useEffect(() => {
     // Drives the rest countdown and how long the coach's marks stay up; a second's resolution is plenty.
@@ -127,6 +140,10 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
   }, []);
 
   const startNextSet = useCallback(() => {
+    if (finalRest.current) {
+      setPhase('done');
+      return;
+    }
     repsRef.current = 0;
     setRepsInSet(0);
     setSetIndex((i) => i + 1);
@@ -151,5 +168,6 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
     skipRest: startNextSet,
     history: history.current,
     hint,
+    restBeforeNextMove: phase === 'rest' && finalRest.current,
   };
 }

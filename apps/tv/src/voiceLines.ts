@@ -52,7 +52,7 @@ export const HINT_LINES: Record<FramingHint, string> = {
  * Rep advice the movement engine gives for any exercise (spotter-movement rep-detector.ts); each
  * exercise's own cues are read from its definition by tools/voice/phrases.mjs. Keep in sync.
  */
-export const ENGINE_CUES = ['The camera moved — keep the phone still', 'Finish each rep standing tall'];
+export const ENGINE_CUES = ['The camera moved — keep the phone still', 'Finish each rep standing tall', 'Stay down in position for the whole rep'];
 
 /** Stable id for a spoken line, used as its audio file name. */
 export function voiceId(text: string): string {

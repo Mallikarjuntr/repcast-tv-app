@@ -22,12 +22,21 @@ export interface FollowResult {
 }
 
 /** Core mode: a follow-along workout with no camera — the beat counts the reps. */
-export function FollowScreen({ session, onFinish }: { session: Session; onFinish: (result: FollowResult) => void }) {
+export function FollowScreen({
+  session,
+  onFinish,
+  finalLine,
+}: {
+  session: Session;
+  onFinish: (result: FollowResult) => void;
+  /** Said at the end instead of "That's the session" (e.g. when a coached session continues). */
+  finalLine?: string;
+}) {
   const s = useScale();
   const [paused, setPaused] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [panel, setPanel] = useState({ width: 0, height: 0 });
-  const w = useGuidedWorkout(session, paused);
+  const w = useGuidedWorkout(session, paused, finalLine);
   const finished = useRef(false);
 
   // Remote keys only reach the app while a button has focus; Android sends down + up per press.

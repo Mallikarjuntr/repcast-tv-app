@@ -21,6 +21,19 @@ export const TRAINER_CLIPS: Record<string, number> = {
   'knee-plank': require('../assets/trainer/knee-plank.mp4'),
   'cool-down': require('../assets/trainer/reach.mp4'),
   'side-bend': require('../assets/trainer/side-bend.mp4'),
+  'forearm-plank': require('../assets/trainer/forearm-plank.mp4'),
+  // Warm-ups and low-impact moves.
+  'arm-circles': require('../assets/trainer/arm-circles.mp4'),
+  'hip-circles': require('../assets/trainer/hip-circles.mp4'),
+  'torso-twist': require('../assets/trainer/torso-twist.mp4'),
+  'butt-kicks': require('../assets/trainer/butt-kicks.mp4'),
+  'calf-raise': require('../assets/trainer/calf-raise.mp4'),
+  'wall-sit': require('../assets/trainer/wall-sit.mp4'),
+  'curtsy-lunge': require('../assets/trainer/curtsy-lunge.mp4'),
+  // Floor moves, side-on.
+  'push-up': require('../assets/trainer/push-up.mp4'),
+  'knee-push-up': require('../assets/trainer/knee-push-up.mp4'),
+  'glute-bridge': require('../assets/trainer/glute-bridge.mp4'),
 };
 
 /** Shown during rests: the trainer stands at ease, breathing, so the screen never looks like work. */

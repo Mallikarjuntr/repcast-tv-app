@@ -68,7 +68,7 @@ export function ReceiptScreen({ summary, history, coach, sessionNumber, streak, 
             SESSION {String(sessionNumber).padStart(3, '0')} · {stamp(finishedAt)}
           </Text>
           {rule}
-          {summary.sets.map((set, i) => row(`${summary.name.toUpperCase()} · SET ${i + 1}`, `${set.counted}`, false, `set-${i}`))}
+          {summary.sets.map((set, i) => row(set.label, `${set.counted}`, false, `set-${i}`))}
           {summary.noReps > 0 ? row("DIDN'T COUNT", `${summary.noReps}`) : null}
           {rule}
           {row('TOTAL REPS', `${summary.counted}`, true)}
@@ -92,8 +92,8 @@ export function ReceiptScreen({ summary, history, coach, sessionNumber, streak, 
           <View style={{ gap: s(16), backgroundColor: colors.paper, paddingVertical: s(22), paddingHorizontal: s(28) }}>
             {summary.sets.map((_, setIndex) => (
               <View key={setIndex} style={{ flexDirection: 'row', alignItems: 'center', gap: s(16) }}>
-                <View style={{ width: s(70) }}>
-                  <Kicker size={14}>SET {setIndex + 1}</Kicker>
+                <View style={{ width: s(170) }}>
+                  <Kicker size={14}>{summary.sets[setIndex]!.label.replace(' · SET ', ' ')}</Kicker>
                 </View>
                 <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: s(2) }}>
                   {history

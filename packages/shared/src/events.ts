@@ -55,7 +55,24 @@ export type SpotterEvent =
       at: number;
     }
   | { type: 'bye'; at: number }
-  | RtcSignal;
+  | RtcSignal
+  | ExerciseCommand;
+
+/**
+ * The TV telling the phone which exercise to judge now (an engine exercise id from spotter-movement),
+ * or null between judged moves (warm-ups, holds). Sent on the session's `controlChannel` whenever it
+ * changes and every few seconds, so a phone that joins late catches up.
+ */
+export interface ExerciseCommand {
+  type: 'exercise';
+  id: string | null;
+  at: number;
+}
+
+/** TV → phone commands have their own sub-channel; the phone's pose stream never comes back to it. */
+export function controlChannel(sessionChannel: string): string {
+  return `${sessionChannel}/tv`;
+}
 
 /**
  * WebRTC set-up for the live camera video, sent both ways on the session's `rtcChannel`. The

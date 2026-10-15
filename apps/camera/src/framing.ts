@@ -43,9 +43,13 @@ export function framing(pose: Point[] | undefined, required: readonly PointName[
   // Centred but something the exercise needs is cut off: almost always standing too close.
   if (!ready) return { ready, hint: 'step-back' };
 
-  const shoulders = mean((['leftShoulder', 'rightShoulder'] as const).filter((n) => seen(pose, n)).map(y));
-  const hipY = mean(hips.map(y));
-  if (shoulders !== null && hipY !== null && Math.abs(hipY - shoulders) < MIN_TORSO) return { ready, hint: 'come-closer' };
+  // Torso length in the image, whichever way the body lies (standing, or side-on on the floor).
+  const shoulderPts = (['leftShoulder', 'rightShoulder'] as const).filter((n) => seen(pose, n));
+  const sx = mean(shoulderPts.map(x));
+  const sy = mean(shoulderPts.map(y));
+  const hx = mean(hips.map(x));
+  const hy = mean(hips.map(y));
+  if (sx !== null && sy !== null && hx !== null && hy !== null && Math.hypot(hx - sx, hy - sy) < MIN_TORSO) return { ready, hint: 'come-closer' };
   if (sideOn) return { ready, hint: 'turn-phone' };
   return { ready };
 }

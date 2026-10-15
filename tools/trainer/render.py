@@ -50,6 +50,19 @@ CLIPS = {
     'knee-plank': {'fbx': 'Plank', 'pose': 'knee-plank', 'yaw': SIDE_YAW, 'target_z': 0.6, 'shadow': (1.0, 0.22)},
     'reach': {'fbx': 'Idle', 'pose': 'reach', 'yaw': FRONT_YAW, 'scale': TALL_SCALE, 'target_z': 1.0},
     'side-bend': {'fbx': 'Idle', 'pose': 'side-bend', 'yaw': 0, 'scale': TALL_SCALE, 'target_z': 1.0},
+    # Warm-ups and low-impact moves, scripted from the standing idle.
+    'arm-circles': {'fbx': 'Idle', 'pose': 'arm-circles', 'yaw': FRONT_YAW, 'scale': TALL_SCALE, 'target_z': 1.0},
+    'hip-circles': {'fbx': 'Idle', 'pose': 'hip-circles', 'yaw': FRONT_YAW},
+    'torso-twist': {'fbx': 'Idle', 'pose': 'torso-twist', 'yaw': FRONT_YAW},
+    'butt-kicks': {'fbx': 'Idle', 'pose': 'butt-kicks', 'yaw': 55},
+    'calf-raise': {'fbx': 'Idle', 'pose': 'calf-raise', 'yaw': 60},
+    'wall-sit': {'fbx': 'Idle', 'pose': 'wall-sit', 'yaw': 65},
+    'curtsy-lunge': {'fbx': 'Idle', 'pose': 'curtsy-lunge', 'yaw': FRONT_YAW},
+    # Floor moves, filmed from the side like the plank.
+    'push-up': {'fbx': 'Plank', 'pose': 'push-up', 'yaw': SIDE_YAW, 'target_z': 0.6, 'shadow': (1.15, 0.22)},
+    'knee-push-up': {'fbx': 'Plank', 'pose': 'knee-push-up', 'yaw': SIDE_YAW, 'target_z': 0.6, 'shadow': (1.0, 0.22)},
+    'forearm-plank': {'fbx': 'Plank', 'pose': 'forearm-plank', 'yaw': SIDE_YAW, 'target_z': 0.6, 'shadow': (1.15, 0.22)},
+    'glute-bridge': {'fbx': 'Idle', 'pose': 'glute-bridge', 'yaw': SIDE_YAW, 'target_z': 0.4, 'shadow': (1.0, 0.22)},
     # Shown during rests: the trainer stands at ease, breathing (Mixamo's idle loop, whole and at its own speed).
     'rest': {'fbx': 'Idle', 'segments': 'whole', 'yaw': FRONT_YAW},
 }

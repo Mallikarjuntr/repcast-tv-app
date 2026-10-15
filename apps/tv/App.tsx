@@ -12,14 +12,14 @@ import { ModesScreen } from './src/screens/ModesScreen';
 import { FollowDoneScreen } from './src/screens/FollowDoneScreen';
 import { FollowScreen, type FollowResult } from './src/screens/FollowScreen';
 import { ReceiptScreen } from './src/screens/ReceiptScreen';
-import { LiveScreen } from './src/screens/LiveScreen';
+import { CoachSessionScreen } from './src/screens/CoachSessionScreen';
 import { PairScreen } from './src/screens/PairScreen';
 import { SwapScreen } from './src/screens/SwapScreen';
 import { VideoTestScreen } from './src/screens/VideoTestScreen';
 import { freeCoachSessionsLeft, loadSessions, loadSwaps, saveSession, saveSwaps, streakDays, weekView, type SessionRecord } from './src/storage';
-import { spotterNote, summarize, type WorkoutSummary } from './src/summary';
+import { spotterNote, summarizeSession, type MoveResult, type WorkoutSummary } from './src/summary';
 import { useCoachNote } from './src/useCoachNote';
-import type { RepNote, WorkoutPlan } from './src/useLiveWorkout';
+import type { RepNote } from './src/useLiveWorkout';
 import { applySwaps, estimateSeconds, LEGS_GENTLY, type Swaps } from './src/workouts';
 import { colors } from './src/theme';
 
@@ -59,9 +59,6 @@ function CoachReceipt({ data, onDone }: { data: CoachReceiptData; onDone: () => 
   );
 }
 
-// Today's sample session until plans come from the backend.
-const SQUAT_PLAN: WorkoutPlan = { exercise: 'squat', name: 'Squats', sets: 3, reps: 12, restSeconds: 30 };
-
 export default function App() {
   const [fontsLoaded] = useFonts({
     Fraunces_400Regular_Italic,
@@ -98,12 +95,12 @@ export default function App() {
   }, []);
 
   const finishLive = useCallback(
-    (history: RepNote[], seconds: number) => {
-      const summary = summarize(SQUAT_PLAN, history, seconds);
+    (moves: MoveResult[], seconds: number) => {
+      const { summary, history } = summarizeSession(moves, seconds);
       const record: SessionRecord = {
         at: new Date().toISOString(),
         mode: 'coach',
-        title: SQUAT_PLAN.name,
+        title: 'Legs, gently.',
         reps: summary.counted,
         seconds,
         cleanReps: summary.good,
@@ -173,7 +170,7 @@ export default function App() {
           onChoose={(mode) => go(mode === 'coach' ? { name: 'pair' } : { name: 'follow' })} />
       )}
       {screen.name === 'pair' && <PairScreen onReady={(channel) => go({ name: 'live', channel })} />}
-      {screen.name === 'live' && <LiveScreen channel={screen.channel} plan={SQUAT_PLAN} onFinish={finishLive} />}
+      {screen.name === 'live' && <CoachSessionScreen channel={screen.channel} session={today} onFinish={finishLive} />}
       {screen.name === 'receipt' && <CoachReceipt data={screen.receipt} onDone={home} />}
       {screen.name === 'follow' && <FollowScreen session={today} onFinish={finishFollow} />}
       {screen.name === 'followDone' && (
