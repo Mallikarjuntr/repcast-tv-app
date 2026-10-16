@@ -54,20 +54,23 @@ export function framing(pose: Point[] | undefined, required: readonly PointName[
   return { ready };
 }
 
-/** Holds a hint back until it has been true for a moment, so a stumble or a fast rep doesn't flash advice. */
+/**
+ * Holds a hint back until it has been true for a moment, and keeps it until it has been gone for a
+ * moment, so a stumble or one rep (side-on for a second at the bottom of a squat) can't flip it.
+ */
 export class SteadyHint {
   private candidate: FramingHint | undefined;
   private since = 0;
   private current: FramingHint | undefined;
 
-  constructor(private readonly holdMs = 1000) {}
+  constructor(private readonly holdMs = 1500) {}
 
   update(hint: FramingHint | undefined, now: number): FramingHint | undefined {
     if (hint !== this.candidate) {
       this.candidate = hint;
       this.since = now;
     }
-    if (hint === undefined || now - this.since >= this.holdMs) this.current = hint;
+    if (now - this.since >= this.holdMs) this.current = hint;
     return this.current;
   }
 }

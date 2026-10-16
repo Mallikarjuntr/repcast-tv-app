@@ -68,7 +68,7 @@ export function PairScreen({ onReady }: { onReady: (channel: string) => void }) 
     if (phoneConnected) say(PHONE_LINKED_LINE);
   }, [phoneConnected]);
   // Spoken help to get into frame, then a go-ahead once the coach can see what it needs.
-  useSpokenGuidance(hint ? HINT_LINES[hint] : allVisible && ready?.framing ? READY_LINE : null, phoneConnected);
+  useSpokenGuidance(hint ? HINT_LINES[hint] : allVisible && ready?.framing ? READY_LINE : null, phoneConnected, hint !== null);
 
   return (
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.paper, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(64) }}>
