@@ -53,7 +53,7 @@ The apps use the deployed Spotter backend out of the box (public endpoints in `p
 
 ### Phone camera app
 
-The published version is at **https://mallikarjuntr.github.io/spotter-tv-app/** — this is what the TV's QR code opens.
+The published version is at **https://mallikarjuntr.github.io/spotter-tv-app/**. The TV's QR code opens the short link **https://spotter-tv.netlify.app/go?code=1234** (on the [website](https://github.com/Mallikarjuntr/spotter-tv-landing-page)), which forwards here with the code.
 
 To run it locally:
 

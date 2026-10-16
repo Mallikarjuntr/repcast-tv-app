@@ -96,13 +96,13 @@ export function PairScreen({ onReady }: { onReady: (channel: string) => void }) 
             <>
               {/* The code draws its own light quiet zone; the rounded clip just softens the corners. */}
               <View style={{ borderRadius: s(12), overflow: 'hidden' }}>
-                <QrCode value={`${config.cameraAppUrl}?code=${state.session.code}`} size={s(188)} />
+                <QrCode value={`${config.pairUrl}?code=${state.session.code}`} size={s(188)} />
               </View>
               <View style={{ gap: s(6), flexShrink: 1 }}>
                 <Kicker size={13}>OR TYPE THIS CODE</Kicker>
                 <Headline text={spacedCode(state.session.code)} size={state.session.code.length > 4 ? 52 : 62} />
                 <Text style={{ fontFamily: fonts.sans, fontSize: s(13), lineHeight: s(18), color: colors.faint }}>
-                  {'at ' + config.cameraAppUrl.replace('https://', '').replace(/\/$/, '').replace('/', '\n/')}
+                  {'at ' + config.pairUrl.replace('https://', '').replace(/\/$/, '').replace('/', '\n/')}
                 </Text>
               </View>
             </>
