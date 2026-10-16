@@ -36,7 +36,6 @@
           <legend class="sr-only">Options</legend>
           <label><input type="radio" name="facing" value="user" checked /> Front camera</label>
           <label><input type="radio" name="facing" value="environment" /> Back camera</label>
-          <label><input type="checkbox" id="speak" checked /> Count out loud</label>
         </fieldset>
         <button class="primary" id="start" type="button">Start camera</button>
         <p class="note">
@@ -51,7 +50,7 @@
           <video id="video" playsinline muted></video>
           <canvas id="overlay"></canvas>
           <div class="tag">You · live</div>
-          <div class="count" aria-live="polite"><span id="count">0</span><span class="of">reps</span></div>
+          <div class="count" aria-live="polite"><span id="count">0</span><span class="of" id="count-of">reps</span></div>
         </div>
 
         <div class="coach card">

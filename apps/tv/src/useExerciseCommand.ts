@@ -1,21 +1,25 @@
-import { controlChannel, openChannel, type LiveChannel } from '@spotter/shared';
+import { controlChannel, openChannel, type ExerciseCommand, type LiveChannel } from '@spotter/shared';
 import { useEffect, useRef } from 'react';
 
-/** Repeated this often, so a phone that (re)joins mid-session learns what to judge. */
-const HEARTBEAT_MS = 4000;
+/** Repeated this often, so a phone that (re)joins mid-session catches up within a couple of seconds. */
+const HEARTBEAT_MS = 2000;
+
+/** What the TV tells the phone: the exercise to judge and where the session is (see ExerciseCommand). */
+export type CoachCommand = Omit<ExerciseCommand, 'type' | 'at'>;
 
 /**
- * Tells the phone which exercise to judge (an engine id such as "squat"), or null for moves the
- * camera doesn't judge. One publish-only connection for the whole session; the id is sent when it
- * changes and as a heartbeat.
+ * Keeps the phone in step with the TV: which exercise to judge, and the session's phase, set and
+ * count, so the phone judges only during a set and shows the TV's count. One publish-only
+ * connection; the command is sent whenever it changes and as a heartbeat.
  */
-export function useExerciseCommand(sessionChannel: string, exerciseId: string | null): void {
+export function useExerciseCommand(sessionChannel: string | null, command: CoachCommand, { endOnLeave = false } = {}): void {
   const channel = useRef<LiveChannel | null>(null);
-  const current = useRef(exerciseId);
-  current.current = exerciseId;
+  const current = useRef(command);
+  current.current = command;
 
   useEffect(() => {
-    const send = () => channel.current?.send({ type: 'exercise', id: current.current, at: Date.now() }, true);
+    if (!sessionChannel) return;
+    const send = () => channel.current?.send({ type: 'exercise', ...current.current, at: Date.now() }, true);
     channel.current = openChannel(controlChannel(sessionChannel), {
       onStatus: (status) => {
         if (status === 'live') send();
@@ -24,12 +28,16 @@ export function useExerciseCommand(sessionChannel: string, exerciseId: string | 
     const timer = setInterval(send, HEARTBEAT_MS);
     return () => {
       clearInterval(timer);
+      // Leaving the session (finished, or BACK): tell the phone at once rather than letting it time out.
+      if (endOnLeave) channel.current?.send({ type: 'exercise', id: null, phase: 'done', at: Date.now() }, true);
       channel.current?.close();
       channel.current = null;
     };
   }, [sessionChannel]);
 
+  // Compare by value: callers build a new object each render.
+  const key = JSON.stringify(command);
   useEffect(() => {
-    channel.current?.send({ type: 'exercise', id: exerciseId, at: Date.now() }, true);
-  }, [exerciseId]);
+    channel.current?.send({ type: 'exercise', ...current.current, at: Date.now() }, true);
+  }, [key]);
 }

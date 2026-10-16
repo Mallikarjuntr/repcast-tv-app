@@ -1,5 +1,5 @@
 import { BODY_PARTS, config, type BodyPart } from '@spotter/shared';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { FloorPlan } from '../components/FloorPlan';
 import { FocusButton } from '../components/FocusButton';
@@ -10,6 +10,7 @@ import { Card, PanelTag, PrivacyLine } from '../components/Studio';
 import { Headline, Kicker, Note } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { latestOf } from '../poseFeed';
+import { useExerciseCommand } from '../useExerciseCommand';
 import { usePairing } from '../usePairing';
 import { useSpokenGuidance } from '../useSpokenGuidance';
 import { useVideoReceiver } from '../useVideoReceiver';
@@ -44,15 +45,24 @@ function spacedCode(code: string): string {
   return code.length === 6 ? `${code.slice(0, 3)} ${code.slice(3)}` : code.split('').join(' ');
 }
 
+/** How long the TV counts down before starting by itself, once it can see what the move needs. */
+const COUNTDOWN_MS = 5000;
+/** Dropping out of view for longer than this cancels the countdown (a stumble doesn't). */
+const LOST_GRACE_MS = 1500;
+
 function missingCue(missing: BodyPart[]): string {
   if (missing.includes('head') || missing.includes('hips')) return 'Step into the middle of the frame';
   return `Step back a little — I can't see your ${missing.map((p) => PART_LABEL[p].toLowerCase()).join(' and ')}`;
 }
 
-export function PairScreen({ onReady }: { onReady: (channel: string) => void }) {
+export function PairScreen({ exercise, onReady }: { exercise: { id: string; name: string } | null; onReady: (channel: string) => void }) {
   const s = useScale();
   const { state, newCode, pose } = usePairing();
   const [panel, setPanel] = useState({ width: 0, height: 0 });
+  const [startsAt, setStartsAt] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
+  const lostSince = useRef<number | null>(null);
+  const started = useRef(false);
 
   const ready = state.phase === 'ready' ? state : null;
   const video = useVideoReceiver(ready?.session.channel ?? null);
@@ -68,6 +78,46 @@ export function PairScreen({ onReady }: { onReady: (channel: string) => void }) 
   useEffect(() => {
     if (phoneConnected) say(PHONE_LINKED_LINE);
   }, [phoneConnected]);
+
+  // Starts by itself: once the camera is on and can see what the first move needs, a short countdown
+  // runs (the phone shows it too); "Start now" skips it, and stepping out of view for a moment stops it.
+  const canStart = phoneConnected && ready?.framing != null && allVisible && !hint;
+  const start = useCallback(() => {
+    if (started.current || !ready) return;
+    started.current = true;
+    onReady(ready.session.channel);
+  }, [onReady, ready]);
+  useEffect(() => {
+    if (canStart) {
+      lostSince.current = null;
+      // The clock only ticks while counting down, so bring it up to date as the countdown starts.
+      setNow(Date.now());
+      setStartsAt((t) => t ?? Date.now() + COUNTDOWN_MS);
+    } else if (startsAt !== null) {
+      lostSince.current ??= Date.now();
+    }
+  }, [canStart, startsAt]);
+  useEffect(() => {
+    if (startsAt === null) return;
+    const timer = setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      if (lostSince.current !== null && t - lostSince.current > LOST_GRACE_MS) {
+        lostSince.current = null;
+        setStartsAt(null);
+      } else if (t >= startsAt) {
+        start();
+      }
+    }, 250);
+    return () => clearInterval(timer);
+  }, [startsAt, start]);
+  const secondsLeft = startsAt === null ? null : Math.max(1, Math.ceil((startsAt - now) / 1000));
+  useExerciseCommand(ready?.session.channel ?? null, {
+    id: exercise?.id ?? null,
+    name: exercise?.name,
+    phase: secondsLeft === null ? 'pair' : 'countdown',
+    secondsLeft: secondsLeft ?? undefined,
+  });
   // Spoken help to get into frame, then a go-ahead once the coach can see what it needs.
   useSpokenGuidance(hint ? HINT_LINES[hint] : allVisible && ready?.framing ? READY_LINE : null, phoneConnected, hint !== null);
 
@@ -163,9 +213,18 @@ export function PairScreen({ onReady }: { onReady: (channel: string) => void }) 
           ) : null}
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: s(20), minHeight: s(66) }}>
-          <Text style={{ flexShrink: 1, fontFamily: fonts.displaySemi, fontSize: s(26), color: allVisible && !hint ? colors.text : colors.textSoft }}>{guidance}</Text>
-          {ready?.phoneConnected ? (
-            <FocusButton label={allVisible ? 'Start workout' : 'Start anyway'} onPress={() => onReady(ready.session.channel)} variant={allVisible ? 'primary' : 'secondary'} play={allVisible} preferredFocus={allVisible} />
+          {secondsLeft !== null ? (
+            <Text style={{ flexShrink: 1, fontFamily: fonts.display, fontSize: s(34), color: colors.accent }}>
+              {`Starting in ${secondsLeft}…`}
+              <Text style={{ fontFamily: fonts.displaySemi, fontSize: s(24), color: colors.textSoft }}>{exercise ? `  ${exercise.name} first` : ''}</Text>
+            </Text>
+          ) : (
+            <Text style={{ flexShrink: 1, fontFamily: fonts.displaySemi, fontSize: s(26), color: allVisible && !hint ? colors.text : colors.textSoft }}>{guidance}</Text>
+          )}
+          {secondsLeft !== null ? (
+            <FocusButton label="Start now" onPress={start} play preferredFocus />
+          ) : ready?.phoneConnected ? (
+            <FocusButton label={allVisible ? 'Start workout' : 'Start anyway'} onPress={start} variant={allVisible ? 'primary' : 'secondary'} play={allVisible} preferredFocus={allVisible} />
           ) : null}
         </View>
       </View>

@@ -91,8 +91,9 @@ Spotter then appears in the Fire TV's apps list. It also runs on the Android TV 
 ### Try a coached workout
 
 1. On the TV: **Start session → Start coaching**. The TV shows a QR code and a 6-digit code.
-2. On a phone **on the same Wi-Fi as the TV**: scan the QR code (or open the camera page and type the code), tap **Start camera** and allow the camera.
-3. Prop the phone at hip height about 2–3 m away, turned about 45°. When the TV ticks head, hips, knees and feet, press **Start workout** and squat.
+2. On a phone **on the same Wi-Fi as the TV**: scan the QR code (or open the camera page and type the code) and allow the camera. The camera starts by itself (on some browsers, tap **Start camera**).
+3. Prop the phone at hip height about 2–3 m away, turned about 45°, and step back until the TV ticks what it needs. The TV counts down from 5 and starts by itself (or press **Start now**). The session goes straight into the moves the camera checks — squats, lunges, jumping jacks; warm-ups and stretches are in Follow along.
+4. The TV runs the session and keeps the count; the phone shows the same count, set and rest, and the TV does the talking.
 
 No phone handy? `node tools/fake-phone.mjs <code> --start-after 8 --rest 32` plays a scripted 3 × 12 squat session against the code on the TV (no video). Or open the camera page on a computer with `?code=<code>&src=<clip url>` to send a recorded squat, with video, to the TV.
 

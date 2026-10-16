@@ -55,22 +55,32 @@ export function framing(pose: Point[] | undefined, required: readonly PointName[
 }
 
 /**
- * Holds a hint back until it has been true for a moment, and keeps it until it has been gone for a
- * moment, so a stumble or one rep (side-on for a second at the bottom of a squat) can't flip it.
+ * Holds a new value back until it has lasted a moment, so a stumble or one rep can't flip it (the
+ * knees drop out of view at the bottom of a squat; a body turns side-on for a second).
  */
-export class SteadyHint {
-  private candidate: FramingHint | undefined;
+export class Steady<T> {
+  private candidate: T;
   private since = 0;
-  private current: FramingHint | undefined;
+  private current: T;
 
-  constructor(private readonly holdMs = 1500) {}
+  constructor(initial: T, private readonly holdMs = 1500) {
+    this.candidate = initial;
+    this.current = initial;
+  }
 
-  update(hint: FramingHint | undefined, now: number): FramingHint | undefined {
-    if (hint !== this.candidate) {
-      this.candidate = hint;
+  update(value: T, now: number): T {
+    if (value !== this.candidate) {
+      this.candidate = value;
       this.since = now;
     }
-    if (now - this.since >= this.holdMs) this.current = hint;
+    if (now - this.since >= this.holdMs) this.current = value;
     return this.current;
+  }
+}
+
+/** The framing hint, steadied the same way. */
+export class SteadyHint extends Steady<FramingHint | undefined> {
+  constructor(holdMs = 1500) {
+    super(undefined, holdMs);
   }
 }

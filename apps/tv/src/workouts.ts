@@ -355,3 +355,20 @@ export function estimateSeconds(session: Session): number {
     return sum + work + rests;
   }, 0);
 }
+
+/** A move the phone's camera can judge rep by rep. */
+export type JudgedStep = Extract<Step, { kind: 'reps' }> & { engine: string };
+
+/**
+ * The moves of a session the camera checks, in order. A camera session runs only these: warm-ups,
+ * holds and stretches are for Follow along, where the trainer shows them.
+ */
+export function judgedSteps(session: Session): JudgedStep[] {
+  return session.steps.filter((s): s is JudgedStep => s.kind === 'reps' && s.engine !== undefined);
+}
+
+/** The camera-checked part of a session, as its own session (for its length and description). */
+export function coachedSession(session: Session): Session {
+  const steps = judgedSteps(session);
+  return { ...session, steps, summary: describe(steps) };
+}

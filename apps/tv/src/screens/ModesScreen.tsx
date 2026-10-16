@@ -8,6 +8,8 @@ export type Mode = 'core' | 'coach';
 interface ModeCardProps {
   kicker: string;
   title: string;
+  /** What this mode runs today, e.g. "Squats, lunges and jumping jacks · about 6 min". */
+  today?: string;
   points: string[];
   action: string;
   /** The paid mode's points and kicker are in the accent. */
@@ -19,7 +21,7 @@ interface ModeCardProps {
 }
 
 /** The whole card is one button: focus rings it, and its action chip turns orange. */
-function ModeCard({ kicker, title, points, action, highlight, badge, price, preferredFocus, onPress }: ModeCardProps) {
+function ModeCard({ kicker, title, today, points, action, highlight, badge, price, preferredFocus, onPress }: ModeCardProps) {
   const s = useScale();
   return (
     <Pressable style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`${title}. ${action}`} onPress={onPress} hasTVPreferredFocus={preferredFocus}>
@@ -40,7 +42,10 @@ function ModeCard({ kicker, title, points, action, highlight, badge, price, pref
                   </View>
                 ) : null}
               </View>
-              <Text style={{ fontFamily: fonts.display, fontSize: s(46), color: colors.text }}>{title}</Text>
+              <View style={{ gap: s(4) }}>
+                <Text style={{ fontFamily: fonts.display, fontSize: s(46), color: colors.text }}>{title}</Text>
+                {today ? <Text style={{ fontFamily: fonts.sansSemi, fontSize: s(17), color: highlight ? colors.accent : colors.muted }}>{today}</Text> : null}
+              </View>
               <View style={{ gap: s(10) }}>
                 {points.map((point) => (
                   <View key={point} style={{ flexDirection: 'row', alignItems: 'center', gap: s(12) }}>
@@ -65,10 +70,14 @@ function ModeCard({ kicker, title, points, action, highlight, badge, price, pref
 
 export function ModesScreen({
   sessionLabel,
+  coreToday,
+  coachToday,
   onChoose,
   freeCoachSessionsLeft,
 }: {
   sessionLabel: string;
+  coreToday?: string;
+  coachToday?: string;
   onChoose: (mode: Mode) => void;
   freeCoachSessionsLeft: number;
 }) {
@@ -84,6 +93,7 @@ export function ModesScreen({
         <ModeCard
           kicker="CORE · FREE · NO CAMERA"
           title="Follow along"
+          today={coreToday}
           points={['A voice that guides every move', 'Timers and a tempo beat to follow', 'Reps counted for you, on the beat', 'Streaks and progress, week by week']}
           action="Start following along"
           onPress={() => onChoose('core')}
@@ -91,6 +101,7 @@ export function ModesScreen({
         <ModeCard
           kicker="SMART COACHING · PAID"
           title="Coach me on camera"
+          today={coachToday}
           points={['Form checks on every single rep', 'Uses the phone or webcam you already own', "Your coach's note after every session", 'Plans that adapt to how you moved']}
           action="Start coaching"
           highlight

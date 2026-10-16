@@ -71,11 +71,11 @@ export function ReceiptScreen({ summary, history, coach, sessionNumber, streak, 
       </View>
 
       <View style={{ flex: 1, flexDirection: 'row', gap: s(24) }}>
-        <View style={{ width: s(430), gap: s(14) }}>
+        <View style={{ width: s(460), gap: s(14) }}>
           <View style={{ flexDirection: 'row', gap: s(12) }}>
-            <StatTile style={{ flex: 1 }} size={52} value={`${summary.counted}`} label="TOTAL REPS" />
-            <StatTile style={{ flex: 1 }} size={52} value={summary.cleanPct === null ? '—' : `${summary.cleanPct}%`} label="CLEAN FORM" color={colors.accent} />
-            <StatTile style={{ flex: 1 }} size={52} value={`${summary.noReps}`} label="DIDN'T COUNT" />
+            <StatTile style={{ flex: 1 }} size={46} value={`${summary.counted}`} label="TOTAL REPS" />
+            <StatTile style={{ flex: 1 }} size={46} value={summary.cleanPct === null ? '—' : `${summary.cleanPct}%`} label="CLEAN FORM" color={colors.accent} />
+            <StatTile style={{ flex: 1 }} size={46} value={`${summary.noReps}`} label="DIDN'T COUNT" />
           </View>
           <Card style={{ flex: 1, gap: s(10), borderLeftWidth: s(5), borderLeftColor: colors.accent }}>
             <Kicker size={13} color={colors.accent}>

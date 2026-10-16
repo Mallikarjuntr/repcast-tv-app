@@ -1,7 +1,7 @@
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
-import { BODY_PARTS, controlChannel, findSession, isPairingCode, openChannel, POSE_SOURCE_INDEX, type BodyPart, type LiveChannel, type SpotterEvent } from '@spotter/shared';
+import { BODY_PARTS, controlChannel, findSession, isPairingCode, openChannel, POSE_SOURCE_INDEX, type BodyPart, type ExerciseCommand, type LiveChannel, type SpotterEvent } from '@spotter/shared';
 import { EXERCISES, isSideOn, RepDetector, squat, type PointName, type RepExercise, type RepResult, type RepUpdate } from 'spotter-movement';
-import { framing, SteadyHint } from './framing';
+import { framing, Steady, SteadyHint } from './framing';
 import { VideoLink } from './video-link';
 
 const MODEL_URL = {
@@ -21,6 +21,8 @@ const BONES: [number, number][] = [
 const PART_POINTS: Record<BodyPart, number[]> = { head: [0], hips: [23, 24], knees: [25, 26], feet: [27, 28] };
 const FRAMING_MIN_GAP_MS = 400;
 const FRAMING_HEARTBEAT_MS = 2000;
+/** No word from the TV for this long (it repeats every 2 s): it has left the session. */
+const TV_SILENT_MS = 8000;
 /** About 12 outline updates a second is smooth on a TV and light on data. */
 const POSE_INTERVAL_MS = 80;
 
@@ -39,11 +41,11 @@ const ui = {
   session: $('session'),
   start: $<HTMLButtonElement>('start'),
   error: $('error'),
-  speak: $<HTMLInputElement>('speak'),
   stage: $('stage'),
   video: $<HTMLVideoElement>('video'),
   overlay: $<HTMLCanvasElement>('overlay'),
   count: $('count'),
+  countOf: $('count-of'),
   cue: $('cue'),
   hint: $('hint'),
   angle: $('angle'),
@@ -66,6 +68,9 @@ const video = new URLSearchParams(location.search).get('video') === 'off' ? null
 let lastFraming = '';
 let lastFramingAt = 0;
 const steadyHint = new SteadyHint();
+// "Ready" waits a moment before changing either way, so the TV's countdown and buttons don't flicker
+// when the knees drop out of view at the bottom of a squat.
+const steadyReady = new Steady(false, 1200);
 let lastPoseAt = 0;
 
 /** Important messages (hello, reps) fall back to HTTPS if the socket is down. */
@@ -106,7 +111,7 @@ async function linkToTv(code: string): Promise<void> {
     control?.close();
     control = openChannel(controlChannel(session.channel), {
       onEvent: (event) => {
-        if (event.type === 'exercise') setExercise(event.id);
+        if (event.type === 'exercise') onTvCommand(event);
       },
     });
     video?.connect(session.channel);
@@ -114,6 +119,7 @@ async function linkToTv(code: string): Promise<void> {
     ui.pairStatus.textContent = `Linked to your TV · code ${code}`;
     ui.pairForm.hidden = true;
     send({ type: 'hello', device: navigator.userAgent.includes('Android') ? 'Android phone' : 'phone', at: Date.now() });
+    showTvState();
   } catch (err) {
     tv?.close();
     tv = null;
@@ -133,12 +139,14 @@ function reportFraming(pose: NormalizedLandmark[] | undefined, now: number): voi
   // Floor exercises are filmed side-on on purpose, so that isn't a problem to fix there.
   const view = framing(pose, exercise?.required ?? UNJUDGED_REQUIRED, sideOn && !exercise?.lying);
   const hint = steadyHint.update(view.hint, now);
-  const key = JSON.stringify({ visible, sideOn, ready: view.ready, hint });
+  const ready = steadyReady.update(view.ready, now);
+  framingHint = hint;
+  const key = JSON.stringify({ visible, sideOn, ready, hint });
   const changed = key !== lastFraming && now - lastFramingAt >= FRAMING_MIN_GAP_MS;
   if (changed || now - lastFramingAt >= FRAMING_HEARTBEAT_MS) {
     lastFraming = key;
     lastFramingAt = now;
-    send({ type: 'framing', visible, sideOn, ready: view.ready, hint, at: Date.now() });
+    send({ type: 'framing', visible, sideOn, ready, hint, at: Date.now() });
   }
 }
 
@@ -158,10 +166,85 @@ function setExercise(id: string | null): void {
   exercise = judged;
   if (judged) detector = new RepDetector(judged);
   reps.length = 0;
-  ui.count.textContent = '0';
   ui.log.replaceChildren();
-  ui.statusTag.textContent = judged ? judged.name.toUpperCase() : 'FOLLOWING ALONG';
-  setCue(judged ? `${judged.name} — when you're ready` : 'Follow the trainer on the TV');
+}
+
+/**
+ * The TV runs the session and keeps the count; the phone follows it. Older TVs send only the
+ * exercise id (no phase): then the phone judges that exercise all the time, as it used to.
+ */
+let tvCommand: ExerciseCommand | null = null;
+let tvCommandAt = 0;
+/** The latest steadied framing hint, to show while getting ready. */
+let framingHint: string | undefined;
+
+const isWork = (cmd: ExerciseCommand) => cmd.id !== null && (cmd.phase === undefined || cmd.phase === 'work');
+
+function onTvCommand(cmd: ExerciseCommand): void {
+  const prev = tvCommand;
+  tvCommand = cmd;
+  tvCommandAt = performance.now();
+  setExercise(cmd.id);
+  // Every set starts the engine afresh, so moving about during a rest can't finish a rep.
+  const freshSet = isWork(cmd) && (!prev || !isWork(prev) || prev.set !== cmd.set || prev.id !== cmd.id);
+  if (freshSet && exercise) {
+    detector = new RepDetector(exercise);
+    setCue(`Go — ${cmd.name?.toLowerCase() ?? exercise.name.toLowerCase()}`);
+  }
+  showTvState();
+}
+
+/** Whether the phone should be judging reps right now. */
+function judging(now: number): boolean {
+  if (!tv) return exercise !== null; // On its own (no TV): a squat test bench.
+  if (!tvCommand || now - tvCommandAt > TV_SILENT_MS) return false;
+  return isWork(tvCommand) && exercise !== null;
+}
+
+const HINT_TEXT: Record<string, string> = {
+  'step-in': 'Step into view of the phone',
+  'step-back': 'Step back a little',
+  'come-closer': 'Come a little closer',
+  'move-left': 'Move a little to your left',
+  'move-right': 'Move a little to your right',
+  'turn-phone': 'Turn the phone about 45° to you',
+};
+
+/** Shows what the TV is doing: the set and its count, a rest or countdown, or a pause. */
+function showTvState(): void {
+  if (!tv) return;
+  const now = performance.now();
+  const cmd = tvCommand;
+  const countBox = ui.count.parentElement!;
+  // Never shows 0: the TV moves on at zero, and its next message replaces this.
+  const left = cmd?.secondsLeft !== undefined ? Math.max(1, Math.ceil(cmd.secondsLeft - (now - tvCommandAt) / 1000)) : null;
+  const show = (tag: string, count: string | null, of: string, cue?: string) => {
+    ui.statusTag.textContent = tag;
+    countBox.hidden = count === null;
+    if (count !== null) ui.count.textContent = count;
+    ui.countOf.textContent = of;
+    if (cue !== undefined) setCue(cue);
+  };
+  if (!cmd) return show('LINKED TO TV', null, '', 'Start a session on your TV');
+  // A finished session stays finished; any other silence means the TV has gone.
+  if (cmd.phase !== 'done' && now - tvCommandAt > TV_SILENT_MS) return show('TV NOT FOUND', null, '', 'Lost your TV — is Spotter still open on it?');
+  const name = (cmd.name ?? exercise?.name ?? '').toUpperCase();
+  switch (cmd.phase) {
+    case undefined:
+      return show(cmd.id ? name : 'FOLLOWING ALONG', ui.count.textContent ?? '0', 'reps', cmd.id ? undefined : 'Follow the trainer on the TV');
+    case 'pair':
+      return show('GET READY', null, '', HINT_TEXT[framingHint ?? ''] ?? `Stand where the phone can see you${cmd.name ? ` — ${cmd.name.toLowerCase()} first` : ''}`);
+    case 'countdown':
+      return show('GET READY', String(left ?? ''), 'starting', `Starting in ${left ?? ''}${cmd.name ? ` — ${cmd.name.toLowerCase()} first` : ''}`);
+    case 'work':
+      return show(cmd.set && cmd.sets ? `${name} · SET ${cmd.set} OF ${cmd.sets}` : name, String(cmd.count ?? 0), cmd.target ? `/ ${cmd.target}` : 'reps');
+    case 'rest':
+      return show('REST', String(left ?? ''), 'seconds', `Rest — next: ${cmd.next ?? 'the next set'}`);
+    case 'paused':
+      return show('PAUSED', String(cmd.count ?? 0), cmd.target ? `/ ${cmd.target}` : 'reps', 'Paused on your TV');
+    case 'done':
+      return show('DONE', null, '', 'Session done — see your TV for the results');
+  }
 }
 const reps: RepResult[] = [];
 let landmarker: PoseLandmarker | null = null;
@@ -239,16 +322,6 @@ async function keepScreenOn(): Promise<void> {
   }
 }
 
-function say(text: string): void {
-  if (!ui.speak.checked || !('speechSynthesis' in window)) return;
-  const utterance = new SpeechSynthesisUtterance(text);
-  const voice = speechSynthesis.getVoices().find((v) => v.lang === 'en-IN') ?? speechSynthesis.getVoices().find((v) => v.lang.startsWith('en'));
-  if (voice) utterance.voice = voice;
-  utterance.rate = 1.05;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(utterance);
-}
-
 function draw(pose: NormalizedLandmark[] | undefined): void {
   const ctx = ui.overlay.getContext('2d');
   if (!ctx) return;
@@ -297,22 +370,18 @@ function onRep(rep: RepResult): void {
     at: Date.now(),
   });
 
+  // The TV speaks; the phone shows the verdict. Linked to a TV, the count shown is the TV's (it
+  // arrives a moment later); on its own the phone counts.
   if (!rep.counted) {
     // An honest spotter: say plainly that it didn't count, and why.
     setCue(`No rep — ${rep.cues[0] ?? "that one doesn't count"}`, true);
-    say(`No rep. ${rep.cues[0] ?? ''}`);
   } else {
-    ui.count.textContent = String(rep.count);
+    if (!tv) ui.count.textContent = String(rep.count);
     const countBox = ui.count.parentElement!;
     countBox.classList.add('bump');
     setTimeout(() => countBox.classList.remove('bump'), 350);
-    if (rep.verdict === 'fix') {
-      setCue(rep.cues.join(' · '), true);
-      say(`${rep.count}. ${rep.cues[0]}`);
-    } else {
-      setCue(rep.count % 5 === 0 ? `${rep.count} — lovely, keep going` : 'Good rep');
-      say(String(rep.count));
-    }
+    if (rep.verdict === 'fix') setCue(rep.cues.join(' · '), true);
+    else setCue('Good rep');
   }
 
   const item = document.createElement('li');
@@ -360,10 +429,12 @@ function loop(): void {
       noPersonFrames = 0;
       const side = isSideOn({ t: now, landmarks: pose, aspect: video.videoWidth / video.videoHeight }, 0.5) === true;
       sideOnSince = side ? (sideOnSince ?? now) : null;
-      if (exercise) render(detector.update({ t: now, landmarks: pose, world: result.worldLandmarks[0], aspect: video.videoWidth / video.videoHeight }));
-    } else if (++noPersonFrames > 15) {
+      if (judging(now)) render(detector.update({ t: now, landmarks: pose, world: result.worldLandmarks[0], aspect: video.videoWidth / video.videoHeight }));
+    } else if (++noPersonFrames > 15 && (!tv || judging(now))) {
       setCue("I can't see you yet — step into the frame", true);
     }
+    // Rests and countdowns tick down between the TV's messages.
+    if (tv && !judging(now)) showTvState();
     if (lastFrameAt) fps = fps ? fps * 0.9 + (1000 / (now - lastFrameAt)) * 0.1 : 1000 / (now - lastFrameAt);
     lastFrameAt = now;
     ui.fps.textContent = fps.toFixed(0);
@@ -399,7 +470,8 @@ function results(): string {
   );
 }
 
-ui.start.addEventListener('click', async () => {
+/** Starts the camera; `auto` (opened from the TV's QR code) fails quietly back to the button. */
+async function startSession(auto: boolean): Promise<void> {
   ui.error.hidden = true;
   if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
     showError('The camera needs a secure (https) page. Open the link GitHub Pages gave you.');
@@ -408,7 +480,6 @@ ui.start.addEventListener('click', async () => {
   facing = (document.querySelector<HTMLInputElement>('input[name="facing"]:checked')?.value as typeof facing) ?? 'user';
   ui.start.disabled = true;
   ui.start.textContent = 'Loading the pose model…';
-  say('');
   try {
     landmarker ??= await loadLandmarker();
     await startCamera();
@@ -416,6 +487,8 @@ ui.start.addEventListener('click', async () => {
     ui.start.disabled = false;
     ui.start.textContent = 'Start camera';
     const name = err instanceof DOMException ? err.name : '';
+    // Some browsers only open the camera after a tap; then the button is the way in.
+    if (auto && name !== 'NotAllowedError') return;
     showError(name === 'NotAllowedError' ? 'Camera permission was blocked. Allow it in the browser settings and try again.' : `Couldn't start: ${String(err)}`);
     return;
   }
@@ -423,9 +496,12 @@ ui.start.addEventListener('click', async () => {
   ui.session.hidden = false;
   lastFramingAt = 0;
   send({ type: 'hello', device: 'camera started', at: Date.now() });
+  showTvState();
   await keepScreenOn();
   requestAnimationFrame(loop);
-});
+}
+
+ui.start.addEventListener('click', () => void startSession(false));
 
 ui.reset.addEventListener('click', () => {
   detector.reset();
@@ -470,9 +546,15 @@ ui.pairForm.addEventListener('submit', (e) => {
 });
 
 const codeFromQr = new URLSearchParams(location.search).get('code');
-if (codeFromQr && isPairingCode(codeFromQr)) void linkToTv(codeFromQr);
+if (codeFromQr && isPairingCode(codeFromQr)) {
+  // Opened from the TV's QR code: link and start the camera straight away (the browser still asks
+  // for camera permission the first time).
+  void linkToTv(codeFromQr).then(() => {
+    if (tv && !clipUrl) void startSession(true);
+  });
+}
 // A clip needs no camera permission, so the test bench starts by itself.
-if (clipUrl) ui.start.click();
+if (clipUrl) void startSession(true);
 
 window.addEventListener('pagehide', () => {
   send({ type: 'bye', at: Date.now() });

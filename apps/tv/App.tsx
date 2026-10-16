@@ -35,7 +35,7 @@ import {
 import { spotterNote, summarizeSession, type MoveResult, type WorkoutSummary } from './src/summary';
 import { useCoachNote } from './src/useCoachNote';
 import type { RepNote } from './src/useLiveWorkout';
-import { applySwaps, estimateSeconds, LEGS_GENTLY, type Swaps } from './src/workouts';
+import { applySwaps, coachedSession, estimateSeconds, judgedSteps, LEGS_GENTLY, type Swaps } from './src/workouts';
 import { profileColour } from './src/components/Avatar';
 import { colors } from './src/theme';
 
@@ -104,6 +104,7 @@ export default function App() {
 
   const [swaps, setSwaps] = useState<Swaps>({});
   const today = useMemo(() => applySwaps(LEGS_GENTLY, swaps), [swaps]);
+  const firstJudged = judgedSteps(today)[0];
 
   const choose = useCallback((chosen: Profile) => {
     setProfile(chosen);
@@ -221,11 +222,19 @@ export default function App() {
       {screen.name === 'swap' && <SwapScreen base={LEGS_GENTLY} swaps={swaps} onDone={finishSwaps} />}
       {screen.name === 'modes' && (
         <ModesScreen
-          sessionLabel={`LEGS, GENTLY · ${Math.round(estimateSeconds(today) / 60)} MIN`}
+          sessionLabel="LEGS, GENTLY"
+          coreToday={`Every move, warm-up to stretch · ${Math.round(estimateSeconds(today) / 60)} min`}
+          coachToday={`${coachedSession(today).summary.replace(/\.$/, '')} · about ${Math.max(1, Math.round(estimateSeconds(coachedSession(today)) / 60))} min`}
           freeCoachSessionsLeft={freeCoachSessionsLeft(sessions)}
           onChoose={(mode) => go(mode === 'coach' ? { name: 'pair' } : { name: 'follow' })} />
       )}
-      {screen.name === 'pair' && <PairScreen onReady={(channel) => go({ name: 'live', channel })} />}
+      {screen.name === 'pair' && (
+        <PairScreen
+          exercise={firstJudged ? { id: firstJudged.engine, name: firstJudged.name } : null}
+          // Replaces the pairing screen, so BACK from the session doesn't land on a countdown that starts it again.
+          onReady={(channel) => swap({ name: 'live', channel })}
+        />
+      )}
       {screen.name === 'live' && <CoachSessionScreen channel={screen.channel} session={today} onFinish={finishLive} />}
       {screen.name === 'receipt' && <CoachReceipt data={screen.receipt} onDone={home} />}
       {screen.name === 'follow' && <FollowScreen session={today} onFinish={finishFollow} />}

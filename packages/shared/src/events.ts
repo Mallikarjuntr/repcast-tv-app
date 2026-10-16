@@ -59,13 +59,36 @@ export type SpotterEvent =
   | ExerciseCommand;
 
 /**
+ * What the TV's coached session is doing, so the phone can follow it: `pair` (getting into view),
+ * `countdown` (about to start), `work` (a set is on: judge reps), `rest`, `paused`, `done`.
+ */
+export type CoachPhase = 'pair' | 'countdown' | 'work' | 'rest' | 'paused' | 'done';
+
+/**
  * The TV telling the phone which exercise to judge now (an engine exercise id from spotter-movement),
- * or null between judged moves (warm-ups, holds). Sent on the session's `controlChannel` whenever it
- * changes and every few seconds, so a phone that joins late catches up.
+ * or null between judged moves. Sent on the session's `controlChannel` whenever it changes and every
+ * couple of seconds, so a phone that joins late catches up.
+ *
+ * The TV is the one source of truth for the session: it counts the reps (from the phone's verdicts)
+ * and runs sets and rests, and the phone shows what the TV says. Older TVs send only `id`; a phone
+ * that gets no `phase` judges `id` all the time, as before.
  */
 export interface ExerciseCommand {
   type: 'exercise';
   id: string | null;
+  phase?: CoachPhase;
+  /** The move's name as the TV shows it, e.g. "Sumo squats". */
+  name?: string;
+  /** Current set (1-based) and how many there are. */
+  set?: number;
+  sets?: number;
+  /** Reps the TV has counted in this set, and the target. */
+  count?: number;
+  target?: number;
+  /** Seconds left in a rest or countdown when this was sent. */
+  secondsLeft?: number;
+  /** The move after this one, during the rest between moves. */
+  next?: string;
   at: number;
 }
 

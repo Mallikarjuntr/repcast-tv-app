@@ -129,6 +129,21 @@ Not checked on the emulator: live phone video (the emulator's network can't rece
 
 The Studio Live screen gives the video a much larger panel, which costs some smoothness and about 50 MB; it stayed stable with ~245 MB free. Follow along (trainer video): 1.7% of frames over 16 ms, median 11 ms.
 
+## 7. Phone and TV side by side (2026-10-16)
+
+The phone and the TV used to drift apart (the phone counting squats on the pairing screen, the phone showing 24 while the TV showed 4), so both are now tested together. A watcher (Node, using the app's own AppSync client) subscribes to the session and logs, with timestamps, every phone→TV message, every TV→phone message and the WebRTC set-up, and reads the phone page's screen (status, count, coach line) over Chrome DevTools twice a second. The phone is the camera page in headless Chrome playing a recorded squat clip; the TV is driven and photographed over ADB. A checker then flags any rep the phone sent outside a TV set, and any moment the phone's count differed from the TV's for more than 1.5 s.
+
+On a **Fire TV Stick 4K (AFTMA08C15, Fire OS 8.1.8.2, Android 11, 32-bit, 1.7 GB)**:
+
+| | Before | After |
+|---|---|---|
+| Reps the phone sent outside a TV set | 55 of 55 | 0 of 45 |
+| Phone count vs TV count | phone 24, TV 4 (running total vs per set) | equal, the phone a ~0.2 s behind |
+| Start | press "Start camera" on the phone, then "Start workout" on the TV | starts by itself after a 5 s countdown once the phone sees you |
+| First thing in a camera session | 40 s warm-up with the trainer video | squats, with your live picture |
+
+Also checked: rest countdowns tick in step on both screens; pause on the remote shows "Paused on your TV" on the phone within ~30 ms and no reps are sent while paused; moving from squats to lunges switches the phone's judging the moment the TV starts the move (a squat then gets "Step one foot forward — that was a squat, this set is lunges"); a phone that reloads mid-set relinks, shows the TV's count again within 1.4 s and its video reconnects within 0.5 s; finishing (or leaving) the session shows "Session done" on the phone. Bugs found and fixed are in `docs/BUGS.md`.
+
 ## Known limits
 
 - **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other. Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.

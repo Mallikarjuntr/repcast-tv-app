@@ -14,6 +14,17 @@ import { useVideoReceiver } from '../useVideoReceiver';
 import { hush, say } from '../voice';
 import { coachIntroLine, countLine, FINISH_LINE, HINT_LINES, NO_REP_LINE, restLine, setIntroLine } from '../voiceLines';
 
+/** A live set's state, as the phone needs it. */
+export interface LiveState {
+  phase: 'work' | 'rest' | 'paused' | 'done';
+  set: number;
+  sets: number;
+  count: number;
+  target: number;
+  secondsLeft?: number;
+  next?: string;
+}
+
 /** How long the coach's marks stay on the outline after a rep. */
 const NOTE_MS = 4000;
 const PRAISE = ['Good depth.', 'Nice and steady.', "That's it — smooth."];
@@ -81,12 +92,15 @@ export function LiveScreen({
   plan,
   next = null,
   onFinish,
+  onState,
 }: {
   channel: string;
   plan: WorkoutPlan;
   /** The next move's name in a multi-move session; null when this is the last. */
   next?: string | null;
   onFinish: (history: RepNote[], seconds: number) => void;
+  /** Where the set is, for the phone to follow (the TV's count is the one that counts). */
+  onState?: (state: LiveState) => void;
 }) {
   const s = useScale();
   const [paused, setPaused] = useState(false);
@@ -136,6 +150,19 @@ export function LiveScreen({
     if (paused) hush();
   }, [paused]);
   useSpokenGuidance(w.hint ? HINT_LINES[w.hint] : null, w.phase === 'work' && !paused);
+
+  const nextUp = w.phase === 'rest' ? (w.restBeforeNextMove && next ? next : `${plan.name}, set ${w.setIndex + 2}`) : undefined;
+  useEffect(() => {
+    onState?.({
+      phase: w.phase === 'work' && paused ? 'paused' : w.phase,
+      set: w.setIndex + 1,
+      sets: plan.sets,
+      count: w.repsInSet,
+      target: plan.reps,
+      secondsLeft: w.phase === 'rest' ? w.restLeftSeconds : undefined,
+      next: nextUp,
+    });
+  }, [onState, w.phase, paused, w.setIndex, plan.sets, w.repsInSet, plan.reps, w.restLeftSeconds, nextUp]);
 
   useEffect(() => {
     if (paused || w.phase === 'done') return;

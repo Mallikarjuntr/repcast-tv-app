@@ -131,10 +131,18 @@ export function HomeScreen({
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(8), paddingLeft: s(6) }}>
               <View style={{ width: s(10), height: s(10), borderRadius: s(5), backgroundColor: streak > 0 ? colors.accent : colors.line }} />
               <Text style={{ fontFamily: fonts.sans, fontSize: s(17), color: colors.muted }}>
-                <Text style={{ fontFamily: fonts.sansBold, color: colors.text }}>
-                  {streak} {streak === 1 ? 'day' : 'days'}
-                </Text>{' '}
-                in a row · best run {best}
+                {streak > 0 ? (
+                  <>
+                    <Text style={{ fontFamily: fonts.sansBold, color: colors.text }}>
+                      {streak} {streak === 1 ? 'day' : 'days'}
+                    </Text>{' '}
+                    in a row · best run {best}
+                  </>
+                ) : best > 0 ? (
+                  `Start a new streak today · best run ${best}`
+                ) : (
+                  'Your first session starts your streak'
+                )}
               </Text>
             </View>
             <FocusButton label="Progress" onPress={onProgress} variant="quiet" size="compact" />

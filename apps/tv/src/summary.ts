@@ -32,6 +32,8 @@ export interface WorkoutSummary {
   name: string;
   plannedSets: number;
   plannedReps: number;
+  /** Reps the whole session asked for (every set of every move). */
+  plannedTotal: number;
   sets: SetSummary[];
   attempts: number;
   counted: number;
@@ -78,6 +80,7 @@ export function summarize(plan: WorkoutPlan, history: RepNote[], seconds: number
     name: plan.name,
     plannedSets: plan.sets,
     plannedReps: plan.reps,
+    plannedTotal: plan.sets * plan.reps,
     sets,
     attempts: history.length,
     counted,
@@ -130,6 +133,7 @@ export function summarizeSession(moves: MoveResult[], seconds: number): { summar
       name: parts.map((p) => p.name).join(', '),
       plannedSets: first?.plannedSets ?? 0,
       plannedReps: first?.plannedReps ?? 0,
+      plannedTotal: parts.reduce((n, p) => n + p.plannedTotal, 0),
       sets: parts.flatMap((p) => p.sets),
       attempts,
       counted,
@@ -186,8 +190,11 @@ export function spotterNote(s: WorkoutSummary): CoachNote {
 
   if (lines.length === 0) lines.push(s.counted > 0 ? 'Every rep counted, and every one was clean.' : "Nothing counted this time — let's set the phone up again and go slower.");
 
+  // Stopped well short of the plan (ended early): the next step is finishing it, not more.
+  const finished = s.plannedTotal === 0 || s.counted >= s.plannedTotal * 0.9;
   let nextTime: string;
   if (s.counted === 0) nextTime = 'phone at hip height, about 2.5 m back, with your whole body in view.';
+  else if (!finished) nextTime = 'the whole session, every set — slower is fine.';
   else if (reason && reason.reason.startsWith('not deep') && reason.count >= 2) nextTime = `${Math.max(6, s.plannedReps - 2)} reps with a 2-second pause at the bottom.`;
   else if (top && top.reps.length >= 2) nextTime = `same reps, slower, ${top.fix}.`;
   else if ((s.cleanPct ?? 0) >= 90 && s.noReps <= 1) nextTime = `we add a set — ${s.plannedSets + 1} × ${s.plannedReps}.`;
@@ -199,6 +206,8 @@ export function spotterNote(s: WorkoutSummary): CoachNote {
 /** The receipt's big line, matched to how the session actually went. */
 export function receiptHeadline(s: WorkoutSummary): { lead: string; italic: string } {
   if (s.cleanPct === null) return { lead: "Let's try\n", italic: 'that again.' };
+  // Ended well before the plan: praise the effort, not the session.
+  if (s.plannedTotal > 0 && s.counted < s.plannedTotal / 2) return { lead: 'A short one.\n', italic: 'It still counts.' };
   const clean = s.cleanPct;
   if (clean >= 80) return { lead: 'That was a\n', italic: 'good one.' };
   if (clean >= 50) return { lead: 'Honest work,\n', italic: 'every rep.' };
