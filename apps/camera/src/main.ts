@@ -111,7 +111,7 @@ async function linkToTv(code: string): Promise<void> {
     });
     video?.connect(session.channel);
     ui.pairStatus.className = 'pair-status linked';
-    ui.pairStatus.textContent = `Linked to your TV · code ${code} ✓`;
+    ui.pairStatus.textContent = `Linked to your TV · code ${code}`;
     ui.pairForm.hidden = true;
     send({ type: 'hello', device: navigator.userAgent.includes('Android') ? 'Android phone' : 'phone', at: Date.now() });
   } catch (err) {
@@ -258,7 +258,7 @@ function draw(pose: NormalizedLandmark[] | undefined): void {
 
   const visible = (i: number) => (pose[i]?.visibility ?? 0) >= 0.5;
   ctx.lineCap = 'round';
-  for (const [color, width] of [['#1d1b17', w * 0.014], ['#f5d547', w * 0.008]] as const) {
+  for (const [color, width] of [['#15120f', w * 0.014], ['#ff7a3d', w * 0.008]] as const) {
     ctx.strokeStyle = color;
     ctx.lineWidth = width;
     for (const [a, b] of BONES) {

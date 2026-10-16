@@ -93,7 +93,7 @@ async function main(): Promise<void> {
     ctx.clearRect(0, 0, overlay.width, overlay.height);
     if (!pose) continue;
     posed++;
-    ctx.strokeStyle = '#f5d547';
+    ctx.strokeStyle = '#ff7a3d';
     ctx.lineWidth = overlay.width * 0.008;
     for (const [a, b] of BONES) {
       const pa = pose[a];

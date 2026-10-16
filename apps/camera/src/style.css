@@ -1,14 +1,22 @@
+/* "Studio", the TV app's look (apps/tv/src/theme.ts): a dark, warm room with cream type and one orange accent. */
 :root {
-  --paper: #efe8da;
-  --paper-deep: #e4dac6;
-  --ink: #1d1b17;
-  --pencil: #5e584c;
-  --pen: #c0321b;
-  --highlighter: #f5d547;
-  --display: 'Fraunces', Georgia, serif;
-  --sans: 'Instrument Sans', system-ui, sans-serif;
-  --hand: 'Kalam', cursive;
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --bg: #15120f;
+  --surface: #221e1a;
+  --raised: #2b2621;
+  --line: #2e2823;
+  --text: #f4efe8;
+  --text-soft: #cfc6ba;
+  --muted: #b5aca0;
+  --faint: #8f867b;
+  --accent: #ff7a3d;
+  --on-accent: #15120f;
+  --live: #ff4d3d;
+  --good: #6fc3a8;
+  --fault: #ff6b5b;
+  --sans: 'Archivo', system-ui, sans-serif;
+  /* Condensed, upper-case: headlines and big numbers. */
+  --display: 'Archivo Narrow', 'Arial Narrow', system-ui, sans-serif;
+  color-scheme: dark;
 }
 
 * {
@@ -21,16 +29,17 @@
 
 body {
   margin: 0;
-  background: var(--paper);
-  color: var(--ink);
+  background: var(--bg);
+  color: var(--text);
   font-family: var(--sans);
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .page {
   max-width: 560px;
   margin: 0 auto;
-  padding: max(20px, env(safe-area-inset-top)) 18px 32px;
+  padding: max(20px, env(safe-area-inset-top)) 16px max(32px, env(safe-area-inset-bottom));
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -39,44 +48,54 @@ body {
 .top {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
+  align-items: center;
+  gap: 12px;
 }
 
 .wordmark {
-  font-family: var(--display);
-  font-style: italic;
-  font-weight: 600;
+  font-weight: 800;
   font-size: 26px;
-  font-variation-settings: 'SOFT' 100, 'WONK' 1;
+  letter-spacing: -0.015em;
 }
 
 .dot {
-  color: var(--pen);
+  color: var(--accent);
 }
 
+/* Small spaced caps label, like the TV's Kicker. */
 .tag,
-.note,
+.kicker,
+.pair-form label,
 .readout dt,
-.log {
-  font-family: var(--mono);
+.of {
+  font-family: var(--sans);
+  font-weight: 700;
   font-size: 12px;
-  letter-spacing: 0.08em;
-  color: var(--pencil);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tag {
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: var(--text-soft);
+  white-space: nowrap;
 }
 
 h1 {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   font-family: var(--display);
-  font-weight: 500;
-  font-size: 44px;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  font-variation-settings: 'opsz' 144, 'SOFT' 50;
+  font-weight: 700;
+  font-size: 56px;
+  line-height: 0.9;
+  text-transform: uppercase;
 }
 
 h1 em {
-  font-weight: 400;
-  font-variation-settings: 'opsz' 144, 'SOFT' 100, 'WONK' 1;
+  font-style: normal;
+  color: var(--accent);
 }
 
 .intro {
@@ -89,29 +108,46 @@ h1 em {
   margin: 0;
   font-size: 17px;
   line-height: 1.45;
+  color: var(--text-soft);
+}
+
+.card {
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 18px;
 }
 
 .pair {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  border-top: 1.5px solid var(--ink);
-  border-bottom: 1.5px solid var(--ink);
-  padding: 12px 0;
+  gap: 12px;
 }
 
 .intro .pair-status {
   font-size: 16px;
+  color: var(--text-soft);
 }
 
-.pair-status.linked {
-  font-family: var(--hand);
-  font-size: 22px;
-  color: var(--ink);
+.intro .pair-status.linked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--text);
 }
 
-.pair-status.failed {
-  color: var(--pen);
+.pair-status.linked::before {
+  content: '';
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--good);
+}
+
+.intro .pair-status.failed {
+  color: var(--fault);
 }
 
 .pair-form {
@@ -120,66 +156,120 @@ h1 em {
   gap: 10px;
 }
 
-.pair-form label {
-  font-family: var(--mono);
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  color: var(--pencil);
-  text-transform: uppercase;
+.pair-form input {
+  flex: 1;
+  min-width: 0;
+  max-width: 150px;
+  min-height: 52px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 30px;
+  letter-spacing: 0.24em;
+  padding: 6px 12px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
 }
 
-.pair-form input {
-  width: 110px;
-  min-height: 48px;
-  font-family: var(--mono);
-  font-size: 24px;
-  letter-spacing: 0.2em;
-  padding: 6px 10px;
-  border: 2px solid var(--ink);
-  border-radius: 3px;
-  background: #fbf8f1;
-  color: var(--ink);
+.pair-form input::placeholder {
+  color: var(--faint);
+  opacity: 0.6;
+}
+
+.pair-form input:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 
 .options {
-  border: 1.5px solid var(--ink);
-  padding: 12px 14px;
+  border: 0;
   margin: 0;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px 18px;
-  font-size: 16px;
+  gap: 8px;
 }
 
+/* Choices as chips; the native control stays for accessibility. */
 .options label {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 32px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: var(--raised);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.options label:has(input:checked) {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.options input {
+  margin: 0;
+  accent-color: var(--accent);
 }
 
 button {
   font-family: var(--sans);
   font-size: 17px;
-  font-weight: 600;
-  color: var(--ink);
-  background: transparent;
-  border: 2px solid var(--ink);
-  border-radius: 3px;
-  padding: 12px 18px;
-  min-height: 48px;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--raised);
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 20px;
+  min-height: 52px;
   cursor: pointer;
 }
 
 button.primary {
-  background: var(--highlighter);
+  background: var(--accent);
+  color: var(--on-accent);
 }
 
-.error {
-  margin: 0;
-  font-family: var(--hand);
-  font-size: 20px;
-  color: var(--pen);
+button:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 2px;
+}
+
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.intro .note {
+  font-size: 14px;
+  color: var(--faint);
+}
+
+.note svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin-top: 0.15em;
+}
+
+.intro .error {
+  font-weight: 700;
+  color: var(--fault);
 }
 
 .session {
@@ -191,8 +281,8 @@ button.primary {
 .stage {
   position: relative;
   width: 100%;
-  background: #2a2824;
-  border-radius: 12px;
+  background: var(--surface);
+  border-radius: 18px;
   overflow: hidden;
 }
 
@@ -214,52 +304,89 @@ button.primary {
   transform: scaleX(-1);
 }
 
+/* "YOU · LIVE", like the TV's PanelTag. */
+.stage .tag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+}
+
+.stage .tag::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--live);
+}
+
 .count {
   position: absolute;
-  left: 12px;
-  bottom: 8px;
+  left: 14px;
+  bottom: 10px;
   display: flex;
   align-items: baseline;
-  gap: 6px;
-  color: var(--paper);
-  text-shadow: 0 1px 6px rgb(0 0 0 / 0.6);
+  gap: 8px;
+  color: var(--text);
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.6);
 }
 
 #count {
   font-family: var(--display);
-  font-weight: 600;
-  font-size: 96px;
-  line-height: 0.9;
-  font-variation-settings: 'opsz' 144, 'SOFT' 30;
+  font-weight: 700;
+  font-size: 104px;
+  line-height: 0.85;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .count.bump #count {
-  color: var(--highlighter);
+  color: var(--accent);
 }
 
-.of {
-  font-family: var(--display);
-  font-style: italic;
-  font-size: 22px;
+.count .of {
+  color: var(--text-soft);
+}
+
+/* What the coach just said, like the TV's CoachCard. */
+.coach {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.coach .kicker {
+  color: var(--accent);
+}
+
+.coach:has(.cue.correction) .kicker {
+  color: var(--fault);
 }
 
 .cue {
   margin: 0;
-  font-family: var(--hand);
-  font-size: 26px;
-  line-height: 1.2;
-  min-height: 1.2em;
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.25;
+  min-height: 1.25em;
 }
 
 .cue.correction {
-  color: var(--pen);
+  color: var(--fault);
 }
 
 .hint {
   margin: 0;
   font-size: 15px;
-  color: var(--pencil);
-  min-height: 1.4em;
+  line-height: 1.4;
+  color: var(--text-soft);
+}
+
+.hint:empty {
+  display: none;
 }
 
 .readout {
@@ -267,33 +394,81 @@ button.primary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-  border-top: 1.5px solid var(--ink);
-  border-bottom: 1.5px solid var(--ink);
-  padding: 8px 0;
+}
+
+.readout div {
+  min-width: 0;
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+}
+
+.readout dt {
+  font-size: 11px;
 }
 
 .readout dd {
-  margin: 2px 0 0;
-  font-family: var(--mono);
-  font-size: 18px;
+  margin: 0;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 26px;
+  line-height: 1;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .log {
   margin: 0;
-  padding-left: 22px;
-  line-height: 1.7;
+  padding: 0 0 0 22px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
   max-height: 200px;
   overflow-y: auto;
 }
 
+.log:empty {
+  display: none;
+}
+
+.log li::marker {
+  color: var(--faint);
+}
+
 .log .bad {
-  color: var(--pen);
+  color: var(--fault);
+}
+
+pre.log {
+  padding: 14px;
+  background: var(--surface);
+  border-radius: 14px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+code {
+  font-size: 0.9em;
+  color: var(--text);
+  word-break: break-all;
 }
 
 .actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.actions button {
+  flex: 1 1 auto;
 }
 
 .sr-only {
