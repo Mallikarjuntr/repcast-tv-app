@@ -165,6 +165,13 @@ export function LiveScreen({
     return () => clearInterval(timer);
   }, [paused, w.phase]);
 
+  const finishEarly = useCallback(() => {
+    if (finished.current) return;
+    finished.current = true;
+    hush();
+    onFinish(w.history, elapsed);
+  }, [elapsed, onFinish, w.history]);
+
   useEffect(() => {
     if (w.phase === 'done' && !finished.current) {
       finished.current = true;
@@ -193,7 +200,11 @@ export function LiveScreen({
           </View>
           <Text style={{ fontFamily: fonts.monoMedium, fontSize: s(28), color: colors.ink }}>{formatTime(elapsed)}</Text>
           {w.phase === 'work' ? (
-            <FocusButton label={paused ? 'Resume' : 'Pause'} onPress={() => setPaused((p) => !p)} variant="link" fontSize={18} preferredFocus />
+            <>
+              <FocusButton label={paused ? 'Resume' : 'Pause'} onPress={() => setPaused((p) => !p)} variant="link" fontSize={18} preferredFocus />
+              {/* Moves on when reps can't be counted (camera trouble, a move you'd rather not do); what was done still counts. */}
+              <FocusButton label="Done with this" onPress={finishEarly} variant="link" fontSize={18} />
+            </>
           ) : null}
         </View>
       </View>
