@@ -2,7 +2,7 @@
 
 **Your living-room spotter.** A Fire TV fitness coach that checks your form through the phone you already own — and calls out every rep like a coach in the room. Video goes only from your phone to your TV — never to the cloud.
 
-- **Core mode (free):** guided workouts with a 3D trainer, a coach's voice, timers, tempo-based rep counting, streaks and progress — no camera needed.
+- **Follow along:** guided workouts with a 3D trainer, a coach's voice, timers, tempo-based rep counting, streaks and progress — no camera needed.
 - **Smart coaching:** your phone becomes the camera. It tracks your body with MediaPipe, judges every rep (good, needs a fix, or no rep — and why), and the TV shows your live picture with your skeleton drawn on it, the count, form notes, and a workout receipt at the end.
 
 > Built for Build, Ship, Shape: Amazon Developer Hackathon 2026 (Fire TV track).

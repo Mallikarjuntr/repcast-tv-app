@@ -12,16 +12,14 @@ interface ModeCardProps {
   today?: string;
   points: string[];
   action: string;
-  /** The paid mode's points and kicker are in the accent. */
+  /** The camera mode, the one to try first: its points and kicker are in the accent. */
   highlight?: boolean;
-  badge?: string;
-  price?: string;
   preferredFocus?: boolean;
   onPress: () => void;
 }
 
 /** The whole card is one button: focus rings it, and its action chip turns orange. */
-function ModeCard({ kicker, title, today, points, action, highlight, badge, price, preferredFocus, onPress }: ModeCardProps) {
+function ModeCard({ kicker, title, today, points, action, highlight, preferredFocus, onPress }: ModeCardProps) {
   const s = useScale();
   return (
     <Pressable style={{ flex: 1 }} accessibilityRole="button" accessibilityLabel={`${title}. ${action}`} onPress={onPress} hasTVPreferredFocus={preferredFocus}>
@@ -30,18 +28,9 @@ function ModeCard({ kicker, title, today, points, action, highlight, badge, pric
         return (
           <View style={{ flex: 1, borderRadius: s(24), borderWidth: s(3), borderColor: focused ? colors.text : 'transparent', padding: s(3), transform: [{ scale: focused ? 1.02 : 1 }] }}>
             <View style={{ flex: 1, borderRadius: s(18), backgroundColor: focused ? colors.surfaceHigh : colors.surface, paddingVertical: s(26), paddingHorizontal: s(30), gap: s(14) }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: s(12) }}>
-                <Kicker size={14} color={highlight ? colors.accent : colors.muted}>
-                  {kicker}
-                </Kicker>
-                {badge ? (
-                  <View style={{ backgroundColor: colors.bg, borderRadius: s(8), paddingHorizontal: s(12), paddingVertical: s(6) }}>
-                    <Kicker size={13} color={colors.textSoft}>
-                      {badge}
-                    </Kicker>
-                  </View>
-                ) : null}
-              </View>
+              <Kicker size={14} color={highlight ? colors.accent : colors.muted}>
+                {kicker}
+              </Kicker>
               <View style={{ gap: s(4) }}>
                 <Text style={{ fontFamily: fonts.display, fontSize: s(46), color: colors.text }}>{title}</Text>
                 {today ? <Text style={{ fontFamily: fonts.sansSemi, fontSize: s(17), color: highlight ? colors.accent : colors.muted }}>{today}</Text> : null}
@@ -58,7 +47,6 @@ function ModeCard({ kicker, title, today, points, action, highlight, badge, pric
                 <View style={{ backgroundColor: focused ? colors.accent : colors.raised, borderRadius: s(12), paddingVertical: s(15), paddingHorizontal: s(26) }}>
                   <Text style={{ fontFamily: fonts.sansHeavy, fontSize: s(21), color: focused ? colors.onAccent : colors.text }}>{action}</Text>
                 </View>
-                {price ? <Text style={{ fontFamily: fonts.sans, fontSize: s(15), lineHeight: s(21), color: colors.muted }}>{price}</Text> : null}
               </View>
             </View>
           </View>
@@ -73,13 +61,11 @@ export function ModesScreen({
   coreToday,
   coachToday,
   onChoose,
-  freeCoachSessionsLeft,
 }: {
   sessionLabel: string;
   coreToday?: string;
   coachToday?: string;
   onChoose: (mode: Mode) => void;
-  freeCoachSessionsLeft: number;
 }) {
   const s = useScale();
   return (
@@ -91,7 +77,7 @@ export function ModesScreen({
 
       <View style={{ flex: 1, flexDirection: 'row', gap: s(22), marginHorizontal: -s(6) }}>
         <ModeCard
-          kicker="CORE · FREE · NO CAMERA"
+          kicker="NO CAMERA"
           title="Follow along"
           today={coreToday}
           points={['A voice that guides every move', 'Timers and a tempo beat to follow', 'Reps counted for you, on the beat', 'Streaks and progress, week by week']}
@@ -99,23 +85,18 @@ export function ModesScreen({
           onPress={() => onChoose('core')}
         />
         <ModeCard
-          kicker="SMART COACHING · PAID"
+          kicker="WITH YOUR PHONE'S CAMERA"
           title="Coach me on camera"
           today={coachToday}
           points={['Form checks on every single rep', 'Uses the phone or webcam you already own', "Your coach's note after every session", 'Plans that adapt to how you moved']}
           action="Start coaching"
           highlight
-          badge={freeCoachSessionsLeft > 0 ? `${freeCoachSessionsLeft} OF 3 FREE LEFT` : 'FREE SESSIONS USED THIS WEEK'}
-          price={'then ₹149 / month\nor ₹999 / year'}
           preferredFocus
           onPress={() => onChoose('coach')}
         />
       </View>
 
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-        <Text style={{ fontFamily: fonts.sans, fontSize: s(14), color: colors.faint }}>Video goes only from your phone to your TV — never to the cloud</Text>
-        <Text style={{ fontFamily: fonts.sans, fontSize: s(14), color: colors.faint }}>Manage your plan in your Amazon account</Text>
-      </View>
+      <Text style={{ fontFamily: fonts.sans, fontSize: s(14), color: colors.faint }}>Video goes only from your phone to your TV — never to the cloud</Text>
     </View>
   );
 }

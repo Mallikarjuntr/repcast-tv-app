@@ -19,7 +19,6 @@ import { SwapScreen } from './src/screens/SwapScreen';
 import { VideoTestScreen } from './src/screens/VideoTestScreen';
 import {
   addProfile,
-  freeCoachSessionsLeft,
   loadLastProfileId,
   loadProfiles,
   loadSessions,
@@ -225,7 +224,6 @@ export default function App() {
           sessionLabel="LEGS, GENTLY"
           coreToday={`Every move, warm-up to stretch · ${Math.round(estimateSeconds(today) / 60)} min`}
           coachToday={`${coachedSession(today).summary.replace(/\.$/, '')} · about ${Math.max(1, Math.round(estimateSeconds(coachedSession(today)) / 60))} min`}
-          freeCoachSessionsLeft={freeCoachSessionsLeft(sessions)}
           onChoose={(mode) => go(mode === 'coach' ? { name: 'pair' } : { name: 'follow' })} />
       )}
       {screen.name === 'pair' && (

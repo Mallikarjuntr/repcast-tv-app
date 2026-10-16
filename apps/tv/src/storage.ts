@@ -102,13 +102,6 @@ function startOfWeek(now: Date): Date {
   return monday;
 }
 
-/** Smart coaching is free three times a week (Monday to Sunday). */
-export function freeCoachSessionsLeft(sessions: SessionRecord[], now = new Date()): number {
-  const monday = startOfWeek(now);
-  const used = sessions.filter((s) => s.mode === 'coach' && new Date(s.at) >= monday).length;
-  return Math.max(0, 3 - used);
-}
-
 export type DayState = 'done' | 'missed' | 'today' | 'ahead';
 
 /** Monday-to-Sunday view of this week from real sessions. */
