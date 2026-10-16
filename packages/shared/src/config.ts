@@ -11,8 +11,9 @@ export const config = {
   /** Where the phone camera app is hosted. */
   cameraAppUrl: 'https://mallikarjuntr.github.io/spotter-tv-app/',
   /**
-   * What the TV's QR code opens (with ?code=1234) and the address it shows: a short link on the
-   * website (spotter-tv-landing-page netlify.toml) that forwards to cameraAppUrl, keeping the code.
+   * What the TV's QR code opens (with ?code=…) and the address it shows: a short link on the
+   * website (spotter-tv-landing-page netlify.toml) that opens the camera page at
+   * spotter-tv.netlify.app/camera/, which Netlify serves from cameraAppUrl.
    */
   pairUrl: 'https://spotter-tv.netlify.app/go',
   /** POST {apiUrl}/coach-note (Claude on Amazon Bedrock). Off until the backend route is live. */
