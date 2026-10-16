@@ -116,6 +116,18 @@ Checked on the Android TV emulator (1080p) with `tools/fake-phone.mjs`, screen b
 
 Not checked on the emulator: live phone video (the emulator's network can't receive it); that needs the stick.
 
+**On the Fire TV Stick (same day).** Installed over the earlier build: the stick's history and swaps moved into the "Me" profile on first launch (cold start 4.4 s). Coached session with the phone page from GitHub Pages playing a recorded squat clip as its camera: pairing, live video with the skeleton on the body, warm-up trainer clip, three sets of sumo squats counted and spoken (Polly clips play through expo-audio), rest, then the TV switched the phone to split squats and a plain squat got an honest "No rep" with its reason. One process the whole time, no crash or low-memory kill.
+
+| Live screen with video, 60 s | Before the redesign (§5) | Studio |
+|---|---|---|
+| Frames over 16 ms | 43% | 60% |
+| Frame time median / p90 / p99 | 16 / 21 / 29 ms | 18 / 25 / 40 ms |
+| App memory (PSS) | 138–140 MB | 183–201 MB |
+| App CPU (of 400%) | ~80–97% | ~125% |
+| Free memory on the stick | — | ~245–250 MB |
+
+The Studio Live screen gives the video a much larger panel, which costs some smoothness and about 50 MB; it stayed stable with ~245 MB free. Follow along (trainer video): 1.7% of frames over 16 ms, median 11 ms.
+
 ## Known limits
 
 - **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other. Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.
