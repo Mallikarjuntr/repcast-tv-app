@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import Svg, { Path, Rect } from 'react-native-svg';
 import { colors } from '../theme';
 
-/** A scannable QR code drawn as one SVG path, with the standard quiet zone. */
+/** A scannable QR code drawn as one SVG path, with the standard 4-module quiet zone (ISO/IEC 18004). */
 export function QrCode({ value, size }: { value: string; size: number }) {
   const { count, path } = useMemo(() => {
     const qr = qrcode(0, 'M');
@@ -19,7 +19,7 @@ export function QrCode({ value, size }: { value: string; size: number }) {
     return { count: n, path: d };
   }, [value]);
 
-  const quiet = 2;
+  const quiet = 4;
   return (
     <Svg width={size} height={size} viewBox={`${-quiet} ${-quiet} ${count + quiet * 2} ${count + quiet * 2}`} accessibilityLabel="QR code to pair your phone">
       <Rect x={-quiet} y={-quiet} width={count + quiet * 2} height={count + quiet * 2} fill={colors.text} />

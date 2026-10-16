@@ -16,7 +16,15 @@ async function request(path: string, init?: RequestInit): Promise<Session> {
   return { code: body.code, channel: body.channel, expiresAt: body.expiresAt };
 }
 
-/** TV side: get a fresh 4-digit pairing code and its channel. */
+/**
+ * A pairing code as shown on the TV: 6 digits (4 from older backends, still accepted so phones and
+ * TVs keep working while the backend is updated).
+ */
+export function isPairingCode(code: string): boolean {
+  return /^(\d{4}|\d{6})$/.test(code);
+}
+
+/** TV side: get a fresh pairing code and its channel. */
 export function createSession(): Promise<Session> {
   return request('/sessions', { method: 'POST' });
 }

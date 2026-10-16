@@ -1,5 +1,5 @@
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
-import { BODY_PARTS, controlChannel, findSession, openChannel, POSE_SOURCE_INDEX, type BodyPart, type LiveChannel, type SpotterEvent } from '@spotter/shared';
+import { BODY_PARTS, controlChannel, findSession, isPairingCode, openChannel, POSE_SOURCE_INDEX, type BodyPart, type LiveChannel, type SpotterEvent } from '@spotter/shared';
 import { EXERCISES, isSideOn, RepDetector, squat, type PointName, type RepExercise, type RepResult, type RepUpdate } from 'spotter-movement';
 import { framing, SteadyHint } from './framing';
 import { VideoLink } from './video-link';
@@ -461,16 +461,16 @@ ui.copy.addEventListener('click', async () => {
 ui.pairForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const code = ui.codeInput.value.trim();
-  if (!/^\d{4}$/.test(code)) {
+  if (!isPairingCode(code)) {
     ui.pairStatus.className = 'pair-status failed';
-    ui.pairStatus.textContent = 'Enter the 4-digit code shown on your TV.';
+    ui.pairStatus.textContent = 'Enter the code shown on your TV.';
     return;
   }
   void linkToTv(code);
 });
 
 const codeFromQr = new URLSearchParams(location.search).get('code');
-if (codeFromQr && /^\d{4}$/.test(codeFromQr)) void linkToTv(codeFromQr);
+if (codeFromQr && isPairingCode(codeFromQr)) void linkToTv(codeFromQr);
 // A clip needs no camera permission, so the test bench starts by itself.
 if (clipUrl) ui.start.click();
 

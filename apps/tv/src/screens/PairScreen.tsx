@@ -39,6 +39,11 @@ function StatusRow({ done, children }: { done: boolean; children: string }) {
   );
 }
 
+/** "1 5 0 4" or, for a 6-digit code, "472 913": easy to read across a room. */
+function spacedCode(code: string): string {
+  return code.length === 6 ? `${code.slice(0, 3)} ${code.slice(3)}` : code.split('').join(' ');
+}
+
 function missingCue(missing: BodyPart[]): string {
   if (missing.includes('head') || missing.includes('hips')) return 'Step into the middle of the frame';
   return `Step back a little — I can't see your ${missing.map((p) => PART_LABEL[p].toLowerCase()).join(' and ')}`;
@@ -89,12 +94,13 @@ export function PairScreen({ onReady }: { onReady: (channel: string) => void }) 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(22), minHeight: s(190) }}>
           {state.phase === 'ready' ? (
             <>
-              <View style={{ backgroundColor: colors.text, borderRadius: s(12), padding: s(10) }}>
-                <QrCode value={`${config.cameraAppUrl}?code=${state.session.code}`} size={s(168)} />
+              {/* The code draws its own light quiet zone; the rounded clip just softens the corners. */}
+              <View style={{ borderRadius: s(12), overflow: 'hidden' }}>
+                <QrCode value={`${config.cameraAppUrl}?code=${state.session.code}`} size={s(188)} />
               </View>
               <View style={{ gap: s(6), flexShrink: 1 }}>
                 <Kicker size={13}>OR TYPE THIS CODE</Kicker>
-                <Headline text={state.session.code.split('').join(' ')} size={62} />
+                <Headline text={spacedCode(state.session.code)} size={state.session.code.length > 4 ? 52 : 62} />
                 <Text style={{ fontFamily: fonts.sans, fontSize: s(13), lineHeight: s(18), color: colors.faint }}>
                   {'at ' + config.cameraAppUrl.replace('https://', '').replace(/\/$/, '').replace('/', '\n/')}
                 </Text>

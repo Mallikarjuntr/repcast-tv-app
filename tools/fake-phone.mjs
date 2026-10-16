@@ -16,13 +16,13 @@ const HTTP_HOST = read('eventsHttpHost');
 const API_KEY = read('eventsApiKey');
 
 const args = process.argv.slice(2);
-const code = args.find((a) => /^\d{4}$/.test(a));
+const code = args.find((a) => /^(\d{4}|\d{6})$/.test(a));
 const option = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
   return i >= 0 ? Number(args[i + 1]) : fallback;
 };
 if (!code) {
-  console.error('usage: node tools/fake-phone.mjs <4-digit code> [--start-after 8] [--rest 32] [--rep-ms 1600]');
+  console.error('usage: node tools/fake-phone.mjs <pairing code> [--start-after 8] [--rest 32] [--rep-ms 1600]');
   process.exit(1);
 }
 const START_AFTER = option('start-after', 8) * 1000;

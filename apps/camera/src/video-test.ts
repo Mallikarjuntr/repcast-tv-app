@@ -1,6 +1,6 @@
 // Test bench, not part of the product: sends a test pattern (or a camera) to the TV over the same
 // VideoLink the phone uses, and shows sender stats.
-import { findSession } from '@spotter/shared';
+import { findSession, isPairingCode } from '@spotter/shared';
 import { VideoLink } from './video-link';
 
 function $<T extends HTMLElement>(id: string): T {
@@ -107,7 +107,7 @@ setInterval(async () => {
 ui.form.addEventListener('submit', (e) => {
   e.preventDefault();
   const code = ui.code.value.trim();
-  if (!/^\d{4}$/.test(code)) return;
+  if (!isPairingCode(code)) return;
   start(code).catch((err: unknown) => {
     statusLine = `Couldn't link: ${String(err)}`;
     show();
