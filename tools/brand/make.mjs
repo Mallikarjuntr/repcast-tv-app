@@ -1,6 +1,6 @@
-// Draws Spotter's app icon, TV banner, splash and Appstore images in the app's "Studio" style
-// (dark, cream type, one orange accent), with the app's own fonts turned into outlines so every
-// image renders the same anywhere.
+// Draws Spotter's app icon, TV banner, splash and Appstore images: an orange tile with a figure
+// mid-squat inside a rep ring, the "spotter." wordmark and the app's "Studio" colours, with the
+// app's own fonts turned into outlines so every image renders the same anywhere.
 //
 //   cd tools/brand && npm install && npm run build
 import { mkdirSync } from 'node:fs';
@@ -45,27 +45,32 @@ function measure(font, value, size) {
   return { width: box.x2 - box.x1, left: box.x1, top: box.y1, bottom: box.y2 };
 }
 
+/** The tile's two oranges, top-left to bottom-right. */
+const TILE_FROM = '#FF9A57';
+const TILE_TO = '#E2471F';
+const MARK_WHITE = '#FFF4E8';
+let gradients = 0;
+
 /**
- * The mark: a tally group — four cream strokes struck through in the accent. `h` is the stroke
- * height; (x, y) is the top-left of the strokes. Slightly uneven, like it was drawn by hand.
+ * The mark on a 100-unit grid, placed at (x, y) and `size` across: a figure mid-squat inside a rep
+ * ring that is three-quarters round. `tile` draws the orange rounded tile behind it (`radius` 0 for
+ * a full-bleed square); without it the ring and figure are drawn in `color` on whatever is behind.
  */
-function tally(x, y, h, { ink = TEXT, pen = ACCENT } = {}) {
-  const gap = h * 0.25;
-  const width = h * 0.115;
-  const wobble = [
-    [0.02, -0.03, 0.0],
-    [-0.025, 0.02, 0.03],
-    [0.03, -0.01, -0.02],
-    [-0.01, 0.03, 0.01],
-  ];
-  const strokes = wobble
-    .map(([top, bottom, lift], i) => {
-      const sx = x + i * gap;
-      return `<path d="M${sx + top * h} ${y + lift * h} L${sx + bottom * h} ${y + h * (1 + lift * 0.5)}" stroke="${ink}" stroke-width="${width}" stroke-linecap="round" fill="none"/>`;
-    })
-    .join('');
-  const slash = `<path d="M${x - gap * 0.75} ${y + h * 0.8} C ${x + gap} ${y + h * 0.62}, ${x + gap * 2.4} ${y + h * 0.42}, ${x + gap * 3.9} ${y + h * 0.16}" stroke="${pen}" stroke-width="${width * 0.95}" stroke-linecap="round" fill="none"/>`;
-  return { svg: strokes + slash, width: gap * 3, left: x - gap * 0.75 - width / 2, right: x + gap * 3.9 + width / 2 };
+function mark(x, y, size, { tile = true, radius = 22, color = MARK_WHITE, ringOpacity = 0.35 } = {}) {
+  const id = `tile${gradients++}`;
+  const c = 2 * Math.PI * 34;
+  const bg = tile
+    ? `<defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${TILE_FROM}"/><stop offset="1" stop-color="${TILE_TO}"/></linearGradient></defs><rect width="100" height="100" rx="${radius}" fill="url(#${id})"/>`
+    : '';
+  const ring =
+    `<circle cx="50" cy="51" r="34" fill="none" stroke="${color}" stroke-opacity="${ringOpacity}" stroke-width="6"/>` +
+    `<circle cx="50" cy="51" r="34" fill="none" stroke="${color}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${(c * 0.72).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 50 51)"/>`;
+  // Side view, facing right: head, back, thigh, shin and foot, arms held forward for balance.
+  const figure =
+    `<g fill="none" stroke="${tile ? '#FFFFFF' : color}" stroke-width="6.2" stroke-linecap="round" stroke-linejoin="round" transform="translate(-4 0)">` +
+    `<path d="M52 39 L43 56 L59 61 L55 74 L62 74"/><path d="M51 42 L67 45"/></g>` +
+    `<circle cx="51" cy="30" r="6.3" fill="${tile ? '#FFFFFF' : color}"/>`;
+  return `<svg x="${x}" y="${y}" width="${size}" height="${size}" viewBox="0 0 100 100">${bg}${ring}${figure}</svg>`;
 }
 
 /** The "spotter." wordmark (components/Type.Wordmark), the full stop in the accent; left edge at x, baseline at y. */
@@ -81,68 +86,43 @@ function svg(w, h, body, background = BG) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${bg}${body}</svg>`;
 }
 
-/** Square icon: the tally mark alone, centred. `scale` is how much of the square it fills. */
-function squareIcon(size, { scale = 0.56, background = BG } = {}) {
-  const h = size * scale;
-  const probe = tally(0, 0, h);
-  const span = probe.right - probe.left;
-  const x = (size - span) / 2 - probe.left;
-  const y = (size - h) / 2;
-  return svg(size, size, tally(x, y, h).svg, background);
+/** A soft orange glow, for depth behind the lockups. */
+function glow(w, h, cx, cy, r) {
+  const id = `glow${gradients++}`;
+  return `<defs><radialGradient id="${id}" cx="${cx}" cy="${cy}" r="${r}"><stop offset="0" stop-color="${ACCENT}" stop-opacity="0.22"/><stop offset="1" stop-color="${ACCENT}" stop-opacity="0"/></radialGradient></defs><rect width="${w}" height="${h}" fill="url(#${id})"/>`;
 }
 
-/** Landscape lockup: tally + wordmark, fitted into a centred safe box. */
-function lockup(w, h, safeW, safeH, { kicker } = {}) {
-  const size = safeH * (kicker ? 0.52 : 0.6);
-  const m = measure(display, 'spotter', size);
-  const tallyH = size * 0.74;
-  const probe = tally(0, 0, tallyH);
-  const tallySpan = probe.right - probe.left;
-  const gap = size * 0.32;
-  let total = tallySpan + gap + m.width;
-  const fit = Math.min(1, (safeW * 0.94) / total);
-  const s = size * fit;
-  const mm = measure(display, 'spotter', s);
-  const th = tallyH * fit;
-  const tp = tally(0, 0, th);
-  total = tp.right - tp.left + gap * fit + mm.width;
+/**
+ * Landscape lockup: the tile, then "spotter." with a tagline under it, centred in a safe box.
+ * `tagline` may be empty.
+ */
+function lockup(w, h, safeW, safeH, { tagline = 'Your TV checks every rep', glowing = true } = {}) {
+  const tile = safeH * 0.62;
+  const size = tile * 0.62;
+  const m = measure(display, 'spotter.', size);
+  const tagSize = size * 0.24;
+  const gap = tile * 0.16;
+  let total = tile + gap + m.width;
+  const fit = Math.min(1, (safeW * 0.96) / total);
+  const T = tile * fit;
+  const S = size * fit;
+  const M = measure(display, 'spotter.', S);
+  const G = gap * fit;
+  total = T + G + M.width;
   const left = (w - total) / 2;
-  // Optical centre: the x-height of the wordmark sits on the middle line.
-  const kickerSize = s * 0.16;
-  const blockH = (mm.bottom - mm.top) + (kicker ? s * 0.5 + kickerSize : 0);
-  const baseline = (h - blockH) / 2 - mm.top + (kicker ? 0 : s * 0.04);
-  const t = tally(left - tp.left, baseline - th * 1.0, th);
-  const word = wordmark(left + (tp.right - tp.left) + gap * fit - mm.left, baseline, s);
-  let body = t.svg + word.svg;
-  if (kicker) {
-    const k = text(label, kicker, 0, 0, kickerSize, { tracking: kickerSize * 0.16 });
-    const kx = (w - k.advance) / 2;
-    body += text(label, kicker, kx, baseline + s * 0.62 + kickerSize, kickerSize, { fill: MUTED, tracking: kickerSize * 0.16 }).svg;
-  }
+  const top = (h - T) / 2;
+  // The wordmark's cap height sits a little above the tile's middle; the tagline below it.
+  const baseline = top + T * (tagline ? 0.58 : 0.66);
+  const word = wordmark(left + T + G - M.left, baseline, S);
+  let body = (glowing ? glow(w, h, '0.32', '0.5', '0.55') : '') + mark(left, top, T) + word.svg;
+  if (tagline) body += text(label, tagline, left + T + G, baseline + tagSize * fit * 1.9, tagSize * fit, { fill: MUTED }).svg;
   return body;
 }
 
-// A squat outline (front view) for the background art, in POSE order on a square grid.
-const SQUAT = [0.5, 0.39, 0.42, 0.47, 0.58, 0.47, 0.4, 0.5, 0.6, 0.5, 0.42, 0.5, 0.58, 0.5, 0.45, 0.65, 0.55, 0.65, 0.39, 0.69, 0.61, 0.69, 0.44, 0.87, 0.56, 0.87];
-const BONES = [[1, 2], [1, 3], [3, 5], [2, 4], [4, 6], [1, 7], [2, 8], [7, 8], [7, 9], [9, 11], [8, 10], [10, 12]];
-
-function figure(points, x, y, size, color, strokeWidth) {
-  const p = (i) => [x + points[i * 2] * size, y + points[i * 2 + 1] * size];
-  const lines = BONES.map(([a, b]) => {
-    const [x1, y1] = p(a);
-    const [x2, y2] = p(b);
-    return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
-  }).join('');
-  const [hx, hy] = p(0);
-  return `<g stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" fill="none">${lines}<circle cx="${hx}" cy="${hy}" r="${size * 0.052}"/></g>`;
-}
-
-/** Fire TV detail-page background: the dark studio with a large, faint squat outline and the mark. */
+/** Fire TV detail-page background: the dark studio with a large, faint ring-and-figure and a glow. */
 function background(w, h) {
-  const glow = `<defs><radialGradient id="g" cx="0.72" cy="0.45" r="0.6"><stop offset="0" stop-color="${SURFACE}"/><stop offset="1" stop-color="${BG}"/></radialGradient></defs><rect width="${w}" height="${h}" fill="url(#g)"/>`;
-  const sketch = figure(SQUAT, w * 0.42, h * -0.42, h * 1.5, '#2E2823', 18);
-  const marks = tally(w * 0.6, h * 0.76, 120, { ink: '#3A332C', pen: ACCENT }).svg;
-  return svg(w, h, glow + sketch + `<g opacity="0.7">${marks}</g>`);
+  const size = h * 1.1;
+  return svg(w, h, glow(w, h, '0.72', '0.45', '0.6') + `<g opacity="0.16">${mark(w - size * 0.92, (h - size) / 2, size, { tile: false, color: TEXT, ringOpacity: 0.5 })}</g>`);
 }
 
 async function write(svgText, file, { width, height, format = 'png' } = {}) {
@@ -157,14 +137,15 @@ async function write(svgText, file, { width, height, format = 'png' } = {}) {
   console.log('wrote', file.replace(ROOT + '/', ''));
 }
 
-// In the app.
-await write(squareIcon(1024), join(APP_IMAGES, 'icon.png'));
-await write(squareIcon(1024, { scale: 0.4, background: null }), join(APP_IMAGES, 'adaptive-icon.png'));
-await write(svg(1280, 720, lockup(1280, 720, 1000, 520)), join(APP_IMAGES, 'tv-banner.png'), { width: 640, height: 360 });
-await write(svg(1200, 400, lockup(1200, 400, 1000, 300), null), join(APP_IMAGES, 'splash.png'));
+// In the app. The launcher icon is a full-bleed square (the launcher rounds it); the adaptive
+// icon's foreground is the ring and figure alone, on the orange set in app.json.
+await write(svg(1024, 1024, mark(0, 0, 1024, { radius: 0 }), null), join(APP_IMAGES, 'icon.png'));
+await write(svg(1024, 1024, mark(1024 * 0.2, 1024 * 0.2, 1024 * 0.6, { tile: false }), null), join(APP_IMAGES, 'adaptive-icon.png'));
+await write(svg(1280, 720, lockup(1280, 720, 1040, 560)), join(APP_IMAGES, 'tv-banner.png'), { width: 640, height: 360 });
+await write(svg(1200, 400, lockup(1200, 400, 1000, 300, { tagline: '', glowing: false }), null), join(APP_IMAGES, 'splash.png'));
 
 // Amazon Appstore listing (Fire TV icon keeps its art inside the 882 x 448 safe zone).
-await write(svg(1280, 720, lockup(1280, 720, 882, 448, { kicker: 'YOUR AT-HOME FITNESS SPOTTER' })), join(STORE, 'fire-tv-icon-1280x720.png'));
+await write(svg(1280, 720, lockup(1280, 720, 882, 448)), join(STORE, 'fire-tv-icon-1280x720.png'));
 await write(background(1920, 1080), join(STORE, 'fire-tv-background-1920x1080.jpg'), { format: 'jpeg' });
-await write(squareIcon(512), join(STORE, 'icon-512.png'));
-await write(squareIcon(512), join(STORE, 'icon-114.png'), { width: 114, height: 114 });
+await write(svg(512, 512, mark(0, 0, 512, { radius: 0 }), null), join(STORE, 'icon-512.png'));
+await write(svg(512, 512, mark(0, 0, 512, { radius: 0 }), null), join(STORE, 'icon-114.png'), { width: 114, height: 114 });
