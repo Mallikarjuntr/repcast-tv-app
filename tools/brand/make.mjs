@@ -1,5 +1,6 @@
-// Draws Spotter's app icon, TV banner, splash and Appstore images in the app's "training notebook"
-// style, with the app's own fonts turned into outlines so every image renders the same anywhere.
+// Draws Spotter's app icon, TV banner, splash and Appstore images in the app's "Studio" style
+// (dark, cream type, one orange accent), with the app's own fonts turned into outlines so every
+// image renders the same anywhere.
 //
 //   cd tools/brand && npm install && npm run build
 import { mkdirSync } from 'node:fs';
@@ -14,17 +15,17 @@ const APP_IMAGES = join(ROOT, 'apps', 'tv', 'assets', 'images');
 const STORE = join(ROOT, 'docs', 'store');
 
 // The app's palette (apps/tv/src/theme.ts).
-const PAPER = '#EFE8DA';
-const PAPER_DEEP = '#E4DAC6';
-const INK = '#1D1B17';
-const PENCIL = '#5E584C';
-const PEN = '#C0321B';
+const BG = '#15120F';
+const SURFACE = '#221E1A';
+const TEXT = '#F4EFE8';
+const MUTED = '#B5ACA0';
+const ACCENT = '#FF7A3D';
 
-const display = opentype.loadSync(join(FONTS, 'fraunces', '600SemiBold_Italic', 'Fraunces_600SemiBold_Italic.ttf'));
-const mono = opentype.loadSync(join(FONTS, 'ibm-plex-mono', '500Medium', 'IBMPlexMono_500Medium.ttf'));
+const display = opentype.loadSync(join(FONTS, 'archivo', '800ExtraBold', 'Archivo_800ExtraBold.ttf'));
+const label = opentype.loadSync(join(FONTS, 'archivo', '700Bold', 'Archivo_700Bold.ttf'));
 
 /** Text as an outline path; x is the left edge, y the baseline. Returns the path and its box. */
-function text(font, value, x, y, size, { fill = INK, tracking = 0 } = {}) {
+function text(font, value, x, y, size, { fill = TEXT, tracking = 0 } = {}) {
   let d = '';
   let cursor = x;
   if (tracking === 0) {
@@ -45,10 +46,10 @@ function measure(font, value, size) {
 }
 
 /**
- * The mark: a tally group — four ink strokes struck through by the coach's red pen. `h` is the
- * stroke height; (x, y) is the top-left of the strokes. Slightly uneven, like it was drawn by hand.
+ * The mark: a tally group — four cream strokes struck through in the accent. `h` is the stroke
+ * height; (x, y) is the top-left of the strokes. Slightly uneven, like it was drawn by hand.
  */
-function tally(x, y, h, { ink = INK, pen = PEN } = {}) {
+function tally(x, y, h, { ink = TEXT, pen = ACCENT } = {}) {
   const gap = h * 0.25;
   const width = h * 0.115;
   const wobble = [
@@ -67,26 +68,21 @@ function tally(x, y, h, { ink = INK, pen = PEN } = {}) {
   return { svg: strokes + slash, width: gap * 3, left: x - gap * 0.75 - width / 2, right: x + gap * 3.9 + width / 2 };
 }
 
-/** The red-pen swash under the wordmark (Marks.Swash), stretched to `w`. */
-function swash(x, y, w, strokeWidth) {
-  const k = w / 118;
-  return `<path d="M${x + 2 * k} ${y + 8 * k} C ${x + 30 * k} ${y + 3 * k}, ${x + 70 * k} ${y + 2 * k}, ${x + 116 * k} ${y + 6 * k}" stroke="${PEN}" stroke-width="${strokeWidth}" stroke-linecap="round" fill="none"/>`;
-}
-
-/** The "spotter" wordmark with its swash, left edge at x and baseline at y. */
+/** The "spotter." wordmark (components/Type.Wordmark), the full stop in the accent; left edge at x, baseline at y. */
 function wordmark(x, y, size) {
   const word = text(display, 'spotter', x, y, size);
+  const dot = text(display, '.', x + display.getAdvanceWidth('spotter', size), y, size, { fill: ACCENT });
   const w = word.box.x2 - word.box.x1;
-  return { svg: word.svg + swash(word.box.x1 + w * 0.02, y + size * 0.16, w * 0.94, size * 0.055), width: w, box: word.box };
+  return { svg: word.svg + dot.svg, width: w, box: word.box };
 }
 
-function svg(w, h, body, background = PAPER) {
+function svg(w, h, body, background = BG) {
   const bg = background ? `<rect width="${w}" height="${h}" fill="${background}"/>` : '';
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${bg}${body}</svg>`;
 }
 
 /** Square icon: the tally mark alone, centred. `scale` is how much of the square it fills. */
-function squareIcon(size, { scale = 0.56, background = PAPER } = {}) {
+function squareIcon(size, { scale = 0.56, background = BG } = {}) {
   const h = size * scale;
   const probe = tally(0, 0, h);
   const span = probe.right - probe.left;
@@ -119,9 +115,9 @@ function lockup(w, h, safeW, safeH, { kicker } = {}) {
   const word = wordmark(left + (tp.right - tp.left) + gap * fit - mm.left, baseline, s);
   let body = t.svg + word.svg;
   if (kicker) {
-    const k = text(mono, kicker, 0, 0, kickerSize, { tracking: kickerSize * 0.14 });
+    const k = text(label, kicker, 0, 0, kickerSize, { tracking: kickerSize * 0.16 });
     const kx = (w - k.advance) / 2;
-    body += text(mono, kicker, kx, baseline + s * 0.62 + kickerSize, kickerSize, { fill: PENCIL, tracking: kickerSize * 0.14 }).svg;
+    body += text(label, kicker, kx, baseline + s * 0.62 + kickerSize, kickerSize, { fill: MUTED, tracking: kickerSize * 0.16 }).svg;
   }
   return body;
 }
@@ -141,14 +137,12 @@ function figure(points, x, y, size, color, strokeWidth) {
   return `<g stroke="${color}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" fill="none">${lines}<circle cx="${hx}" cy="${hy}" r="${size * 0.052}"/></g>`;
 }
 
-/** Fire TV detail-page background: ruled notebook paper, a red margin, a faint squat sketch. */
+/** Fire TV detail-page background: the dark studio with a large, faint squat outline and the mark. */
 function background(w, h) {
-  let rules = '';
-  for (let y = 120; y < h; y += 54) rules += `<line x1="0" y1="${y}" x2="${w}" y2="${y}" stroke="${PAPER_DEEP}" stroke-width="2"/>`;
-  const margin = `<line x1="150" y1="0" x2="150" y2="${h}" stroke="${PEN}" stroke-opacity="0.35" stroke-width="2.5"/>`;
-  const sketch = figure(SQUAT, w * 0.42, h * -0.42, h * 1.5, '#D8CCB3', 18);
-  const marks = tally(w * 0.6, h * 0.76, 120, { ink: '#D8CCB3', pen: PEN }).svg;
-  return svg(w, h, rules + margin + sketch + `<g opacity="0.55">${marks}</g>`);
+  const glow = `<defs><radialGradient id="g" cx="0.72" cy="0.45" r="0.6"><stop offset="0" stop-color="${SURFACE}"/><stop offset="1" stop-color="${BG}"/></radialGradient></defs><rect width="${w}" height="${h}" fill="url(#g)"/>`;
+  const sketch = figure(SQUAT, w * 0.42, h * -0.42, h * 1.5, '#2E2823', 18);
+  const marks = tally(w * 0.6, h * 0.76, 120, { ink: '#3A332C', pen: ACCENT }).svg;
+  return svg(w, h, glow + sketch + `<g opacity="0.7">${marks}</g>`);
 }
 
 async function write(svgText, file, { width, height, format = 'png' } = {}) {
@@ -156,8 +150,8 @@ async function write(svgText, file, { width, height, format = 'png' } = {}) {
   // Render at 2x for smooth edges, then scale to the target (the SVG's own size unless given).
   const [, w, h] = svgText.match(/width="(\d+)" height="(\d+)"/);
   let image = sharp(Buffer.from(svgText), { density: 144 }).resize(width ?? Number(w), height ?? Number(h));
-  // Images drawn on paper carry no alpha channel (the Appstore's Fire TV icon must not).
-  if (svgText.includes('<rect width=')) image = image.flatten({ background: PAPER });
+  // Images with a background carry no alpha channel (the Appstore's Fire TV icon must not).
+  if (svgText.includes('<rect width=')) image = image.flatten({ background: BG });
   image = format === 'jpeg' ? image.jpeg({ quality: 92 }) : image.png();
   await image.toFile(file);
   console.log('wrote', file.replace(ROOT + '/', ''));

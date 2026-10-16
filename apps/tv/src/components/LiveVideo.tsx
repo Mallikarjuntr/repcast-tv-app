@@ -79,7 +79,7 @@ function makePart(): Part {
  * The skeleton over the video. Each pose (about 20 a second) only sets animated values that the
  * native side applies directly, so nothing re-renders in React per frame: on a Fire TV Stick a
  * React redraw per pose kept the app at ~100% CPU. Native views, not SVG (the stick can't afford
- * re-uploading an SVG bitmap every frame). The red-pen marks re-render, but only while showing.
+ * re-uploading an SVG bitmap every frame). The coach's marks re-render, but only while showing.
  */
 const Skeleton = memo(function Skeleton({
   getPose,
@@ -172,9 +172,9 @@ const Skeleton = memo(function Skeleton({
             width: BONE_BASE,
             height: stroke,
             borderRadius: stroke / 2,
-            backgroundColor: colors.highlighter,
+            backgroundColor: colors.accent,
             borderWidth: Math.max(1, stroke * 0.18),
-            borderColor: colors.ink,
+            borderColor: colors.bg,
             opacity: part.opacity,
             transform: [{ translateX: part.x }, { translateY: part.y }, { rotate: part.rotate }, { scaleX: part.scale }],
           }}
@@ -189,7 +189,7 @@ const Skeleton = memo(function Skeleton({
           height: HEAD_BASE,
           borderRadius: HEAD_BASE / 2,
           borderWidth: Math.max(2, stroke * 0.5),
-          borderColor: colors.highlighter,
+          borderColor: colors.accent,
           opacity: head.opacity,
           transform: [{ translateX: head.x }, { translateY: head.y }, { scale: head.scale }],
         }}
@@ -220,7 +220,7 @@ export function LiveVideo({
 }) {
   const [mirrored, setMirrored] = useState(getPose()?.frame.mirrored ?? false);
   return (
-    <View style={{ position: 'absolute', left: 0, top: 0, width, height, backgroundColor: colors.ink }}>
+    <View style={{ position: 'absolute', left: 0, top: 0, width, height, backgroundColor: colors.bg }}>
       <RTCView streamURL={streamUrl} objectFit="contain" mirror={mirrored} style={{ width, height }} />
       <Skeleton getPose={getPose} subscribePose={subscribePose} notes={notes} width={width} height={height} onMirrored={setMirrored} />
     </View>

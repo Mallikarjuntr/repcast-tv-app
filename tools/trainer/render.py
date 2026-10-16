@@ -78,7 +78,7 @@ def add_shadow(scene, size):
     nodes = mat.node_tree.nodes
     nodes.clear()
     emit = nodes.new('ShaderNodeEmission')
-    emit.inputs['Color'].default_value = (*style.srgb_to_linear((0.827, 0.776, 0.671)), 1)  # #D3C6AB
+    emit.inputs['Color'].default_value = (*style.srgb_to_linear(style.SHADOW), 1)
     out = nodes.new('ShaderNodeOutputMaterial')
     mat.node_tree.links.new(emit.outputs['Emission'], out.inputs['Surface'])
     disc.data.materials.append(mat)

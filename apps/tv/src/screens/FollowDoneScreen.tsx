@@ -1,17 +1,16 @@
 import { Text, View } from 'react-native';
 import { FocusButton } from '../components/FocusButton';
-import { Dash, PenCircle, Swash, Tick } from '../components/Marks';
-import { Headline, Kicker, PenNote } from '../components/Type';
+import { Card, StatTile, WeekStrip } from '../components/Studio';
+import { Headline, Kicker, Note } from '../components/Type';
 import type { DayState } from '../storage';
 import { colors, fonts, useScale } from '../theme';
-import type { Session } from '../workouts';
+import type { Session, Step } from '../workouts';
 
-function line(s: Session['steps'][number]): [string, string] {
-  if (s.kind === 'timed') return [s.name, `${s.seconds} s`];
-  return [s.name, `${s.sets} × ${s.reps}`];
+function amount(step: Step): string {
+  return step.kind === 'timed' ? `${step.seconds} s` : `${step.sets} × ${step.reps}`;
 }
 
-/** End of a Core mode workout: what was done, as a short receipt, and how the week looks now. */
+/** End of a Core mode workout: what was done, and how the week looks now. */
 export function FollowDoneScreen({
   session,
   reps,
@@ -31,51 +30,41 @@ export function FollowDoneScreen({
   const minutes = Math.max(1, Math.round(seconds / 60));
   const days = week.filter((d) => d.state === 'done').length;
   return (
-    <View style={{ flex: 1, backgroundColor: colors.paper, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), flexDirection: 'row', gap: s(72) }}>
-      <View style={{ flex: 1.3, gap: s(20), justifyContent: 'center' }}>
-        <Kicker>FOLLOW ALONG · DONE</Kicker>
-        <Headline lead={`${reps} reps,\n`} italic={`${minutes} ${minutes === 1 ? 'minute' : 'minutes'}.`} size={110} />
-        <Swash width={s(260)} />
-        <Text style={{ fontFamily: fonts.sans, fontSize: s(24), lineHeight: s(35), color: colors.inkSoft, maxWidth: s(600) }}>
-          Counted by the beat, so it's as honest as you were. Want every rep checked? Smart coaching watches your form through your phone.
-        </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(28), marginTop: s(8) }}>
-          <FocusButton label="Back home" onPress={onHome} preferredFocus />
-          <FocusButton label="Try Smart coaching" onPress={onCoach} variant="link" fontSize={22} />
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: s(44), paddingHorizontal: s(64), paddingBottom: s(40), flexDirection: 'row', gap: s(48) }}>
+      <View style={{ flex: 1, gap: s(20) }}>
+        <Kicker color={colors.accent}>FOLLOW ALONG · DONE</Kicker>
+        <Headline text={"That's the\nsession."} size={104} />
+        <View style={{ flexDirection: 'row', gap: s(12) }}>
+          <StatTile style={{ width: s(170) }} value={`${reps}`} label={reps === 1 ? 'REP' : 'REPS'} />
+          <StatTile style={{ width: s(170) }} value={`${minutes}`} label={minutes === 1 ? 'MINUTE' : 'MINUTES'} />
+          <StatTile style={{ width: s(170) }} value={`${days}`} label="DAYS THIS WEEK" color={colors.accent} />
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(24) }}>
+          <WeekStrip week={week} size={36} />
+          <Text style={{ fontFamily: fonts.sansBold, fontSize: s(20), color: colors.text, flexShrink: 1 }}>{days > 1 ? `${days} days this week. Keep it going.` : 'Day one of the week. Nice.'}</Text>
+        </View>
+        <View style={{ marginTop: 'auto', gap: s(14) }}>
+          <View style={{ maxWidth: s(640) }}>
+            <Note size={17} color={colors.muted}>
+              Counted by the beat, so it's as honest as you were. Want every rep checked? Smart coaching watches your form through your phone.
+            </Note>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(10), marginLeft: -s(6) }}>
+            <FocusButton label="Back home" onPress={onHome} preferredFocus />
+            <FocusButton label="Try Smart coaching" onPress={onCoach} variant="secondary" />
+          </View>
         </View>
       </View>
 
-      <View style={{ flex: 1, justifyContent: 'center' }}>
-        <View style={{ backgroundColor: colors.paperBright, paddingVertical: s(28), paddingHorizontal: s(32), gap: s(10), transform: [{ rotate: '1deg' }] }}>
-          <Kicker color={colors.ink}>{session.title.replace('\n', ' ').trim()} {session.titleItalic}</Kicker>
-          <View style={{ borderTopWidth: s(1.5), borderStyle: 'dashed', borderTopColor: colors.faint, marginVertical: s(6) }} />
-          {session.steps.map((step) => {
-            const [name, amount] = line(step);
-            return (
-              <View key={step.id} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                <Text style={{ fontFamily: fonts.mono, fontSize: s(20), lineHeight: s(32), color: colors.ink }}>{name}</Text>
-                <Text style={{ fontFamily: fonts.mono, fontSize: s(20), lineHeight: s(32), color: colors.ink }}>{amount}</Text>
-              </View>
-            );
-          })}
-          <View style={{ borderTopWidth: s(1.5), borderStyle: 'dashed', borderTopColor: colors.faint, marginVertical: s(6) }} />
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ fontFamily: fonts.monoMedium, fontSize: s(22), color: colors.ink }}>TOTAL</Text>
-            <Text style={{ fontFamily: fonts.monoMedium, fontSize: s(22), color: colors.ink }}>{reps} reps</Text>
+      <Card style={{ width: s(360), gap: s(4), alignSelf: 'flex-start', marginTop: s(36) }}>
+        <Kicker size={13}>{`${session.title}${session.titleItalic}`.replace(/\s*\n\s*/g, ' ').replace(/\.$/, '').toUpperCase()}</Kicker>
+        {session.steps.map((step) => (
+          <View key={step.id} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: s(8), borderTopWidth: s(1), borderTopColor: colors.line }}>
+            <Text style={{ fontFamily: fonts.sansSemi, fontSize: s(18), color: colors.text }}>{step.name}</Text>
+            <Text style={{ fontFamily: fonts.sans, fontSize: s(18), color: colors.muted }}>{amount(step)}</Text>
           </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: s(14) }}>
-            {week.map(({ day, state }, i) => (
-              <View key={i} style={{ alignItems: 'center', gap: s(6) }}>
-                <Kicker size={14} color={state === 'missed' || state === 'ahead' ? colors.pencil : colors.ink}>{day}</Kicker>
-                {state === 'done' ? <Tick size={s(26)} /> : state === 'missed' ? <Dash size={s(26)} /> : state === 'today' ? <PenCircle size={s(26)} /> : <View style={{ width: s(26), height: s(26) }} />}
-              </View>
-            ))}
-          </View>
-        </View>
-        <View style={{ marginTop: s(26), marginLeft: s(24) }}>
-          <PenNote size={28}>{days > 1 ? `${days} days this week. Keep it going.` : 'Day one of the week. Nice.'}</PenNote>
-        </View>
-      </View>
+        ))}
+      </Card>
     </View>
   );
 }

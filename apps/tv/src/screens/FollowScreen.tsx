@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { FocusButton } from '../components/FocusButton';
-import { SetDot } from '../components/Marks';
 import { BeatBar, DemoFigure } from '../components/DemoFigure';
+import { CoachCard, Card, PanelTag, PausedOverlay, Segments } from '../components/Studio';
 import { TrainerVideo, type TrainerPosition } from '../components/TrainerVideo';
 import { REST_CLIP, TRAINER_CLIPS } from '../trainerClips';
-import { Tally } from '../components/Tally';
-import { Headline, Kicker, PenNote } from '../components/Type';
+import { BigNumber, Kicker, Note } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { useTVEventHandler, type TVRemoteEvent } from '../tv';
 import { useGuidedWorkout } from '../useGuidedWorkout';
@@ -92,71 +91,33 @@ export function FollowScreen({
           : step.cues.up
         : step.cue;
 
+  const steps = session.steps;
+  const moveLabel = steps.length > 1 ? `MOVE ${w.stepIndex + 1} OF ${steps.length}` : '';
+  const setLabel = !resting && sets > 1 ? `SET ${w.setIndex + 1} OF ${sets}` : '';
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.paper, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(20) }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Kicker size={18} color={colors.ink}>
-          FOLLOW ALONG · {resting ? 'REST' : step.name.toUpperCase()}
-          {!resting && sets > 1 ? ` · SET ${w.setIndex + 1} OF ${sets}` : ''}
-        </Kicker>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(24) }}>
-          <Text style={{ fontFamily: fonts.monoMedium, fontSize: s(28), color: colors.ink }}>{formatTime(elapsed)}</Text>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(22) }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: s(54) }}>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: s(18) }}>
+          <Text style={{ fontFamily: fonts.display, fontSize: s(30), color: colors.text }}>{resting ? 'REST' : step.name.toUpperCase()}</Text>
+          <Kicker size={16}>{[moveLabel, setLabel].filter(Boolean).join(' · ')}</Kicker>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(14) }}>
+          <Text style={{ fontFamily: fonts.sansBold, fontSize: s(26), color: colors.text, fontVariant: ['tabular-nums'], marginRight: s(8) }}>{formatTime(elapsed)}</Text>
           {w.phase === 'work' ? (
             <>
-              <FocusButton label={paused ? 'Resume' : 'Pause'} onPress={() => setPaused((p) => !p)} variant="link" fontSize={18} preferredFocus />
-              <FocusButton label="Done with this" onPress={w.finishSet} variant="link" fontSize={18} />
+              <FocusButton label={paused ? 'Resume' : 'Pause'} onPress={() => setPaused((p) => !p)} variant="light" size="compact" preferredFocus />
+              <FocusButton label="Done with this" onPress={w.finishSet} variant="secondary" size="compact" />
             </>
           ) : null}
         </View>
       </View>
 
-      <View style={{ flex: 1, flexDirection: 'row', gap: s(56), alignItems: 'center' }}>
-        <View style={{ flex: 1.15, gap: s(12) }}>
-          {w.phase === 'rest' ? (
-            <View style={{ gap: s(14) }}>
-              <Kicker>REST · NEXT: {(w.nextLabel ?? '').toUpperCase()}</Kicker>
-              <Text style={{ fontFamily: fonts.displayBold, fontSize: s(300), lineHeight: s(260), letterSpacing: -s(14), color: colors.ink }}>
-                {String(w.secondsLeft).padStart(2, '0')}
-              </Text>
-              <View style={{ flexDirection: 'row' }}>
-                <FocusButton label="Skip rest" onPress={w.skipRest} preferredFocus fontSize={22} />
-              </View>
-            </View>
-          ) : step.kind === 'reps' ? (
-            <>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: s(18) }}>
-                <Text style={{ fontFamily: fonts.displayBold, fontSize: s(340), lineHeight: s(290), letterSpacing: -s(17), color: colors.ink }}>
-                  {String(w.reps).padStart(2, '0')}
-                </Text>
-                <Text style={{ fontFamily: fonts.displayItalic, fontSize: s(48), color: colors.pencil }}>of {step.reps}</Text>
-              </View>
-              <Tally done={w.reps} total={step.reps} height={s(52)} />
-            </>
-          ) : (
-            <View style={{ gap: s(6) }}>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: s(18) }}>
-                <Text style={{ fontFamily: fonts.displayBold, fontSize: s(300), lineHeight: s(260), letterSpacing: -s(14), color: colors.ink }}>
-                  {String(w.secondsLeft).padStart(2, '0')}
-                </Text>
-                <Text style={{ fontFamily: fonts.displayItalic, fontSize: s(48), color: colors.pencil }}>seconds</Text>
-              </View>
-              <Kicker>OF {step.seconds} · KEEP GOING</Kicker>
-            </View>
-          )}
-        </View>
-
+      <View style={{ flex: 1, flexDirection: 'row', gap: s(40) }}>
         <View
-          style={{ flex: 1, alignSelf: 'stretch', backgroundColor: colors.paperDeep, borderWidth: s(1.5), borderColor: colors.ink }}
+          style={{ flex: 1, backgroundColor: colors.surface, borderRadius: s(20), overflow: 'hidden' }}
           onLayout={(e) => setPanel({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
         >
-          <View style={{ position: 'absolute', top: s(14), left: s(18), right: s(18), flexDirection: 'row', justifyContent: 'space-between', zIndex: 2 }}>
-            <Kicker size={14}>{resting ? 'REST · BREATHE' : step.kind === 'reps' ? 'FOLLOW THE BEAT' : 'LIKE THIS'}</Kicker>
-            {step.kind === 'reps' && w.phase === 'work' ? (
-              <Text style={{ fontFamily: fonts.hand, fontSize: s(30), lineHeight: s(40), color: w.half === 'down' ? colors.pen : colors.ink }}>
-                {w.half === 'down' ? 'down…' : 'up!'}
-              </Text>
-            ) : null}
-          </View>
           {clip !== undefined ? (
             <>
               <TrainerVideo key={resting ? 'rest' : `${shown.id}-live`} clip={clip} paused={paused} position={trainerPosition} />
@@ -173,31 +134,73 @@ export function FollowScreen({
               depthBar={onBeat}
             />
           )}
+          <View style={{ position: 'absolute', top: s(16), left: s(18) }}>
+            <PanelTag>{resting ? 'THE TRAINER IS RESTING TOO' : 'LIKE THIS'}</PanelTag>
+          </View>
           {upcoming ? (
-            <View style={{ position: 'absolute', left: s(18), right: s(18), bottom: s(18), backgroundColor: colors.paper, borderWidth: s(1.5), borderColor: colors.ink, paddingHorizontal: s(18), paddingVertical: s(12), gap: s(4), zIndex: 2 }}>
-              <Kicker size={14}>UP NEXT</Kicker>
-              <Text style={{ fontFamily: fonts.display, fontSize: s(30), color: colors.ink }}>{upcoming.name}</Text>
-              <Text style={{ fontFamily: fonts.sans, fontSize: s(17), color: colors.inkSoft }}>{upcoming.why}</Text>
-            </View>
+            <Card style={{ position: 'absolute', left: s(16), right: s(16), bottom: s(16), backgroundColor: colors.bg, borderRadius: s(14), paddingVertical: s(14), paddingHorizontal: s(20), gap: s(4) }}>
+              <Kicker size={13} color={colors.accent}>
+                UP NEXT
+              </Kicker>
+              <Text style={{ fontFamily: fonts.display, fontSize: s(30), color: colors.text }}>{w.nextLabel ?? upcoming.name}</Text>
+              <Text style={{ fontFamily: fonts.sans, fontSize: s(16), color: colors.muted }} numberOfLines={1}>
+                {upcoming.why}
+              </Text>
+            </Card>
           ) : null}
         </View>
+
+        <View style={{ width: s(380), gap: s(18) }}>
+          {resting ? (
+            <>
+              <Kicker color={colors.accent}>REST · BREATHE</Kicker>
+              <BigNumber value={String(w.secondsLeft).padStart(2, '0')} suffix="seconds" size={230} />
+              <View style={{ flexDirection: 'row', marginLeft: -s(6) }}>
+                <FocusButton label="Skip rest" onPress={w.skipRest} preferredFocus />
+              </View>
+            </>
+          ) : step.kind === 'reps' ? (
+            <>
+              <Kicker color={colors.accent}>FOLLOW THE BEAT</Kicker>
+              <BigNumber value={String(w.reps).padStart(2, '0')} suffix={`/ ${step.reps}`} size={230} />
+              <Segments done={w.reps} total={step.reps} />
+              {w.phase === 'work' ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(14) }}>
+                  <Text style={{ fontFamily: fonts.display, fontSize: s(26), color: w.half === 'down' ? colors.accent : colors.dim }}>DOWN</Text>
+                  <View style={{ flex: 1, height: s(4), borderRadius: s(2), backgroundColor: colors.line }} />
+                  <Text style={{ fontFamily: fonts.display, fontSize: s(26), color: w.half === 'up' ? colors.accent : colors.dim }}>UP</Text>
+                </View>
+              ) : null}
+            </>
+          ) : (
+            <>
+              <Kicker color={colors.accent}>{holdStill ? 'HOLD IT' : 'KEEP GOING'}</Kicker>
+              <BigNumber value={String(w.secondsLeft).padStart(2, '0')} suffix="seconds" size={230} />
+              <Note size={17} color={colors.muted}>
+                of {step.seconds}
+              </Note>
+            </>
+          )}
+          <View style={{ marginTop: 'auto' }}>
+            <CoachCard line={coach} />
+          </View>
+        </View>
       </View>
 
-      <View style={{ borderTopWidth: s(1.5), borderTopColor: colors.ink, paddingTop: s(18), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: s(40) }}>
-        <Text style={{ fontFamily: fonts.displayItalic, fontSize: s(36), lineHeight: s(42), color: colors.ink, flexShrink: 1 }}>“{coach}”</Text>
-        <View style={{ flexDirection: 'row', gap: s(12) }}>
-          {sets > 1 && Array.from({ length: sets }, (_, i) => (
-            <SetDot key={i} size={s(26)} state={i < w.setIndex || (resting && i === w.setIndex) ? 'done' : i === w.setIndex ? 'current' : 'upcoming'} />
+      {steps.length > 1 ? (
+        <View style={{ flexDirection: 'row', gap: s(6) }}>
+          {steps.map((item, i) => (
+            <View key={item.id} style={{ flex: 1, gap: s(6) }}>
+              <View style={{ height: s(5), borderRadius: s(3), backgroundColor: i < w.stepIndex ? colors.faint : i === w.stepIndex ? colors.accent : colors.line }} />
+              <Text style={{ fontFamily: fonts.sansBold, fontSize: s(13), color: i === w.stepIndex ? colors.text : colors.faint }} numberOfLines={1}>
+                {item.name}
+              </Text>
+            </View>
           ))}
         </View>
-      </View>
-
-      {paused ? (
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(239,232,218,0.94)', alignItems: 'center', justifyContent: 'center', gap: s(18) }}>
-          <Headline lead="Paused." size={120} />
-          <PenNote arrow={false}>press OK or play/pause to carry on</PenNote>
-        </View>
       ) : null}
+
+      {paused ? <PausedOverlay /> : null}
     </View>
   );
 }

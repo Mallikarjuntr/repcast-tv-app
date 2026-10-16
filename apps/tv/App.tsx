@@ -1,7 +1,5 @@
-import { Fraunces_400Regular_Italic, Fraunces_500Medium, Fraunces_600SemiBold, Fraunces_600SemiBold_Italic } from '@expo-google-fonts/fraunces';
-import { IBMPlexMono_400Regular, IBMPlexMono_500Medium } from '@expo-google-fonts/ibm-plex-mono';
-import { InstrumentSans_400Regular, InstrumentSans_500Medium, InstrumentSans_600SemiBold } from '@expo-google-fonts/instrument-sans';
-import { Kalam_400Regular } from '@expo-google-fonts/kalam';
+import { Archivo_400Regular, Archivo_500Medium, Archivo_600SemiBold, Archivo_700Bold, Archivo_800ExtraBold } from '@expo-google-fonts/archivo';
+import { ArchivoNarrow_600SemiBold, ArchivoNarrow_700Bold } from '@expo-google-fonts/archivo-narrow';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -38,6 +36,7 @@ import { spotterNote, summarizeSession, type MoveResult, type WorkoutSummary } f
 import { useCoachNote } from './src/useCoachNote';
 import type { RepNote } from './src/useLiveWorkout';
 import { applySwaps, estimateSeconds, LEGS_GENTLY, type Swaps } from './src/workouts';
+import { profileColour } from './src/components/Avatar';
 import { colors } from './src/theme';
 
 void SplashScreen.preventAutoHideAsync();
@@ -81,16 +80,13 @@ function CoachReceipt({ data, onDone }: { data: CoachReceiptData; onDone: () => 
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Fraunces_400Regular_Italic,
-    Fraunces_500Medium,
-    Fraunces_600SemiBold,
-    Fraunces_600SemiBold_Italic,
-    InstrumentSans_400Regular,
-    InstrumentSans_500Medium,
-    InstrumentSans_600SemiBold,
-    Kalam_400Regular,
-    IBMPlexMono_400Regular,
-    IBMPlexMono_500Medium,
+    Archivo_400Regular,
+    Archivo_500Medium,
+    Archivo_600SemiBold,
+    Archivo_700Bold,
+    Archivo_800ExtraBold,
+    ArchivoNarrow_600SemiBold,
+    ArchivoNarrow_700Bold,
   });
   const [history, setHistory] = useState<Screen[]>([{ name: 'home' }]);
   const screen = history[history.length - 1]!;
@@ -189,10 +185,10 @@ export default function App() {
   }, [back]);
 
   const ready = profile !== null || screen.name === 'who' || screen.name === 'addProfile' || screen.name === 'videoTest';
-  if (!fontsLoaded || !ready) return <View style={{ flex: 1, backgroundColor: colors.paper }} />;
+  if (!fontsLoaded || !ready) return <View style={{ flex: 1, backgroundColor: colors.bg }} />;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.paper }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar hidden />
       {screen.name === 'home' && (
         <HomeScreen
@@ -203,6 +199,7 @@ export default function App() {
           onSwap={() => go({ name: 'swap' })}
           onNoCamera={() => go({ name: 'follow' })}
           profileName={profile?.name ?? ''}
+          profileColour={profileColour(profiles.findIndex((p) => p.id === profile?.id))}
           onProgress={() => go({ name: 'progress' })}
           onSwitch={() => go({ name: 'who' })}
         />

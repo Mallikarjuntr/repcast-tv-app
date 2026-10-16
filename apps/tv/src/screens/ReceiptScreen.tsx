@@ -1,17 +1,15 @@
-import { useState, type ReactNode } from 'react';
 import { Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import { FocusButton } from '../components/FocusButton';
-import { Cross, Tick } from '../components/Marks';
+import { Card, StatTile } from '../components/Studio';
 import { Headline, Kicker } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { receiptHeadline, type CoachNote, type WorkoutSummary } from '../summary';
 import type { RepNote } from '../useLiveWorkout';
 
-const RECEIPT_W = 420;
-
-function formatTime(seconds: number): string {
-  return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+/** "4 MIN 32 S": spelled out, so it can't be read as the clock time next to it. */
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  return m > 0 ? `${m} MIN ${seconds % 60} S` : `${seconds} S`;
 }
 
 function stamp(date: Date): string {
@@ -20,16 +18,31 @@ function stamp(date: Date): string {
   return `${day} · ${time}`;
 }
 
-/** Zig-zag bottom edge, as if torn off a till roll. */
-function TornEdge({ width, height }: { width: number; height: number }) {
-  const teeth = 21;
-  const step = width / teeth;
-  let d = `M0 0 H${width} V${height * 0.15}`;
-  for (let i = teeth; i > 0; i--) d += ` L${(i - 0.5) * step} ${height} L${(i - 1) * step} ${height * 0.15}`;
+/** One square per attempt: clean (accent), counted with a note (grey), didn't count (red outline). */
+function RepSquare({ note }: { note: RepNote }) {
+  const s = useScale();
+  const clean = note.counted && note.verdict === 'good';
   return (
-    <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
-      <Path d={`${d} Z`} fill={colors.paperBright} />
-    </Svg>
+    <View
+      style={{
+        width: s(16),
+        height: s(16),
+        borderRadius: s(4),
+        backgroundColor: !note.counted ? 'transparent' : clean ? colors.accent : colors.faint,
+        borderWidth: note.counted ? 0 : s(2),
+        borderColor: colors.fault,
+      }}
+    />
+  );
+}
+
+function Legend({ color, outline, children }: { color: string; outline?: boolean; children: string }) {
+  const s = useScale();
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(6) }}>
+      <View style={{ width: s(11), height: s(11), borderRadius: s(3), backgroundColor: outline ? 'transparent' : color, borderWidth: outline ? s(2) : 0, borderColor: color }} />
+      <Text style={{ fontFamily: fonts.sans, fontSize: s(13), color: colors.textSoft }}>{children}</Text>
+    </View>
   );
 }
 
@@ -43,106 +56,74 @@ export interface ReceiptProps {
   onDone: () => void;
 }
 
-/** After a coached workout: the till receipt of what counted, and the coach's handwritten note. */
+/** After a coached workout: what counted, every attempt set by set, and the coach's note. */
 export function ReceiptScreen({ summary, history, coach, sessionNumber, streak, finishedAt, onDone }: ReceiptProps) {
   const s = useScale();
-  const [showReps, setShowReps] = useState(false);
   const headline = receiptHeadline(summary);
 
-  const mono = { fontFamily: fonts.mono, fontSize: s(17), lineHeight: s(30), color: colors.ink };
-  const monoBold = { ...mono, fontFamily: fonts.monoMedium };
-  const row = (left: ReactNode, right: ReactNode, bold = false, key?: string) => (
-    <View key={key} style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Text style={bold ? monoBold : mono}>{left}</Text>
-      {typeof right === 'string' || typeof right === 'number' ? <Text style={bold ? monoBold : mono}>{right}</Text> : right}
-    </View>
-  );
-  const rule = <View style={{ borderTopWidth: s(1.5), borderStyle: 'dashed', borderTopColor: colors.faint, marginVertical: s(12) }} />;
-
   return (
-    <View style={{ flex: 1, backgroundColor: colors.paperDeep, paddingVertical: s(40), paddingHorizontal: s(64), flexDirection: 'row', gap: s(72) }}>
-      <View style={{ width: s(RECEIPT_W), marginTop: s(6), transform: [{ rotate: '-1.6deg' }] }}>
-        <View style={{ backgroundColor: colors.paperBright, paddingTop: s(28), paddingHorizontal: s(32), paddingBottom: s(18) }}>
-          <Text style={{ textAlign: 'center', fontFamily: fonts.displayBoldItalic, fontSize: s(30), lineHeight: s(36), color: colors.ink }}>spotter</Text>
-          <Text style={{ ...mono, textAlign: 'center', fontSize: s(14), letterSpacing: s(1), color: colors.pencil }}>
-            SESSION {String(sessionNumber).padStart(3, '0')} · {stamp(finishedAt)}
-          </Text>
-          {rule}
-          {summary.sets.map((set, i) => row(set.label, `${set.counted}`, false, `set-${i}`))}
-          {summary.noReps > 0 ? row("DIDN'T COUNT", `${summary.noReps}`) : null}
-          {rule}
-          {row('TOTAL REPS', `${summary.counted}`, true)}
-          {row(
-            'CLEAN FORM',
-            <Text style={{ ...monoBold, backgroundColor: colors.highlighter, paddingHorizontal: s(6) }}>{summary.cleanPct === null ? '—' : `${summary.cleanPct}%`}</Text>,
-            true,
-          )}
-          {row('TIME', formatTime(summary.seconds))}
-          {row('STREAK', `${streak} ${streak === 1 ? 'DAY' : 'DAYS'}`)}
-          {rule}
-          <Text style={{ ...mono, textAlign: 'center', fontSize: s(14), letterSpacing: s(1), color: colors.pencil }}>THANK YOU FOR SHOWING UP</Text>
-        </View>
-        <TornEdge width={s(RECEIPT_W)} height={s(14)} />
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(22) }}>
+      <View style={{ gap: s(12) }}>
+        <Kicker color={colors.accent}>
+          SESSION {String(sessionNumber).padStart(3, '0')} · {stamp(finishedAt)} · {formatDuration(summary.seconds)} · {streak} {streak === 1 ? 'DAY' : 'DAYS'} IN A ROW
+        </Kicker>
+        <Headline text={`${headline.lead}${headline.italic}`.replace('\n', ' ')} size={72} />
       </View>
 
-      <View style={{ flex: 1, gap: s(24), paddingTop: s(10) }}>
-        <Headline lead={headline.lead} italic={headline.italic} size={74} />
+      <View style={{ flex: 1, flexDirection: 'row', gap: s(24) }}>
+        <View style={{ width: s(430), gap: s(14) }}>
+          <View style={{ flexDirection: 'row', gap: s(12) }}>
+            <StatTile style={{ flex: 1 }} size={52} value={`${summary.counted}`} label="TOTAL REPS" />
+            <StatTile style={{ flex: 1 }} size={52} value={summary.cleanPct === null ? '—' : `${summary.cleanPct}%`} label="CLEAN FORM" color={colors.accent} />
+            <StatTile style={{ flex: 1 }} size={52} value={`${summary.noReps}`} label="DIDN'T COUNT" />
+          </View>
+          <Card style={{ flex: 1, gap: s(10), borderLeftWidth: s(5), borderLeftColor: colors.accent }}>
+            <Kicker size={13} color={colors.accent}>
+              YOUR COACH'S NOTE
+            </Kicker>
+            <Text style={{ fontFamily: fonts.sansSemi, fontSize: s(21), lineHeight: s(29), color: colors.text }}>{coach.note.note}</Text>
+            <Text style={{ fontFamily: fonts.sans, fontSize: s(19), lineHeight: s(27), color: colors.textSoft }}>Next time: {coach.note.nextTime}</Text>
+            <Text style={{ marginTop: 'auto', fontFamily: fonts.sans, fontSize: s(13), color: colors.faint }}>
+              {coach.writing
+                ? 'Your coach is still writing…'
+                : coach.note.source === 'ai'
+                  ? 'Written by your AI coach · Claude on Amazon Bedrock'
+                  : 'Written by Spotter from your reps'}
+            </Text>
+          </Card>
+        </View>
 
-        {showReps ? (
-          <View style={{ gap: s(16), backgroundColor: colors.paper, paddingVertical: s(22), paddingHorizontal: s(28) }}>
-            {summary.sets.map((_, setIndex) => (
-              <View key={setIndex} style={{ flexDirection: 'row', alignItems: 'center', gap: s(16) }}>
-                <View style={{ width: s(170) }}>
-                  <Kicker size={14}>{summary.sets[setIndex]!.label.replace(' · SET ', ' ')}</Kicker>
-                </View>
-                <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: s(2) }}>
-                  {history
-                    .filter((n) => n.set === setIndex)
-                    .map((n, i) => (
-                      <View key={i}>{n.counted ? <Tick size={s(30)} color={n.verdict === 'good' ? colors.ink : colors.pen} /> : <Cross size={s(30)} />}</View>
-                    ))}
-                </View>
-              </View>
-            ))}
-            <View style={{ flexDirection: 'row', gap: s(26), alignItems: 'center', marginTop: s(4) }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(4) }}>
-                <Tick size={s(22)} />
-                <Kicker size={13}>CLEAN</Kicker>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(4) }}>
-                <Tick size={s(22)} color={colors.pen} />
-                <Kicker size={13}>COUNTED, WITH A NOTE</Kicker>
-              </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(4) }}>
-                <Cross size={s(22)} />
-                <Kicker size={13}>DIDN'T COUNT</Kicker>
-              </View>
+        <Card style={{ flex: 1, gap: s(2) }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: s(8) }}>
+            <Kicker size={12}>EVERY ATTEMPT, AS YOUR PHONE JUDGED IT</Kicker>
+            <View style={{ flexDirection: 'row', gap: s(14) }}>
+              <Legend color={colors.accent}>Clean</Legend>
+              <Legend color={colors.faint}>With a note</Legend>
+              <Legend color={colors.fault} outline>
+                Didn't count
+              </Legend>
             </View>
           </View>
-        ) : (
-          <View style={{ backgroundColor: colors.paper, paddingVertical: s(22), paddingHorizontal: s(28), maxWidth: s(620), transform: [{ rotate: '0.8deg' }] }}>
-            <Text style={{ fontFamily: fonts.hand, fontSize: s(27), lineHeight: s(38), color: colors.pen }}>
-              {coach.note.note}
-              {'\n'}Next time: {coach.note.nextTime}
-            </Text>
-            <Text style={{ fontFamily: fonts.hand, fontSize: s(24), lineHeight: s(32), color: colors.pen, textAlign: 'right', marginTop: s(4) }}>
-              {coach.writing ? 'your coach is still writing…' : '— your spotter'}
-            </Text>
-          </View>
-        )}
+          {summary.sets.map((set, setIndex) => (
+            <View key={setIndex} style={{ flexDirection: 'row', alignItems: 'center', gap: s(14), paddingVertical: s(8), borderTopWidth: s(1), borderTopColor: colors.line }}>
+              <Text style={{ width: s(190), fontFamily: fonts.sansBold, fontSize: s(14), letterSpacing: s(1), color: colors.text }} numberOfLines={1}>
+                {set.label}
+              </Text>
+              <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: s(3) }}>
+                {history
+                  .filter((n) => n.set === setIndex)
+                  .map((n, i) => (
+                    <RepSquare key={i} note={n} />
+                  ))}
+              </View>
+              <Text style={{ width: s(40), textAlign: 'right', fontFamily: fonts.sansBold, fontSize: s(16), color: colors.textSoft }}>{set.counted}</Text>
+            </View>
+          ))}
+        </Card>
+      </View>
 
-        <Kicker size={13}>
-          {showReps
-            ? 'EVERY ATTEMPT, IN ORDER, AS YOUR PHONE JUDGED IT'
-            : coach.note.source === 'ai'
-              ? 'NOTE WRITTEN BY YOUR AI COACH · CLAUDE ON AMAZON BEDROCK'
-              : 'NOTE WRITTEN BY SPOTTER FROM YOUR REPS'}
-        </Kicker>
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(28), marginTop: 'auto' }}>
-          <FocusButton label="Done for today" onPress={onDone} preferredFocus />
-          <FocusButton label={showReps ? 'Back to the note' : 'See every rep'} onPress={() => setShowReps((v) => !v)} variant="link" fontSize={22} />
-        </View>
+      <View style={{ flexDirection: 'row', marginLeft: -s(6) }}>
+        <FocusButton label="Done for today" onPress={onDone} preferredFocus />
       </View>
     </View>
   );

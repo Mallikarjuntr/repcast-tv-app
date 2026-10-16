@@ -1,13 +1,13 @@
 import { BODY_PARTS, config, type BodyPart } from '@spotter/shared';
 import { useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
 import { FloorPlan } from '../components/FloorPlan';
 import { FocusButton } from '../components/FocusButton';
 import { LiveVideo } from '../components/LiveVideo';
 import { Cross, Tick } from '../components/Marks';
 import { QrCode } from '../components/QrCode';
-import { Headline, Kicker, PenNote } from '../components/Type';
+import { Card, PanelTag, PrivacyLine } from '../components/Studio';
+import { Headline, Kicker, Note } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { latestOf } from '../poseFeed';
 import { usePairing } from '../usePairing';
@@ -20,32 +20,28 @@ const NO_NOTES = { depth: false, knees: false, chest: false };
 
 const PART_LABEL: Record<BodyPart, string> = { head: 'Head', hips: 'Hips', knees: 'Knees', feet: 'Feet' };
 
-function Waiting({ size }: { size: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 34 34">
-      <Circle cx={17} cy={17} r={9} fill="none" stroke={colors.pencil} strokeWidth={2.5} strokeDasharray="4 4" />
-    </Svg>
-  );
-}
-
 function StatusRow({ done, children }: { done: boolean; children: string }) {
   const s = useScale();
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(12) }}>
-      {done ? <Tick size={s(26)} /> : <Waiting size={s(26)} />}
-      <Text style={{ fontFamily: fonts.sans, fontSize: s(20), color: done ? colors.ink : colors.pencil }}>{children}</Text>
-    </View>
+    <Card style={{ flexDirection: 'row', alignItems: 'center', gap: s(12), borderRadius: s(12), paddingVertical: s(13), paddingHorizontal: s(18) }}>
+      <View
+        style={{
+          width: s(11),
+          height: s(11),
+          borderRadius: s(6),
+          backgroundColor: done ? colors.good : 'transparent',
+          borderWidth: done ? 0 : s(2),
+          borderColor: colors.faint,
+        }}
+      />
+      <Text style={{ fontFamily: fonts.sansSemi, fontSize: s(18), color: done ? colors.text : colors.muted }}>{children}</Text>
+    </Card>
   );
 }
 
-/** A spoken line as a handwritten note: lower-case start, no full stop. */
-function penNote(line: string): string {
-  return `${line.charAt(0).toLowerCase()}${line.slice(1)}`.replace(/\.$/, '');
-}
-
 function missingCue(missing: BodyPart[]): string {
-  if (missing.includes('head') || missing.includes('hips')) return 'step into the middle of the frame';
-  return `step back a little — I can't see your ${missing.map((p) => PART_LABEL[p].toLowerCase()).join(' and ')}`;
+  if (missing.includes('head') || missing.includes('hips')) return 'Step into the middle of the frame';
+  return `Step back a little — I can't see your ${missing.map((p) => PART_LABEL[p].toLowerCase()).join(' and ')}`;
 }
 
 export function PairScreen({ onReady }: { onReady: (channel: string) => void }) {
@@ -70,83 +66,101 @@ export function PairScreen({ onReady }: { onReady: (channel: string) => void }) 
   // Spoken help to get into frame, then a go-ahead once the coach can see what it needs.
   useSpokenGuidance(hint ? HINT_LINES[hint] : allVisible && ready?.framing ? READY_LINE : null, phoneConnected, hint !== null);
 
-  return (
-    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.paper, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(64) }}>
-      <View style={{ flex: 0.9, gap: s(18) }}>
-        <Kicker>STEP 1 OF 2 · PAIR</Kicker>
-        <Headline lead={'Your phone is\nthe '} italic="camera." size={64} />
-        <Text style={{ fontFamily: fonts.sans, fontSize: s(21), lineHeight: s(30), color: colors.inkSoft, maxWidth: s(440) }}>
-          Scan this with your phone. It opens in the browser, so there's nothing to install.
-        </Text>
+  const guidance =
+    ready?.phoneConnected && missing
+      ? hint
+        ? HINT_LINES[hint].replace(/\.$/, '')
+        : !allVisible
+          ? missingCue(missing)
+          : ready.sideOn
+            ? 'Turn the phone about 45° — from the side I can’t see both legs'
+            : 'I can see you — ready when you are'
+      : ready?.phoneConnected
+        ? 'Waiting for the camera to start…'
+        : 'Then step into view of the phone';
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(28), minHeight: s(180) }}>
+  return (
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.bg, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(40) }}>
+      <View style={{ width: s(440), gap: s(16) }}>
+        <Kicker color={colors.accent}>STEP 1 OF 2 · PAIR</Kicker>
+        <Headline text={'Your phone is\nthe camera'} size={66} />
+        <Note size={18}>Scan this with your phone. It opens in the browser, so there's nothing to install.</Note>
+
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(22), minHeight: s(190) }}>
           {state.phase === 'ready' ? (
             <>
-              <View style={{ borderWidth: s(2), borderColor: colors.ink, padding: s(6), backgroundColor: colors.paperBright }}>
-                <QrCode value={`${config.cameraAppUrl}?code=${state.session.code}`} size={s(164)} />
+              <View style={{ backgroundColor: colors.text, borderRadius: s(12), padding: s(10) }}>
+                <QrCode value={`${config.cameraAppUrl}?code=${state.session.code}`} size={s(168)} />
               </View>
-              <View style={{ gap: s(4), flexShrink: 1 }}>
-                <Kicker size={15}>OR TYPE THIS CODE</Kicker>
-                <Text style={{ fontFamily: fonts.monoMedium, fontSize: s(56), letterSpacing: s(10), color: colors.ink }}>{state.session.code}</Text>
-                <Kicker size={13}>{'AT ' + config.cameraAppUrl.replace('https://', '').replace(/\/$/, '').replace('/', '\n/')}</Kicker>
+              <View style={{ gap: s(6), flexShrink: 1 }}>
+                <Kicker size={13}>OR TYPE THIS CODE</Kicker>
+                <Headline text={state.session.code.split('').join(' ')} size={62} />
+                <Text style={{ fontFamily: fonts.sans, fontSize: s(13), lineHeight: s(18), color: colors.faint }}>
+                  {'at ' + config.cameraAppUrl.replace('https://', '').replace(/\/$/, '').replace('/', '\n/')}
+                </Text>
               </View>
             </>
           ) : state.phase === 'loading' ? (
-            <PenNote arrow={false}>getting a code from Spotter…</PenNote>
+            <Note size={20}>Getting a code from Spotter…</Note>
           ) : (
-            <View style={{ gap: s(12) }}>
-              <PenNote arrow={false}>{"I couldn't reach Spotter. Check the TV's internet."}</PenNote>
-              <Kicker size={13}>{state.message.toUpperCase()}</Kicker>
+            <View style={{ gap: s(10) }}>
+              <Note size={20} color={colors.text}>
+                {"I couldn't reach Spotter. Check the TV's internet."}
+              </Note>
+              <Kicker size={12}>{state.message.toUpperCase()}</Kicker>
             </View>
           )}
         </View>
 
-        <View style={{ gap: s(10), marginTop: 'auto' }}>
-          <StatusRow done={ready?.phoneConnected ?? false}>{ready?.phoneConnected ? 'Phone connected' : 'Waiting for your phone…'}</StatusRow>
-          {ready?.phoneConnected && missing ? (
-            <>
-              <View style={{ flexDirection: 'row', gap: s(18), paddingLeft: s(4) }}>
-                {BODY_PARTS.map((part) => (
-                  <View key={part} style={{ flexDirection: 'row', alignItems: 'center', gap: s(4) }}>
-                    {ready.framing![part] ? <Tick size={s(22)} /> : <Cross size={s(22)} />}
-                    {/* A part the exercise can do without (e.g. feet for squats) isn't marked as a problem. */}
-                    <Text style={{ fontFamily: fonts.sans, fontSize: s(18), color: ready.framing![part] ? colors.ink : allVisible ? colors.pencil : colors.pen }}>{PART_LABEL[part]}</Text>
-                  </View>
-                ))}
-              </View>
-              <PenNote arrow={false} size={24} tilt={-1.5}>
-                {hint ? penNote(HINT_LINES[hint]) : !allVisible ? missingCue(missing) : ready.sideOn ? 'turn the phone about 45° — from the side I can’t see both legs' : 'I can see you — ready when you are'}
-              </PenNote>
-            </>
-          ) : (
-            <StatusRow done={false}>{ready?.phoneConnected ? 'Waiting for the camera to start…' : 'Then step into view of the phone'}</StatusRow>
-          )}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(24), marginTop: s(6) }}>
+        <View style={{ gap: s(12), marginTop: 'auto' }}>
+          <StatusRow done={phoneConnected}>{phoneConnected ? 'Phone connected' : 'Waiting for your phone…'}</StatusRow>
+          <View style={{ flexDirection: 'row', marginLeft: -s(6) }}>
             {state.phase === 'error' ? (
-              <FocusButton label="Try again" onPress={newCode} preferredFocus fontSize={20} />
+              <FocusButton label="Try again" onPress={newCode} preferredFocus />
             ) : (
-              <>
-                {ready?.phoneConnected ? (
-                  <FocusButton label={allVisible ? 'Start workout' : 'Start anyway'} onPress={() => onReady(ready.session.channel)} preferredFocus={allVisible} fontSize={20} />
-                ) : null}
-                <FocusButton label="New code" onPress={newCode} variant="link" fontSize={18} preferredFocus={!ready?.phoneConnected} />
-              </>
+              <FocusButton label="New code" onPress={newCode} variant="quiet" size="compact" preferredFocus={!phoneConnected} />
             )}
           </View>
+          <PrivacyLine size={13} />
         </View>
       </View>
 
-      <View style={{ flex: 1.25, gap: s(18) }}>
+      <View style={{ flex: 1, gap: s(14) }}>
         <Kicker>{showVideo ? 'STEP 2 OF 2 · YOU, RIGHT NOW' : 'STEP 2 OF 2 · SET IT DOWN'}</Kicker>
         <View
-          style={{ flex: 1, backgroundColor: colors.paperDeep, borderWidth: s(1.5), borderColor: colors.ink, alignItems: 'center', justifyContent: 'center' }}
+          style={{ flex: 1, backgroundColor: colors.surface, borderRadius: s(20), overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}
           onLayout={(e) => setPanel({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
         >
           {showVideo ? (
-            <LiveVideo streamUrl={video.streamUrl!} getPose={videoPose.getPose} subscribePose={videoPose.subscribePose} notes={NO_NOTES} width={panel.width - s(3)} height={panel.height - s(3)} />
+            <LiveVideo streamUrl={video.streamUrl!} getPose={videoPose.getPose} subscribePose={videoPose.subscribePose} notes={NO_NOTES} width={panel.width} height={panel.height} />
           ) : (
-            <FloorPlan width={s(640)} height={s(518)} />
+            <FloorPlan width={s(560)} height={s(453)} />
           )}
+          {showVideo ? (
+            <View style={{ position: 'absolute', left: s(18), top: s(16) }}>
+              <PanelTag dot={colors.live}>YOU · LIVE</PanelTag>
+            </View>
+          ) : null}
+          {ready?.phoneConnected && missing ? (
+            <View style={{ position: 'absolute', right: s(16), top: s(16), gap: s(8) }}>
+              {BODY_PARTS.map((part) => {
+                const seen = ready.framing![part];
+                return (
+                  <View key={part} style={{ flexDirection: 'row', alignItems: 'center', gap: s(8), backgroundColor: colors.bg, borderRadius: s(8), paddingVertical: s(5), paddingLeft: s(8), paddingRight: s(14) }}>
+                    {seen ? <Tick size={s(20)} /> : <Cross size={s(20)} color={allVisible ? colors.faint : colors.fault} />}
+                    {/* A part the exercise can do without (e.g. feet for squats) isn't marked as a problem. */}
+                    <Text style={{ fontFamily: fonts.sansBold, fontSize: s(15), color: seen ? colors.text : allVisible ? colors.faint : colors.fault }}>{PART_LABEL[part]}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: s(20), minHeight: s(66) }}>
+          <Text style={{ flexShrink: 1, fontFamily: fonts.displaySemi, fontSize: s(26), color: allVisible && !hint ? colors.text : colors.textSoft }}>{guidance}</Text>
+          {ready?.phoneConnected ? (
+            <FocusButton label={allVisible ? 'Start workout' : 'Start anyway'} onPress={() => onReady(ready.session.channel)} variant={allVisible ? 'primary' : 'secondary'} play={allVisible} preferredFocus={allVisible} />
+          ) : null}
         </View>
       </View>
     </View>

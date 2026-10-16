@@ -4,7 +4,8 @@ import { FocusButton } from '../components/FocusButton';
 import { DemoFigure } from '../components/DemoFigure';
 import { TrainerVideo } from '../components/TrainerVideo';
 import { TRAINER_CLIPS } from '../trainerClips';
-import { Headline, Kicker } from '../components/Type';
+import { PanelTag } from '../components/Studio';
+import { Headline, Kicker, Note } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { isFocused } from '../tv';
 import { SWAP_OPTIONS, type Session, type Step, type Swaps } from '../workouts';
@@ -51,19 +52,24 @@ export function SwapScreen({ base, swaps: initial, onDone }: { base: Session; sw
   const clip = TRAINER_CLIPS[shown.id];
   const swapCount = Object.keys(swaps).length;
 
+  const sessionName = `${base.title}${base.titleItalic}`.replace(/\s*\n\s*/g, ' ').replace(/\.$/, '').toUpperCase();
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.paper, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(32), gap: s(18) }}>
-      <View style={{ gap: s(10) }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: s(36) }}>
-          <Kicker>SWAP A MOVE · {base.title.replace('\n', ' ').trim().toUpperCase()} {base.titleItalic.toUpperCase()}</Kicker>
-          {/* Kept away from Done so pressing down from the list can't land on it by accident. */}
-          {swapCount > 0 ? <FocusButton label="Put everything back" onPress={() => setSwaps({})} variant="link" fontSize={18} /> : null}
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: s(36), paddingHorizontal: s(64), paddingBottom: s(32), gap: s(18) }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <View style={{ gap: s(12) }}>
+          <Kicker color={colors.accent}>
+            {sessionName}
+            {swapCount > 0 ? ` · ${swapCount} SWAPPED` : ''}
+          </Kicker>
+          <Headline text="Swap what doesn't suit you" size={56} />
         </View>
-        <Headline lead="Swap what " italic="doesn't suit you." size={54} />
+        {/* Kept away from Done so pressing down from the list can't land on it by accident. */}
+        {swapCount > 0 ? <FocusButton label="Put everything back" onPress={() => setSwaps({})} variant="secondary" size="compact" /> : null}
       </View>
 
-      <View style={{ flex: 1, flexDirection: 'row', gap: s(48) }}>
-        <View style={{ flex: 1.25 }}>
+      <View style={{ flex: 1, flexDirection: 'row', gap: s(28) }}>
+        <View style={{ width: s(560), gap: s(6) }}>
           {base.steps.map((original, i) => {
             const choice = choiceFor(original);
             const count = (SWAP_OPTIONS[original.id] ?? [original]).length;
@@ -76,45 +82,54 @@ export function SwapScreen({ base, swaps: initial, onDone }: { base: Session; sw
                 hasTVPreferredFocus={i === 0}
                 onFocus={() => setFocusedIndex(i)}
                 onPress={() => cycle(original)}
-                style={(state) => ({
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: s(16),
-                  paddingVertical: s(9),
-                  paddingHorizontal: s(14),
-                  backgroundColor: isFocused(state) ? colors.highlighter : 'transparent',
-                  borderBottomWidth: s(1.5),
-                  borderBottomColor: colors.faint,
-                })}
               >
-                <Text style={{ fontFamily: fonts.mono, fontSize: s(16), color: colors.pencil }}>{String(i + 1).padStart(2, '0')}</Text>
-                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'baseline', gap: s(14) }}>
-                  <Text style={{ fontFamily: fonts.display, fontSize: s(26), lineHeight: s(34), color: colors.ink }}>{choice.name}</Text>
-                  {swapped ? (
-                    <Text style={{ fontFamily: fonts.hand, fontSize: s(20), lineHeight: s(28), color: colors.pen }}>was {original.name.toLowerCase()}</Text>
-                  ) : null}
-                </View>
-                <Text style={{ fontFamily: fonts.mono, fontSize: s(16), color: colors.ink }}>{amount(choice)}</Text>
-                <Text style={{ fontFamily: fonts.mono, fontSize: s(13), letterSpacing: s(1.5), color: colors.pencil, width: s(64), textAlign: 'right' }}>
-                  {count > 1 ? `${(SWAP_OPTIONS[original.id] ?? []).findIndex((o) => o.id === choice.id) + 1} OF ${count}` : ''}
-                </Text>
+                {(state) => {
+                  const focused = isFocused(state);
+                  return (
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: s(16),
+                        paddingVertical: s(5),
+                        paddingHorizontal: s(18),
+                        borderRadius: s(12),
+                        borderWidth: s(3),
+                        borderColor: focused ? colors.text : 'transparent',
+                        backgroundColor: focused ? colors.surfaceHigh : colors.surface,
+                      }}
+                    >
+                      <Text style={{ fontFamily: fonts.sansBold, fontSize: s(13), color: colors.faint, width: s(22) }}>{String(i + 1).padStart(2, '0')}</Text>
+                      <View style={{ flex: 1, gap: s(1) }}>
+                        <Text style={{ fontFamily: fonts.displaySemi, fontSize: s(22), color: colors.text }}>{choice.name}</Text>
+                        <Text style={{ fontFamily: fonts.sans, fontSize: s(14), color: colors.faint }}>
+                          {swapped ? `instead of ${original.name.toLowerCase()}` : 'as planned'} · {amount(choice)}
+                        </Text>
+                      </View>
+                      {swapped ? (
+                        <Kicker size={12} color={colors.accent}>
+                          SWAPPED
+                        </Kicker>
+                      ) : null}
+                      <Text style={{ fontFamily: fonts.sansBold, fontSize: s(12), letterSpacing: s(1.5), color: colors.faint, width: s(56), textAlign: 'right' }}>
+                        {count > 1 ? `${(SWAP_OPTIONS[original.id] ?? []).findIndex((o) => o.id === choice.id) + 1} OF ${count}` : ''}
+                      </Text>
+                    </View>
+                  );
+                }}
               </Pressable>
             );
           })}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(28), marginTop: 'auto' }}>
-            <FocusButton label="Done" onPress={() => onDone(swaps)} fontSize={22} />
+          <View style={{ flexDirection: 'row', marginTop: 'auto', marginLeft: -s(6) }}>
+            <FocusButton label="Done" onPress={() => onDone(swaps)} variant="light" />
           </View>
         </View>
 
         <View style={{ flex: 1, gap: s(12) }}>
           <View
-            style={{ flex: 1, backgroundColor: colors.paperDeep, borderWidth: s(1.5), borderColor: colors.ink }}
+            style={{ flex: 1, backgroundColor: colors.surface, borderRadius: s(20), overflow: 'hidden' }}
             onLayout={(e) => setPanel({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
           >
-            <View style={{ position: 'absolute', top: s(12), left: s(16), right: s(16), flexDirection: 'row', justifyContent: 'space-between', zIndex: 2 }}>
-              <Kicker size={13}>LIKE THIS</Kicker>
-              <Kicker size={13}>{options.length > 1 ? `OPTION ${optionIndex + 1} OF ${options.length}` : 'NO SWAPS FOR THIS ONE'}</Kicker>
-            </View>
             {clip !== undefined ? (
               <TrainerVideo key={shown.id} clip={clip} paused={false} position={freeLoop} />
             ) : (
@@ -127,9 +142,12 @@ export function SwapScreen({ base, swaps: initial, onDone }: { base: Session; sw
                 animate={shown.kind === 'reps' || shown.cycle > 0}
               />
             )}
+            <View style={{ position: 'absolute', top: s(14), left: s(16), right: s(16), flexDirection: 'row', justifyContent: 'space-between' }}>
+              <PanelTag>LIKE THIS · {shown.name.toUpperCase()}</PanelTag>
+              <PanelTag color={colors.faint}>{options.length > 1 ? `OPTION ${optionIndex + 1} OF ${options.length}` : 'NO SWAPS FOR THIS ONE'}</PanelTag>
+            </View>
           </View>
-          <Text style={{ fontFamily: fonts.display, fontSize: s(28), lineHeight: s(36), color: colors.ink }}>{shown.name}</Text>
-          <Text style={{ fontFamily: fonts.sans, fontSize: s(19), lineHeight: s(27), color: colors.inkSoft }}>{shown.why}</Text>
+          <Note size={17}>{shown.why}</Note>
           <Kicker size={13}>{options.length > 1 ? 'PRESS OK TO TRY THE NEXT OPTION' : ' '}</Kicker>
         </View>
       </View>

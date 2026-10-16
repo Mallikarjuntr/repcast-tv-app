@@ -27,7 +27,7 @@ const BONES: [PosePoint, PosePoint][] = [
   ['rKnee', 'rAnkle'],
 ];
 
-/** The live outline of the person, fitted into the panel, with the coach's red-pen marks. */
+/** The live outline of the person, fitted into the panel, with the coach's marks. */
 export const PoseFigure = memo(function PoseFigure({
   frame,
   notes,
@@ -99,7 +99,7 @@ export const PoseFigure = memo(function PoseFigure({
               width: length,
               height: stroke,
               borderRadius: stroke / 2,
-              backgroundColor: colors.ink,
+              backgroundColor: colors.text,
               transform: [{ rotate: `${Math.atan2(pb.y - pa.y, pb.x - pa.x)}rad` }],
             }}
           />
@@ -115,7 +115,7 @@ export const PoseFigure = memo(function PoseFigure({
             height: headR * 2,
             borderRadius: headR,
             borderWidth: stroke * 0.8,
-            borderColor: colors.ink,
+            borderColor: colors.text,
           }}
         />
       ) : null}

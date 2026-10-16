@@ -22,8 +22,8 @@ export function QrCode({ value, size }: { value: string; size: number }) {
   const quiet = 2;
   return (
     <Svg width={size} height={size} viewBox={`${-quiet} ${-quiet} ${count + quiet * 2} ${count + quiet * 2}`} accessibilityLabel="QR code to pair your phone">
-      <Rect x={-quiet} y={-quiet} width={count + quiet * 2} height={count + quiet * 2} fill={colors.paperBright} />
-      <Path d={path} fill={colors.ink} />
+      <Rect x={-quiet} y={-quiet} width={count + quiet * 2} height={count + quiet * 2} fill={colors.text} />
+      <Path d={path} fill={colors.bg} />
     </Svg>
   );
 }

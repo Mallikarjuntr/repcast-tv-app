@@ -108,6 +108,14 @@ In Smart coaching the TV shows the phone's camera with the user's skeleton drawn
 
 Not yet measured: glass-to-glass latency (an adb screenshot takes about a second, too slow to time it; the stream's own stats put it around 150–200 ms), and a real phone running the pose model and the video encoder at the same time for a whole workout.
 
+## 6. The "Studio" redesign (2026-10-16)
+
+The TV app moved from the paper "Training Notebook" look to a dark "Studio" look (Archivo type, one orange accent), chosen from three mocked-up directions. Only the look changed: every screen keeps its flow, focus order and remote keys. The 3D trainer clips were re-rendered on the panel colour (`tools/trainer/style.py`) so they sit seamlessly in the dark panels, and the app icon, TV banner, splash and Appstore images were regenerated (`tools/brand`).
+
+Checked on the Android TV emulator (1080p) with `tools/fake-phone.mjs`, screen by screen: Who's training → Add someone (Fire TV keyboard) → Home (trainer preview, carried-over coach advice) → Choose a mode → Pair (QR + code, checklist ticks, focus jumps to Start workout) → coached session: warm-up (trainer clip) → squats on the Live screen (count, segments, clean / with a note / no rep, coach card, outline fallback) → rest between sets → later moves ended early with "Done with this" → Paused overlay → receipt (stats, coach's note, every attempt by set). Then Follow along (beat count, rest with the trainer at ease and an "Up next" card, progress across the six moves) → Follow along done, Swap a move (cycle an option, "Put everything back"), and Progress (calendar, clean-form bars). Screenshots: `docs/screenshots/studio/`.
+
+Not checked on the emulator: live phone video (the emulator's network can't receive it); that needs the stick.
+
 ## Known limits
 
 - **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other. Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.

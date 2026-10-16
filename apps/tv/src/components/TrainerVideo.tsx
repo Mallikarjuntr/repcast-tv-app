@@ -11,7 +11,7 @@ export type TrainerPosition = number | 'hold' | null;
 
 /**
  * The 3D trainer: a pre-rendered looping clip of the move (tools/trainer), drawn in the app's
- * ink-on-paper style. For moves on a beat, `position` keeps the trainer in step with the counting;
+ * studio style (pale figure on the panel colour). For moves on a beat, `position` keeps the trainer in step with the counting;
  * holds and previews just loop. Remount (key) it to change clips.
  */
 export function TrainerVideo({ clip, paused, position }: { clip: number; paused: boolean; position: () => TrainerPosition }) {
@@ -47,11 +47,11 @@ export function TrainerVideo({ clip, paused, position }: { clip: number; paused:
     return () => clearInterval(timer);
   }, [player, paused, position]);
 
-  // Paper behind the video and no black "shutter" before the first frame, so it blends into the panel.
+  // The panel colour behind the video and no black "shutter" before the first frame, so it blends into the panel.
   return (
     <VideoView
       player={player}
-      style={{ flex: 1, backgroundColor: colors.paperDeep }}
+      style={{ flex: 1, backgroundColor: colors.surface }}
       contentFit="contain"
       nativeControls={false}
       useExoShutter={false}

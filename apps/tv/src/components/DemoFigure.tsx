@@ -25,7 +25,7 @@ export const DemoFigure = memo(function DemoFigure({
   height: number;
   /** False for a held pose (a plank): draw once, no frame loop. */
   animate?: boolean;
-  /** Show how far into the rep the beat is, as a highlighter bar along the bottom. */
+  /** Show how far into the rep the beat is, as an accent bar along the bottom. */
   depthBar?: boolean;
 }) {
   const s = useScale();
@@ -63,13 +63,13 @@ function useFrameLoop(active: boolean): void {
 
 function BarFill({ fraction, inset, bottom, height }: { fraction: number; inset: number; bottom: number; height: number }) {
   return (
-    <View style={{ position: 'absolute', left: inset, right: inset, bottom, height, backgroundColor: colors.paper }}>
-      <View style={{ width: `${Math.round(fraction * 100)}%`, height: '100%', backgroundColor: colors.highlighter }} />
+    <View style={{ position: 'absolute', left: inset, right: inset, bottom, height, backgroundColor: colors.line }}>
+      <View style={{ width: `${Math.round(fraction * 100)}%`, height: '100%', backgroundColor: colors.accent }} />
     </View>
   );
 }
 
-/** The highlighter bar along the bottom of the panel showing how far into the rep the beat is. */
+/** The accent bar along the bottom of the panel showing how far into the rep the beat is. */
 export const BeatBar = memo(function BeatBar({ position, animate = true }: { position: () => number; animate?: boolean }) {
   const s = useScale();
   useFrameLoop(animate);

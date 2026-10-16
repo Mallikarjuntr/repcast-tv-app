@@ -103,16 +103,16 @@ export function VideoTestScreen() {
   }, []);
 
   const line = (label: string, value: string) => (
-    <Text key={label} style={{ fontFamily: fonts.mono, fontSize: s(15), color: colors.ink }}>
+    <Text key={label} style={{ fontFamily: fonts.sansMedium, fontSize: s(15), color: colors.text }}>
       {label.padEnd(10)} {value}
     </Text>
   );
 
   return (
-    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.paper, padding: s(32), gap: s(32) }}>
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.bg, padding: s(32), gap: s(32) }}>
       <View style={{ width: s(360), gap: s(10) }}>
         <Kicker>VIDEO TEST · PHASE 0</Kicker>
-        <Text style={{ fontFamily: fonts.monoMedium, fontSize: s(56), letterSpacing: s(8), color: colors.ink }}>{code ?? '····'}</Text>
+        <Text style={{ fontFamily: fonts.sansBold, fontSize: s(56), letterSpacing: s(8), color: colors.text }}>{code ?? '····'}</Text>
         {line('video', video?.state ?? 'waiting')}
         {stats ? (
           <>
@@ -128,9 +128,9 @@ export function VideoTestScreen() {
             {line('poses', String(stats.poses))}
           </>
         ) : null}
-        {error ? <Text style={{ fontFamily: fonts.sans, fontSize: s(16), color: colors.pen }}>{error}</Text> : null}
+        {error ? <Text style={{ fontFamily: fonts.sans, fontSize: s(16), color: colors.fault }}>{error}</Text> : null}
       </View>
-      <View style={{ flex: 1, backgroundColor: colors.ink }}>
+      <View style={{ flex: 1, backgroundColor: colors.text }}>
         {video?.streamUrl ? <RTCView streamURL={video.streamUrl} objectFit="contain" style={{ flex: 1 }} /> : null}
       </View>
     </View>

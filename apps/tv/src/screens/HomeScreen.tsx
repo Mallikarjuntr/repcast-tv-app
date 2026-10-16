@@ -1,33 +1,69 @@
-import { Text, View } from 'react-native';
-import { Dash, PenCircle, Tick } from '../components/Marks';
+import { useCallback } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { FocusButton } from '../components/FocusButton';
-import { Headline, Kicker, PenNote, Wordmark } from '../components/Type';
-import { weekView, type SessionRecord } from '../storage';
+import { Avatar } from '../components/Avatar';
+import { Card, PanelTag, Speaker } from '../components/Studio';
+import { TrainerVideo } from '../components/TrainerVideo';
+import { Headline, Kicker, Note, Wordmark } from '../components/Type';
+import { bestStreak } from '../progress';
+import { streakDays, type SessionRecord } from '../storage';
 import { colors, fonts, useScale } from '../theme';
-import { estimateSeconds, type Session } from '../workouts';
+import { TRAINER_CLIPS } from '../trainerClips';
+import { isFocused } from '../tv';
+import { estimateSeconds, type Session, type Step } from '../workouts';
 
-const NUMBER_WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven'];
-
-function streakLine(done: number, todayDone: boolean): string {
-  const word = (n: number) => NUMBER_WORDS[n] ?? String(n);
-  if (todayDone) return `${word(done)} ${done === 1 ? 'day' : 'days'} this week.\nToday's in the book.`;
-  if (done === 0) return 'A fresh week.\nToday makes one.';
-  return `${word(done)} ${done === 1 ? 'day' : 'days'} this week.\nToday makes ${word(done + 1).toLowerCase()}.`;
+function amount(step: Step): string {
+  return step.kind === 'reps' ? `${step.sets} × ${step.reps}` : `${step.seconds} s`;
 }
 
-function lastTime(record: SessionRecord | undefined): { label: string; lines: string[] } {
-  if (!record) return { label: 'LAST TIME', lines: ['Nothing yet.', 'Your first session', 'shows up here.'] };
-  const day = new Date(record.at).toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase();
-  const lines = [`${record.reps} reps`, `${Math.max(1, Math.round(record.seconds / 60))} min`];
-  if (record.mode === 'coach' && record.cleanReps !== undefined && record.reps > 0) lines.push(`${Math.round((record.cleanReps / record.reps) * 100)}% clean form`);
-  else lines.push('followed along, no camera');
-  return { label: `LAST TIME · ${day}`, lines };
+function lastTime(record: SessionRecord | undefined, now: Date): string | null {
+  if (!record) return null;
+  const at = new Date(record.at);
+  const day = at.toDateString() === now.toDateString() ? 'earlier today' : at.toLocaleDateString('en-GB', { weekday: 'long' });
+  const clean = record.mode === 'coach' && record.cleanReps !== undefined && record.reps > 0 ? `, ${Math.round((record.cleanReps / record.reps) * 100)}% clean` : '';
+  return `Last time, ${day}: ${record.reps} reps${clean}`;
+}
+
+function sentence(text: string): string {
+  const flat = text.replace(/\s*\n\s*/g, ' ').trim();
+  return `${flat.charAt(0).toUpperCase()}${flat.slice(1)}`;
 }
 
 function formatToday(date: Date): string {
   const day = date.toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase();
   const dm = date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }).toUpperCase();
-  return `${day} · ${dm}`;
+  return `${day} ${dm}`;
+}
+
+/** The person chip in the corner: who's training, and the way to switch. */
+function WhoChip({ name, colour, onPress }: { name: string; colour: string; onPress: () => void }) {
+  const s = useScale();
+  return (
+    <Pressable accessibilityRole="button" accessibilityLabel={`${name} is training. Switch person`} onPress={onPress}>
+      {(state) => {
+        const focused = isFocused(state);
+        return (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: s(10),
+              backgroundColor: focused ? colors.raised : colors.surface,
+              borderRadius: s(999),
+              borderWidth: s(3),
+              borderColor: focused ? colors.text : 'transparent',
+              paddingVertical: s(4),
+              paddingLeft: s(4),
+              paddingRight: s(18),
+            }}
+          >
+            <Avatar name={name} colour={colour} size={36} />
+            <Text style={{ fontFamily: fonts.sansSemi, fontSize: s(18), color: colors.text }}>{name}</Text>
+          </View>
+        );
+      }}
+    </Pressable>
+  );
 }
 
 export function HomeScreen({
@@ -38,6 +74,7 @@ export function HomeScreen({
   onSwap,
   onNoCamera,
   profileName,
+  profileColour,
   onProgress,
   onSwitch,
 }: {
@@ -49,79 +86,98 @@ export function HomeScreen({
   onNoCamera: () => void;
   /** Who's training; shown so a household always knows whose page this is. */
   profileName: string;
+  profileColour: string;
   onProgress: () => void;
   onSwitch: () => void;
 }) {
   const s = useScale();
-  const now = new Date();
-  const week = weekView(sessions, now);
-  const last = lastTime(sessions[sessions.length - 1]);
   const minutes = Math.round(estimateSeconds(today) / 60);
-  const done = week.filter((d) => d.state === 'done').length;
+  const coached = today.steps.some((step) => step.kind === 'reps' && step.engine);
+  const streak = streakDays(sessions);
+  const best = bestStreak(sessions);
+  const last = sessions[sessions.length - 1];
   // Carry the coach's advice from the last coached session over to today.
-  const advice = sessions[sessions.length - 1]?.nextTime;
-  const penNote = advice ? `last time's note —\n${advice.charAt(0).toUpperCase()}${advice.slice(1)}` : today.coachNote;
+  const advice = sentence(last?.nextTime ?? today.coachNote);
+  const now = new Date();
+  const lastLine = lastTime(last, now);
+  // The trainer previews the first move that has reps to it: the heart of the session.
+  const preview = today.steps.find((step) => step.kind === 'reps' && TRAINER_CLIPS[step.id] !== undefined);
+  const freeLoop = useCallback(() => null, []);
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.paper, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(28) }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: s(36), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(20) }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Wordmark />
-        <View style={{ alignItems: 'flex-end' }}>
-          <Kicker>{formatToday(now)}</Kicker>
-          <Kicker>
-            {profileName.toUpperCase()} · SESSION {String(sessions.length + 1).padStart(2, '0')}
-          </Kicker>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(24) }}>
+          <Kicker size={16}>{formatToday(now)}</Kicker>
+          <WhoChip name={profileName} colour={profileColour} onPress={onSwitch} />
         </View>
       </View>
 
-      <View style={{ flex: 1, flexDirection: 'row', gap: s(72) }}>
-        <View style={{ flex: 1.55, gap: s(18) }}>
-          <Kicker>
-            TODAY'S SESSION — {minutes} MIN{swapCount > 0 ? ` · ${swapCount} ${swapCount === 1 ? 'MOVE' : 'MOVES'} SWAPPED` : ''}
+      <View style={{ flexDirection: 'row', gap: s(44) }}>
+        <View style={{ flex: 1, gap: s(12) }}>
+          <Kicker color={colors.accent}>
+            TODAY · {minutes} MIN{coached ? ' · CAMERA COACHED' : ''}
+            {swapCount > 0 ? ` · ${swapCount} SWAPPED` : ''}
           </Kicker>
-          <Headline lead={today.title} italic={today.titleItalic} size={104} />
-          <Text style={{ fontFamily: fonts.sans, fontSize: s(24), lineHeight: s(35), color: colors.inkSoft, maxWidth: s(600) }}>{today.summary}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(28), marginTop: s(10) }}>
-            <FocusButton label="Start session" onPress={onStart} preferredFocus />
-            <FocusButton label="Swap a move" onPress={onSwap} variant="link" fontSize={22} />
-            <FocusButton label="Move without camera" onPress={onNoCamera} variant="link" fontSize={22} />
+          <Headline text={`${today.title}${today.titleItalic}`} size={80} />
+          <Note size={19}>{today.summary}</Note>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(10), marginTop: s(4), marginLeft: -s(6) }}>
+            <FocusButton label="Start session" onPress={onStart} play preferredFocus />
+            <FocusButton label="Follow along" onPress={onNoCamera} variant="secondary" />
+            <FocusButton label="Swap a move" onPress={onSwap} variant="quiet" />
           </View>
-          <View style={{ marginLeft: s(40), marginTop: s(4) }}>
-            <PenNote size={26}>{penNote}</PenNote>
-          </View>
-        </View>
-
-        <View style={{ flex: 1, gap: s(26), borderLeftWidth: s(1.5), borderLeftColor: colors.ink, paddingLeft: s(40) }}>
-          <Kicker>THIS WEEK</Kicker>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            {week.map(({ day, state }, i) => (
-              <View key={i} style={{ alignItems: 'center', gap: s(8) }}>
-                <Kicker color={state === 'missed' || state === 'ahead' ? colors.pencil : colors.ink}>{day}</Kicker>
-                {state === 'done' ? <Tick size={s(34)} /> : state === 'missed' ? <Dash size={s(34)} /> : state === 'today' ? <PenCircle size={s(34)} /> : <View style={{ width: s(34), height: s(34) }} />}
-              </View>
-            ))}
-          </View>
-          <Text style={{ fontFamily: fonts.displayItalic, fontSize: s(34), lineHeight: s(39), color: colors.ink }}>
-            {streakLine(done, week[(now.getDay() + 6) % 7]?.state === 'done')}
-          </Text>
-          <View style={{ borderTopWidth: s(1.5), borderTopColor: colors.faint, paddingTop: s(22), gap: s(10) }}>
-            <Kicker>{last.label}</Kicker>
-            {last.lines.map((line) => (
-              <Text key={line} style={{ fontFamily: fonts.mono, fontSize: s(20), lineHeight: s(32), color: colors.ink }}>
-                {line}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(20), marginLeft: -s(6) }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(8), paddingLeft: s(6) }}>
+              <View style={{ width: s(10), height: s(10), borderRadius: s(5), backgroundColor: streak > 0 ? colors.accent : colors.line }} />
+              <Text style={{ fontFamily: fonts.sans, fontSize: s(17), color: colors.muted }}>
+                <Text style={{ fontFamily: fonts.sansBold, color: colors.text }}>
+                  {streak} {streak === 1 ? 'day' : 'days'}
+                </Text>{' '}
+                in a row · best run {best}
               </Text>
-            ))}
+            </View>
+            <FocusButton label="Progress" onPress={onProgress} variant="quiet" size="compact" />
           </View>
-          <View style={{ flexDirection: 'row', gap: s(24), marginTop: 'auto' }}>
-            <FocusButton label="Progress" onPress={onProgress} variant="link" fontSize={20} />
-            <FocusButton label="Who's training?" onPress={onSwitch} variant="link" fontSize={20} />
+        </View>
+
+        <View style={{ width: s(500), gap: s(12) }}>
+          <View style={{ height: s(270), borderRadius: s(18), backgroundColor: colors.surface, overflow: 'hidden' }}>
+            {preview ? <TrainerVideo key={preview.id} clip={TRAINER_CLIPS[preview.id]!} paused={false} position={freeLoop} /> : null}
+            {preview ? (
+              <View style={{ position: 'absolute', left: s(14), bottom: s(12) }}>
+                <PanelTag>{preview.name.toUpperCase()}</PanelTag>
+              </View>
+            ) : null}
+          </View>
+          {/* The coach's advice from last time carries over to today. */}
+          <View style={{ flexDirection: 'row', gap: s(12), alignItems: 'flex-start', paddingHorizontal: s(4) }}>
+            <View style={{ marginTop: s(2) }}>
+              <Speaker size={s(20)} />
+            </View>
+            <View style={{ flex: 1, gap: s(2) }}>
+              <Text style={{ fontFamily: fonts.sansSemi, fontSize: s(17), lineHeight: s(23), color: colors.text }} numberOfLines={2}>
+                {advice}
+              </Text>
+              {lastLine ? <Text style={{ fontFamily: fonts.sans, fontSize: s(15), color: colors.faint }}>{lastLine}</Text> : null}
+            </View>
           </View>
         </View>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: s(36) }}>
-        <Kicker size={15}>◀ ▶  MOVE</Kicker>
-        <Kicker size={15}>OK  SELECT</Kicker>
-        <Kicker size={15}>PLAY/PAUSE  PAUSE ANYTIME</Kicker>
+      <View style={{ gap: s(12), marginTop: 'auto' }}>
+        <Kicker>TODAY'S MOVES</Kicker>
+        <View style={{ flexDirection: 'row', gap: s(14) }}>
+          {today.steps.map((step, i) => (
+            <Card key={step.id} style={{ flex: 1, borderRadius: s(12), paddingVertical: s(12), paddingHorizontal: s(16), gap: s(4) }}>
+              <Text style={{ fontFamily: fonts.sansBold, fontSize: s(13), color: colors.faint }}>{String(i + 1).padStart(2, '0')}</Text>
+              <Text style={{ fontFamily: fonts.displaySemi, fontSize: s(20), color: colors.text }} numberOfLines={1}>
+                {step.name}
+              </Text>
+              <Text style={{ fontFamily: fonts.sans, fontSize: s(15), color: colors.muted }}>{amount(step)}</Text>
+            </Card>
+          ))}
+        </View>
       </View>
     </View>
   );

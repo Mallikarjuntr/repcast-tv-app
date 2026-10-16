@@ -14,7 +14,7 @@
           "image": "./assets/images/splash.png",
           "imageWidth": 360,
           "resizeMode": "contain",
-          "backgroundColor": "#EFE8DA"
+          "backgroundColor": "#15120F"
         }
       ],
       [
@@ -37,7 +37,7 @@
       "package": "com.mallikarjuntr.spotter",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#EFE8DA"
+        "backgroundColor": "#15120F"
       }
     },
     "name": "Spotter",
@@ -45,7 +45,7 @@
     "version": "0.1.0",
     "orientation": "landscape",
     "userInterfaceStyle": "light",
-    "backgroundColor": "#EFE8DA",
+    "backgroundColor": "#15120F",
     "icon": "./assets/images/icon.png",
     "scheme": "spotter"
   }

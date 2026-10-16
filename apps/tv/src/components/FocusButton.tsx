@@ -1,19 +1,37 @@
-import { Pressable, Text } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { colors, fonts, useScale } from '../theme';
 import { isFocused } from '../tv';
+
+/**
+ * `primary` is the one thing to do on a screen (orange), `secondary` a dark chip, `light` a cream
+ * chip for controls over a workout (Pause), `quiet` plain text. Focus adds a cream ring and a lift.
+ */
+export type ButtonVariant = 'primary' | 'secondary' | 'light' | 'quiet';
+
+const LOOK: Record<ButtonVariant, { bg: string; fg: string; font: string }> = {
+  primary: { bg: colors.accent, fg: colors.onAccent, font: fonts.sansHeavy },
+  secondary: { bg: colors.raised, fg: colors.text, font: fonts.sansBold },
+  light: { bg: colors.text, fg: colors.bg, font: fonts.sansHeavy },
+  quiet: { bg: 'transparent', fg: colors.text, font: fonts.sansSemi },
+};
 
 interface FocusButtonProps {
   label: string;
   onPress: () => void;
-  /** `solid` is a boxed button; `link` is underlined text. Both turn highlighter yellow when focused. */
-  variant?: 'solid' | 'link';
+  variant?: ButtonVariant;
+  /** `compact` for header controls (Pause, Done with this). */
+  size?: 'regular' | 'compact';
+  /** A play triangle before the label, for the button that starts a workout. */
+  play?: boolean;
   preferredFocus?: boolean;
-  /** Visual size on the 1280-wide design canvas. */
-  fontSize?: number;
 }
 
-export function FocusButton({ label, onPress, variant = 'solid', preferredFocus, fontSize = 24 }: FocusButtonProps) {
+export function FocusButton({ label, onPress, variant = 'primary', size = 'regular', play, preferredFocus }: FocusButtonProps) {
   const s = useScale();
+  const look = LOOK[variant];
+  const compact = size === 'compact';
+  const fontSize = compact ? 18 : variant === 'primary' ? 22 : 20;
   return (
     <Pressable
       accessibilityRole="button"
@@ -22,28 +40,48 @@ export function FocusButton({ label, onPress, variant = 'solid', preferredFocus,
       hasTVPreferredFocus={preferredFocus}
       style={(state) => {
         const focused = isFocused(state);
-        return variant === 'solid'
-          ? {
-              backgroundColor: focused ? colors.highlighter : 'transparent',
-              borderColor: colors.ink,
-              borderWidth: s(2.5),
-              borderRadius: s(3),
-              paddingVertical: s(16),
-              paddingHorizontal: s(30),
-              transform: [{ scale: focused ? 1.04 : 1 }],
-            }
-          : {
-              backgroundColor: focused ? colors.highlighter : 'transparent',
-              borderBottomColor: colors.ink,
-              borderBottomWidth: s(2),
-              paddingVertical: s(6),
-              paddingHorizontal: s(focused ? 8 : 2),
-            };
+        return {
+          // The ring sits a few pixels outside the button, like a CSS outline with an offset.
+          borderRadius: s(compact ? 13 : 15),
+          borderWidth: s(3),
+          borderColor: focused ? (variant === 'light' ? colors.accent : colors.text) : 'transparent',
+          padding: s(3),
+          transform: [{ scale: focused ? 1.04 : 1 }],
+        };
       }}
     >
-      <Text style={{ fontFamily: variant === 'solid' ? fonts.sansBold : fonts.sansMedium, fontSize: s(fontSize), color: colors.ink }}>
-        {label}
-      </Text>
+      {(state) => {
+        const focused = isFocused(state);
+        return (
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: s(12),
+              backgroundColor: variant === 'quiet' && focused ? colors.raised : look.bg,
+              borderRadius: s(compact ? 9 : 11),
+              paddingVertical: s(compact ? 9 : 15),
+              paddingHorizontal: s(compact ? 18 : variant === 'quiet' ? 14 : 26),
+            }}
+          >
+            {play ? (
+              <Svg width={s(18)} height={s(18)} viewBox="0 0 18 18">
+                <Path d="M4 2 L16 9 L4 16 Z" fill={look.fg} />
+              </Svg>
+            ) : null}
+            <Text
+              style={{
+                fontFamily: look.font,
+                fontSize: s(fontSize),
+                color: look.fg,
+                textDecorationLine: variant === 'quiet' && !focused ? 'underline' : 'none',
+              }}
+            >
+              {label}
+            </Text>
+          </View>
+        );
+      }}
     </Pressable>
   );
 }

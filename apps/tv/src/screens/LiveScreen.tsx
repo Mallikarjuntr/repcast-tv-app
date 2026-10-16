@@ -1,12 +1,10 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import Svg, { Path, Rect } from 'react-native-svg';
 import { FocusButton } from '../components/FocusButton';
 import { LiveVideo } from '../components/LiveVideo';
-import { SetDot } from '../components/Marks';
 import { PoseFigure, type Annotations, type PoseFrame } from '../components/PoseFigure';
-import { Tally } from '../components/Tally';
-import { Headline, Kicker, PenNote } from '../components/Type';
+import { CoachCard, PanelTag, PausedOverlay, PrivacyLine, Segments } from '../components/Studio';
+import { BigNumber, Kicker, Note } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { useTVEventHandler, type TVRemoteEvent } from '../tv';
 import { useLiveWorkout, type RepNote, type WorkoutPlan } from '../useLiveWorkout';
@@ -16,7 +14,7 @@ import { useVideoReceiver } from '../useVideoReceiver';
 import { hush, say } from '../voice';
 import { coachIntroLine, countLine, FINISH_LINE, HINT_LINES, NO_REP_LINE, restLine, setIntroLine } from '../voiceLines';
 
-/** How long the coach's red-pen marks stay on the outline after a rep. */
+/** How long the coach's marks stay on the outline after a rep. */
 const NOTE_MS = 4000;
 const PRAISE = ['Good depth.', 'Nice and steady.', "That's it — smooth."];
 
@@ -33,24 +31,6 @@ function coachLine(plan: WorkoutPlan, phase: string, rep: RepNote | null): strin
 
 function formatTime(seconds: number): string {
   return `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
-}
-
-function Lock({ size, color }: { size: number; color: string }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Rect x={5} y={11} width={14} height={10} rx={2} fill="none" stroke={color} strokeWidth={2} />
-      <Path d="M8 11 V7 a4 4 0 0 1 8 0 V11" fill="none" stroke={color} strokeWidth={2} />
-    </Svg>
-  );
-}
-
-function Speaker({ size }: { size: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Path d="M4 9 H8 L13 5 V19 L8 15 H4 Z" fill="none" stroke={colors.ink} strokeWidth={1.8} strokeLinejoin="round" />
-      <Path d="M16.5 8.5 C 18 10, 18 14, 16.5 15.5 M19 6 C 22 9, 22 15, 19 18" fill="none" stroke={colors.ink} strokeWidth={1.8} strokeLinecap="round" />
-    </Svg>
-  );
 }
 
 /** How long without an outline before we say the phone has lost sight of you. */
@@ -91,9 +71,7 @@ function PoseWaiting({ lostSight }: { lostSight: boolean }) {
   const s = useScale();
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: s(24) }}>
-      <PenNote arrow={false} size={26}>
-        {lostSight ? "I can't see you — step back into view" : 'waiting for the camera…'}
-      </PenNote>
+      <Note size={24}>{lostSight ? "I can't see you — step back into view" : 'Waiting for the camera…'}</Note>
     </View>
   );
 }
@@ -187,92 +165,84 @@ export function LiveScreen({
   const hasCorrection = !!recent && recent.verdict !== 'good';
   const noRep = !!recent && !recent.counted;
 
+  // This set so far, as the phone judged it.
+  const thisSet = w.history.filter((n) => n.set === w.setIndex);
+  const clean = thisSet.filter((n) => n.counted && n.verdict === 'good').length;
+  const withNote = thisSet.filter((n) => n.counted && n.verdict !== 'good').length;
+  const missed = thisSet.filter((n) => !n.counted).length;
+  const resting = w.phase === 'rest';
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.paper, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(20) }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Kicker size={18} color={colors.ink}>
-          {plan.name.toUpperCase()} · SET {w.setIndex + 1} OF {plan.sets}
-        </Kicker>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(28) }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(8) }}>
-            <Lock size={s(18)} color={colors.pencil} />
-            <Text style={{ fontFamily: fonts.sans, fontSize: s(16), color: colors.pencil }}>Video goes only from your phone to your TV — never to the cloud</Text>
-          </View>
-          <Text style={{ fontFamily: fonts.monoMedium, fontSize: s(28), color: colors.ink }}>{formatTime(elapsed)}</Text>
+    <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(40), gap: s(22) }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: s(54) }}>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: s(18) }}>
+          <Text style={{ fontFamily: fonts.display, fontSize: s(30), color: colors.text }}>{plan.name.toUpperCase()}</Text>
+          <Kicker size={16}>
+            SET {w.setIndex + 1} OF {plan.sets}
+          </Kicker>
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(14) }}>
+          <Text style={{ fontFamily: fonts.sansBold, fontSize: s(26), color: colors.text, fontVariant: ['tabular-nums'], marginRight: s(8) }}>{formatTime(elapsed)}</Text>
           {w.phase === 'work' ? (
             <>
-              <FocusButton label={paused ? 'Resume' : 'Pause'} onPress={() => setPaused((p) => !p)} variant="link" fontSize={18} preferredFocus />
+              <FocusButton label={paused ? 'Resume' : 'Pause'} onPress={() => setPaused((p) => !p)} variant="light" size="compact" preferredFocus />
               {/* Moves on when reps can't be counted (camera trouble, a move you'd rather not do); what was done still counts. */}
-              <FocusButton label="Done with this" onPress={finishEarly} variant="link" fontSize={18} />
+              <FocusButton label="Done with this" onPress={finishEarly} variant="secondary" size="compact" />
             </>
           ) : null}
         </View>
       </View>
 
-      <View style={{ flex: 1, flexDirection: 'row', gap: s(56), alignItems: 'center' }}>
-        <View style={{ flex: 1.15, gap: s(12) }}>
-          {w.phase === 'rest' ? (
-            <View style={{ gap: s(14) }}>
-              <Kicker>{w.restBeforeNextMove && next ? `REST · NEXT: ${next.toUpperCase()}` : `REST · NEXT IS SET ${w.setIndex + 2} OF ${plan.sets}`}</Kicker>
-              <Text style={{ fontFamily: fonts.displayBold, fontSize: s(300), lineHeight: s(260), letterSpacing: -s(14), color: colors.ink }}>
-                {String(w.restLeftSeconds).padStart(2, '0')}
-              </Text>
-              <View style={{ flexDirection: 'row' }}>
-                <FocusButton label="Skip rest" onPress={w.skipRest} preferredFocus fontSize={22} />
+      <View style={{ flex: 1, flexDirection: 'row', gap: s(40) }}>
+        <View style={{ width: s(380), gap: s(18) }}>
+          {resting ? (
+            <>
+              <Kicker color={colors.accent}>{w.restBeforeNextMove && next ? `REST · NEXT: ${next.toUpperCase()}` : `REST · NEXT IS SET ${w.setIndex + 2} OF ${plan.sets}`}</Kicker>
+              <BigNumber value={String(w.restLeftSeconds).padStart(2, '0')} suffix="seconds" size={230} />
+              <View style={{ flexDirection: 'row', marginLeft: -s(6) }}>
+                <FocusButton label="Skip rest" onPress={w.skipRest} preferredFocus />
               </View>
-            </View>
+            </>
           ) : (
             <>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: s(18) }}>
-                <Text style={{ fontFamily: fonts.displayBold, fontSize: s(340), lineHeight: s(290), letterSpacing: -s(17), color: colors.ink }}>
-                  {String(w.repsInSet).padStart(2, '0')}
-                </Text>
-                <Text style={{ fontFamily: fonts.displayItalic, fontSize: s(48), color: colors.pencil }}>of {plan.reps}</Text>
-              </View>
-              <Tally done={w.repsInSet} total={plan.reps} height={s(52)} />
+              <BigNumber value={String(w.repsInSet).padStart(2, '0')} suffix={`/ ${plan.reps}`} size={230} />
+              <Segments done={w.repsInSet} total={plan.reps} />
+              <Text style={{ fontFamily: fonts.sans, fontSize: s(17), color: colors.muted }}>
+                <Text style={{ fontFamily: fonts.sansBold, color: colors.text }}>{clean}</Text> clean{'   '}
+                <Text style={{ fontFamily: fonts.sansBold, color: colors.text }}>{withNote}</Text> with a note{'   '}
+                <Text style={{ fontFamily: fonts.sansBold, color: missed > 0 ? colors.fault : colors.text }}>{missed}</Text> no rep
+              </Text>
             </>
           )}
+          <View style={{ marginTop: 'auto' }}>
+            <CoachCard line={coachLine(plan, w.phase, w.lastRep)} correction={hasCorrection} />
+          </View>
         </View>
 
         <View
-          style={{ flex: 1, alignSelf: 'stretch', backgroundColor: colors.paperDeep, borderWidth: s(1.5), borderColor: colors.ink }}
+          style={{ flex: 1, backgroundColor: colors.surface, borderRadius: s(20), overflow: 'hidden' }}
           onLayout={(e) => setPanel({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
         >
           {showVideo ? (
-            <LiveVideo streamUrl={video.streamUrl!} getPose={videoPose.getPose} subscribePose={videoPose.subscribePose} notes={notes} width={panel.width - s(3)} height={panel.height - s(3)} />
-          ) : null}
-          <View style={{ position: 'absolute', top: s(14), left: s(18), zIndex: 2, backgroundColor: showVideo ? colors.paper : 'transparent', paddingHorizontal: showVideo ? s(8) : 0, paddingVertical: showVideo ? s(3) : 0 }}>
-            <Kicker size={14}>YOU, RIGHT NOW</Kicker>
+            <LiveVideo streamUrl={video.streamUrl!} getPose={videoPose.getPose} subscribePose={videoPose.subscribePose} notes={notes} width={panel.width} height={panel.height} />
+          ) : (
+            <LivePose getPose={w.getPose} subscribePose={w.subscribePose} notes={notes} width={panel.width} height={panel.height} />
+          )}
+          <View style={{ position: 'absolute', top: s(16), left: s(18) }}>
+            <PanelTag dot={showVideo ? colors.live : undefined}>{showVideo ? 'YOU · LIVE' : 'YOU, RIGHT NOW'}</PanelTag>
           </View>
           {noRep ? (
-            <View style={{ position: 'absolute', top: s(36), right: s(22), borderWidth: s(3), borderColor: colors.pen, paddingHorizontal: s(14), paddingVertical: s(4), transform: [{ rotate: '-8deg' }], zIndex: 2, backgroundColor: showVideo ? colors.paper : 'transparent' }}>
-              <Text style={{ fontFamily: fonts.monoMedium, fontSize: s(26), letterSpacing: s(4), color: colors.pen }}>NO REP</Text>
+            <View style={{ position: 'absolute', top: s(16), right: s(18), backgroundColor: colors.bg, borderRadius: s(8), borderWidth: s(3), borderColor: colors.fault, paddingHorizontal: s(14), paddingVertical: s(5) }}>
+              <Text style={{ fontFamily: fonts.display, fontSize: s(28), letterSpacing: s(2), color: colors.fault }}>NO REP</Text>
             </View>
           ) : null}
-          {showVideo ? null : <LivePose getPose={w.getPose} subscribePose={w.subscribePose} notes={notes} width={panel.width} height={panel.height} />}
+          <View style={{ position: 'absolute', left: s(18), bottom: s(14) }}>
+            <PrivacyLine color={colors.textSoft} />
+          </View>
         </View>
       </View>
 
-      <View style={{ borderTopWidth: s(1.5), borderTopColor: colors.ink, paddingTop: s(18), flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: s(40) }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(20), flexShrink: 1 }}>
-          <Speaker size={s(34)} />
-          <Text style={{ fontFamily: fonts.displayItalic, fontSize: s(36), lineHeight: s(42), color: hasCorrection ? colors.pen : colors.ink, flexShrink: 1 }}>
-            “{coachLine(plan, w.phase, w.lastRep)}”
-          </Text>
-        </View>
-        <View style={{ flexDirection: 'row', gap: s(12) }}>
-          {Array.from({ length: plan.sets }, (_, i) => (
-            <SetDot key={i} size={s(26)} state={i < w.setIndex ? 'done' : i === w.setIndex ? 'current' : 'upcoming'} />
-          ))}
-        </View>
-      </View>
-
-      {paused ? (
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(239,232,218,0.94)', alignItems: 'center', justifyContent: 'center', gap: s(18) }}>
-          <Headline lead="Paused." size={120} />
-          <PenNote arrow={false}>press OK or play/pause to carry on</PenNote>
-        </View>
-      ) : null}
+      {paused ? <PausedOverlay /> : null}
     </View>
   );
 }
