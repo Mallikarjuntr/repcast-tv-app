@@ -478,3 +478,82 @@ code {
   overflow: hidden;
   clip: rect(0 0 0 0);
 }
+
+/*
+ * While the camera runs, the page is exactly one screen tall: the picture takes whatever room the
+ * coach card, readout and buttons leave, so the buttons never need a scroll. (A phone held upright
+ * gives a portrait video; at its natural height it pushed everything below off the screen.)
+ */
+.page:has(> .session:not([hidden])) {
+  height: 100vh;
+  height: 100dvh;
+  padding-top: max(12px, env(safe-area-inset-top));
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+  gap: 10px;
+}
+
+.session {
+  flex: 1;
+  min-height: 0;
+  gap: 10px;
+}
+
+.session .stage {
+  flex: 1;
+  min-height: 160px;
+}
+
+/* Video and skeleton are fitted the same way (the canvas is the video's size), so they stay aligned. */
+.session .stage video,
+.session .stage canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.session #count {
+  font-size: clamp(64px, 11dvh, 104px);
+}
+
+.session .coach {
+  padding: 12px 16px;
+  gap: 4px;
+}
+
+.session .cue {
+  font-size: 19px;
+}
+
+.session .hint {
+  font-size: 14px;
+}
+
+.session .readout div {
+  padding: 8px 12px;
+  gap: 4px;
+}
+
+.session .readout dd {
+  font-size: 22px;
+}
+
+/* The per-rep list is for testing; "Copy results" still has every rep. */
+.session .log {
+  display: none;
+}
+
+.session .actions {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+.session .actions button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 48px;
+  padding: 8px 6px;
+  font-size: 15px;
+  line-height: 1.15;
+}

@@ -527,7 +527,7 @@ ui.copy.addEventListener('click', async () => {
   const text = results();
   try {
     await navigator.clipboard.writeText(text);
-    ui.copy.textContent = 'Copied — paste it to Claude';
+    ui.copy.textContent = 'Copied';
   } catch {
     window.prompt('Copy these results:', text);
   }
