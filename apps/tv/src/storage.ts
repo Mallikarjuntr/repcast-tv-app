@@ -14,25 +14,84 @@ export interface SessionRecord {
   nextTime?: string;
 }
 
-const KEY = 'spotter.sessions.v1';
-const KEEP = 120;
+/** Someone who trains on this TV. Everything Spotter remembers is kept per person, on the TV only. */
+export interface Profile {
+  id: string;
+  name: string;
+  /** ISO timestamp. */
+  createdAt: string;
+}
 
-export async function loadSessions(): Promise<SessionRecord[]> {
+export const MAX_PROFILES = 6;
+
+/** Before profiles, one history and one set of swaps were kept for the whole TV under these keys. */
+const LEGACY_SESSIONS_KEY = 'spotter.sessions.v1';
+const LEGACY_SWAPS_KEY = 'spotter.swaps.v1';
+const PROFILES_KEY = 'spotter.profiles.v1';
+const LAST_PROFILE_KEY = 'spotter.lastProfile.v1';
+const sessionsKey = (profileId: string) => `spotter.sessions.v1.${profileId}`;
+const swapsKey = (profileId: string) => `spotter.swaps.v1.${profileId}`;
+const KEEP = 365;
+
+async function readJson<T>(key: string, fallback: T): Promise<T> {
   try {
-    const raw = await AsyncStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as SessionRecord[]) : [];
+    const raw = await AsyncStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
   } catch {
-    return [];
+    return fallback;
   }
 }
 
-export async function saveSession(record: SessionRecord): Promise<SessionRecord[]> {
-  const all = [...(await loadSessions()), record].slice(-KEEP);
+async function writeJson(key: string, value: unknown): Promise<void> {
   try {
-    await AsyncStorage.setItem(KEY, JSON.stringify(all));
+    await AsyncStorage.setItem(key, JSON.stringify(value));
   } catch {
-    // Storage full or unavailable: progress just isn't remembered this time.
+    // Storage full or unavailable: it just isn't remembered this time.
   }
+}
+
+/**
+ * The people who train on this TV. The first time, the TV's existing history and swaps become the
+ * first profile ("Me"), so nothing is lost; the old keys are left in place untouched.
+ */
+export async function loadProfiles(): Promise<Profile[]> {
+  const saved = await readJson<Profile[] | null>(PROFILES_KEY, null);
+  if (saved && saved.length > 0) return saved;
+  const first: Profile = { id: 'p1', name: 'Me', createdAt: new Date().toISOString() };
+  await writeJson(sessionsKey(first.id), await readJson<SessionRecord[]>(LEGACY_SESSIONS_KEY, []));
+  await writeJson(swapsKey(first.id), await readJson<Record<string, string>>(LEGACY_SWAPS_KEY, {}));
+  await writeJson(PROFILES_KEY, [first]);
+  return [first];
+}
+
+/** Adds someone new (with no history); returns everyone. */
+export async function addProfile(name: string): Promise<Profile[]> {
+  const profiles = await loadProfiles();
+  if (profiles.length >= MAX_PROFILES) return profiles;
+  const used = new Set(profiles.map((p) => p.id));
+  let n = profiles.length + 1;
+  while (used.has(`p${n}`)) n += 1;
+  const next = [...profiles, { id: `p${n}`, name: name.trim().slice(0, 20), createdAt: new Date().toISOString() }];
+  await writeJson(PROFILES_KEY, next);
+  return next;
+}
+
+/** Who trained last, so the TV can start with them. */
+export async function loadLastProfileId(): Promise<string | null> {
+  return readJson<string | null>(LAST_PROFILE_KEY, null);
+}
+
+export async function saveLastProfileId(profileId: string): Promise<void> {
+  await writeJson(LAST_PROFILE_KEY, profileId);
+}
+
+export async function loadSessions(profileId: string): Promise<SessionRecord[]> {
+  return readJson<SessionRecord[]>(sessionsKey(profileId), []);
+}
+
+export async function saveSession(profileId: string, record: SessionRecord): Promise<SessionRecord[]> {
+  const all = [...(await loadSessions(profileId)), record].slice(-KEEP);
+  await writeJson(sessionsKey(profileId), all);
   return all;
 }
 
@@ -85,22 +144,11 @@ export function streakDays(sessions: SessionRecord[], now = new Date()): number 
   return streak;
 }
 
-const SWAPS_KEY = 'spotter.swaps.v1';
-
 /** Moves the person swapped out (original step id → replacement id); kept until they change them. */
-export async function loadSwaps(): Promise<Record<string, string>> {
-  try {
-    const raw = await AsyncStorage.getItem(SWAPS_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, string>) : {};
-  } catch {
-    return {};
-  }
+export async function loadSwaps(profileId: string): Promise<Record<string, string>> {
+  return readJson<Record<string, string>>(swapsKey(profileId), {});
 }
 
-export async function saveSwaps(swaps: Record<string, string>): Promise<void> {
-  try {
-    await AsyncStorage.setItem(SWAPS_KEY, JSON.stringify(swaps));
-  } catch {
-    // Not remembered this time; the swaps still apply to today's session.
-  }
+export async function saveSwaps(profileId: string, swaps: Record<string, string>): Promise<void> {
+  await writeJson(swapsKey(profileId), swaps);
 }

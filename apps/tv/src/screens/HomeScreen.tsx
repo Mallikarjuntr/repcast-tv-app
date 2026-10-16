@@ -37,6 +37,9 @@ export function HomeScreen({
   onStart,
   onSwap,
   onNoCamera,
+  profileName,
+  onProgress,
+  onSwitch,
 }: {
   today: Session;
   sessions: SessionRecord[];
@@ -44,6 +47,10 @@ export function HomeScreen({
   onStart: () => void;
   onSwap: () => void;
   onNoCamera: () => void;
+  /** Who's training; shown so a household always knows whose page this is. */
+  profileName: string;
+  onProgress: () => void;
+  onSwitch: () => void;
 }) {
   const s = useScale();
   const now = new Date();
@@ -60,7 +67,9 @@ export function HomeScreen({
         <Wordmark />
         <View style={{ alignItems: 'flex-end' }}>
           <Kicker>{formatToday(now)}</Kicker>
-          <Kicker>SESSION {String(sessions.length + 1).padStart(2, '0')}</Kicker>
+          <Kicker>
+            {profileName.toUpperCase()} · SESSION {String(sessions.length + 1).padStart(2, '0')}
+          </Kicker>
         </View>
       </View>
 
@@ -101,6 +110,10 @@ export function HomeScreen({
                 {line}
               </Text>
             ))}
+          </View>
+          <View style={{ flexDirection: 'row', gap: s(24), marginTop: 'auto' }}>
+            <FocusButton label="Progress" onPress={onProgress} variant="link" fontSize={20} />
+            <FocusButton label="Who's training?" onPress={onSwitch} variant="link" fontSize={20} />
           </View>
         </View>
       </View>
