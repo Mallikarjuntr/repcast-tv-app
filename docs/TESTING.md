@@ -48,6 +48,7 @@ Test clips are openly licensed exercise videos streamed from Wikimedia Commons (
 | Ankle points jitter by ~30% of leg length in low-resolution video | Drift and stance are judged as percentiles across the rep, from an anchor averaged over standing frames |
 | From the side, the pose model often draws the hidden leg on top of the visible one (lite and full models alike) | A small knee gap only counts as a squat stance when the person isn't side-on; the phone and TV ask the user to turn the phone ~45° |
 | The torso comes upright a moment after the legs straighten | 1.2 s grace before judging "finish standing tall" |
+| On the Fire TV Stick, a plain squat clip judged as **sumo squats** counted as 20+ clean reps: nothing checked the stance | Sumo squats measure foot width while standing at the start of each rep (ankle span ÷ shoulder span, which holds from a 45° camera). Measured: real squat from ~45° 0.83–1.08 (median 0.90), trainer squat ~1.17, trainer sumo squat 2.17–2.43. Below 1.25 → no rep ("Feet wider — that was a squat, this set is sumo squats"), below 1.5 → counts with "Step your feet a little wider". Not judged side-on or without visible ankles. Replay: the Commons squat clip as sumo squats went from 2/2 clean to 0/2 with that reason; the trainer's sumo squat stays clean; the same clip as plain squats is unchanged (2/2 clean) |
 
 ## 3. End-to-end on the TV
 

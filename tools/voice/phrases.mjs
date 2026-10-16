@@ -41,7 +41,7 @@ for (const line of [NO_REP_LINE, PHONE_LINKED_LINE, READY_LINE, ...Object.values
 const everyStep = [...SESSIONS.flatMap((s) => s.steps), ...Object.values(SWAP_OPTIONS).flat()];
 for (const step of everyStep) if (step.kind === 'reps') lines.add(coachIntroLine(step.name, step.reps));
 for (const exercise of Object.values(EXERCISES)) {
-  const cues = [exercise.depth?.cue, exercise.depth?.noRepCue, exercise.stance?.cue, ...(exercise.targets ?? []).map((t) => t.cue)];
+  const cues = [exercise.depth?.cue, exercise.depth?.noRepCue, exercise.stance?.cue, exercise.width?.cue, exercise.width?.noRepCue, ...(exercise.targets ?? []).map((t) => t.cue)];
   for (const check of exercise.checks ?? []) cues.push(check.cue, check.failCue);
   for (const cue of cues) if (cue) lines.add(cue);
 }
