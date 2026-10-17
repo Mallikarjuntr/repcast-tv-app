@@ -10,7 +10,14 @@ const https =
     ? { key: readFileSync(resolve(certDir, 'key.pem')), cert: readFileSync(resolve(certDir, 'cert.pem')) }
     : undefined;
 
+// `SPOTTER_MOVEMENT_SRC=1 npm run dev` uses the movement engine's source from a sibling checkout
+// (../spotter-movement next to this repo) instead of the installed package, to test engine changes
+// on the replay bench before publishing them.
+const engineSrc = resolve(import.meta.dirname, '../../../spotter-movement/src/index.ts');
+const alias: Record<string, string> = process.env.SPOTTER_MOVEMENT_SRC === '1' && existsSync(engineSrc) ? { 'spotter-movement': engineSrc } : {};
+
 export default defineConfig({
+  resolve: { alias },
   // Relative paths so the same build works on GitHub Pages (/spotter-tv-app/) and locally.
   base: './',
   server: { https },

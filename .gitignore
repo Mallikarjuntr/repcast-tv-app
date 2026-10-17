@@ -28,3 +28,6 @@ apps/tv/.expo/
 
 # Python bytecode (Blender scripts in tools/trainer)
 __pycache__/
+
+# Test renders for the replay bench (tools/trainer/views.py)
+tools/trainer/views-out/

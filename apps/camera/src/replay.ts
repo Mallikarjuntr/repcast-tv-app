@@ -23,6 +23,8 @@ const fps = Number(params.get('fps') ?? '15');
 /** Optional detailed per-frame trace window, in seconds: ?trace=17-25 */
 /** Optional: stop after this many seconds of video. */
 const until = Number(params.get('until') ?? 'Infinity');
+/** Optional: play the clip this many times back to back (one-loop test renders, tools/trainer/views.py). */
+const repeat = Math.max(1, Number(params.get('repeat') ?? '1'));
 const [traceFrom, traceTo] = (params.get('trace') ?? '-1--1').split('-').map(Number) as [number, number];
 const model = params.get('model') === 'full' ? 'full' : 'lite';
 
@@ -83,8 +85,8 @@ async function main(): Promise<void> {
   // Step through the video by seeking, at the phone's frame rate, so results don't depend on how
   // fast this machine decodes or whether the page is visible.
   const step = 1 / fps;
-  for (let time = 0; time < Math.min(video.duration, until); time += step) {
-    video.currentTime = time;
+  for (let time = 0; time < Math.min(video.duration * repeat, until); time += step) {
+    video.currentTime = time % video.duration;
     await new Promise((resolve) => video.addEventListener('seeked', resolve, { once: true }));
     const t = Math.round(time * 1000);
     const result = landmarker.detectForVideo(video, t);
@@ -126,7 +128,11 @@ async function main(): Promise<void> {
       const ax = video.videoWidth / video.videoHeight;
       const leg = torsos.length ? [...torsos].sort((a, b) => a - b)[Math.floor(torsos.length / 2)]! : 1;
       const fd = Math.hypot((lm(27).x - lm(28).x) * ax, lm(27).y - lm(28).y) / leg;
-      const feet = `sr=${shoulderRatio(pose, ax).toFixed(2)} fd=${fd.toFixed(2)} ky=${(Math.abs(lm(25).y - lm(26).y) / leg).toFixed(2)} kv=${(lm(25).visibility ?? 0).toFixed(2)},${(lm(26).visibility ?? 0).toFixed(2)} av=${(lm(27).visibility ?? 0).toFixed(2)},${(lm(28).visibility ?? 0).toFixed(2)}`;
+      // The same knee-height gap from the 3D points, over the 3D torso length (view-independent in principle).
+      const w = result.worldLandmarks[0];
+      const wTorso = w ? Math.hypot((w[11]!.x + w[12]!.x - w[23]!.x - w[24]!.x) / 2, (w[11]!.y + w[12]!.y - w[23]!.y - w[24]!.y) / 2, (w[11]!.z + w[12]!.z - w[23]!.z - w[24]!.z) / 2) : 0;
+      const wky = w && wTorso > 0 ? Math.abs(w[25]!.y - w[26]!.y) / wTorso : -1;
+      const feet = `sr=${shoulderRatio(pose, ax).toFixed(2)} fd=${fd.toFixed(2)} ky=${(Math.abs(lm(25).y - lm(26).y) / leg).toFixed(2)} wky=${wky.toFixed(2)} kv=${(lm(25).visibility ?? 0).toFixed(2)},${(lm(26).visibility ?? 0).toFixed(2)} av=${(lm(27).visibility ?? 0).toFixed(2)},${(lm(28).visibility ?? 0).toFixed(2)}`;
       trace.push(`${time.toFixed(2)} ${feet} m=${f(update.metric)} ${update.phase} top=${f(d.topLine)} stand=${f(d.standingAngle)} up=${isUpright(frame, 30, 0.5) ? 1 : 0} tilt=${f(tilt)} st=${stance(frame, 0.5, leg) ?? '-'} drift=${f(d.drift, 2)} stag=${f(d.staggeredShare, 2)}`);
     }
     // One sample per second: time, knee angle, phase, torso tilt.

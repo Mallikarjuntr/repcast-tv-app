@@ -104,7 +104,7 @@ npm run build:camera                      # typecheck + build the camera app (wh
 cd apps/tv && npx tsc --noEmit            # typecheck the TV app
 ```
 
-The rep engine has its own unit tests in [spotter-movement](https://github.com/Mallikarjuntr/spotter-movement) (`npm test`), and `apps/camera/replay.html` replays recorded videos through the exact phone pipeline. Results, device measurements and known limits are in [docs/TESTING.md](docs/TESTING.md).
+The rep engine has its own unit tests in [spotter-movement](https://github.com/Mallikarjuntr/spotter-movement) (`npm test`), and `apps/camera/replay.html` replays recorded videos through the exact phone pipeline (`&repeat=N` loops a clip). `tools/trainer/views.py` renders every judged move from the front, 45° and the side to check the judging wherever the phone stands. Results, device measurements and known limits are in [docs/TESTING.md](docs/TESTING.md).
 
 ## License
 

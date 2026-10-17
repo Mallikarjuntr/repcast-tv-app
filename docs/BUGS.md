@@ -58,6 +58,18 @@ Status: **fixed** (2026-10-16, verified on the stick), **decided** (a product ca
 | 28 | A move ended before any attempt still went into the history and streak | Not saved; the receipt still shows | fixed |
 | 29 | "Last time, Friday: 1 reps" | "1 rep" | fixed |
 
+## Every move from every angle (2026-10-18)
+
+| # | What happened | Fix | Status |
+|---|---|---|---|
+| 30 | Every jumping jack was rejected: "The camera moved — keep the phone still" (user's phone: 0/9) | The engine assumed planted feet; jacks jump them apart. Jacks no longer require planted feet | fixed (engine a984e28) |
+| 31 | Facing the camera, squats were rejected as "camera moved" | The pose model swaps left and right ankles for a frame; feet are matched regardless of label | fixed |
+| 32 | Side-on squats with the feet out of view: "camera moved" (real clip 3/7) | Hip drift measured against torso length, not shoulder width (≈ 0 side-on) — now 6/7, the 7th genuinely shallow | fixed |
+| 33 | Lunges facing the camera were called squats ("Step one foot forward — that was a squat") | Lunge cut-off 0.3 when both legs are visible (0.45 side-on, ≥ 3 frames), from measured squat and lunge knee gaps | fixed; front-view lunges not yet checked on a real person |
+| 34 | Half squats never counted side-on (straight legs read ~150°) | The start-of-rep line follows the person's own standing line | fixed |
+| 35 | Curtsy lunges at 45° rejected ("step back and across") on the trainer render | Not changed: the render is shallow and there is no real footage | open — needs a real clip |
+| 36 | "Start anyway" / "Start now" and phone sync | Checked side by side: the phone follows within 0.2–1 s | works |
+
 ## Not ours
 
 - Fire OS shows "Allow USB debugging?" over a running app when a computer connects without "Always allow"; while it is up the app's timers stall (a rest took 74 s instead of 60). The phone correctly showed "Lost your TV" and recovered when the dialog closed.

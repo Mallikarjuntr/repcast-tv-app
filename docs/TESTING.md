@@ -157,6 +157,45 @@ Checked on the Android TV emulator with the remote keys only, and a headless Chr
 
 Bugs found and fixed on the way are in `docs/BUGS.md` (#19–#29). Not yet checked: the stick (performance of the new picker, video on the second move over real Wi-Fi), and a real phone.
 
+## 9. Every move from every angle (2026-10-18)
+
+Prompted by the user's phone test: 9 of 9 jumping jacks were rejected as "The camera moved", and lunges facing the phone were called squats. Rather than guess per report, every judged move was replayed from three phone positions.
+
+**Method.** `tools/trainer/views.py` renders each judged move with the 3D trainer from the front (0°), at 45° and side-on (90°), as portrait phone-shaped clips without the outline pass (~12–40 s each, kept in the git-ignored `tools/trainer/views-out/`). The replay bench (`apps/camera/replay.html`) gained `&repeat=N` to loop a one-rep clip, and a `wky` (3D knee gap) column in its trace. `SPOTTER_MOVEMENT_SRC=1` makes the camera dev server use the engine source from the sibling `spotter-movement` checkout (launch config `camera-engine`, port 5174), so engine changes can be replayed before publishing. A headless Chrome runs the bench three tabs at a time and collects `window.spotterResult`. Real footage: Wikimedia Commons clips (CC/public domain) — "Squat - exercise demonstration video" (from behind), "Squat and Frontal Raise" (side), "Strength Training Circuit- Forward Lunge" and "Forward lunge training" (front and side), "Interval Push-ups" (side).
+
+**Found and fixed in spotter-movement (each with a unit test):**
+
+| Problem | Evidence | Fix |
+|---|---|---|
+| Jumping/step jacks rejected as "camera moved" | User's phone: 0/9 counted | Jacks don't require planted feet |
+| Facing the camera, the pose model swaps left/right ankles for a frame → "camera moved" | Trainer squat from the front: 1/5 counted | Each foot matched to the nearer starting foot |
+| Side-on with feet hidden, hip sway → "camera moved" (measured against shoulder width ≈ 0 side-on) | Real side-on squats: 3/7 counted | Hip drift measured against torso length |
+| Lunges facing the camera called squats | Real lunge facing the camera: knee gap 0.39–0.54 vs cut-off 0.55 | Cut-off 0.3 with both legs visible, 0.45 side-on, and at least 3 lunge frames |
+| Half squats never started when straight legs read ~150° (side-on) | Trainer half squat side-on: 0 reps | Start line follows the learned standing line |
+
+**Measurements that set the lunge cut-off.** Knee gap over torso length in frames at the bottom of reps: squats, half and sumo squats (front, 45°, side; trainer and two real clips) stay ≤ 0.3 in 94–100% of frames, median 0.02–0.06, and side-on never exceed 0.45; real lunges exceed 0.3 in ~60% of frames (side-on lunges exceed 0.45 in 44–57%).
+
+**After the fixes:**
+
+| | Front (0°) | 45° | Side (90°) |
+|---|---|---|---|
+| Squats (trainer) | 5/5 | 5/5 | 5/5 |
+| Sumo squats (trainer) | 5/5 | 5/5 | 5/5 |
+| Half squats (trainer) | 0 — trainer reads as leaning 30° from the front, never "upright" | 5/5 | 5/5 |
+| Jumping jacks, step jacks (trainer) | 4/4, 3/3 | 5/5 | 5/5 |
+| Lunges (trainer) | n/a — the trainer's lunge isn't a real lunge from the front | 2/5 (shallow render) | 5/5 |
+| Curtsy lunges (trainer) | 0 attempts | 0/5 "step back and across" | 5/5 |
+| Push-ups / knee push-ups (trainer) | head-on: not supported | 5/5, 4/5 | 0/1, 0 — the renders don't go low enough |
+| Glute bridges (trainer) | head-on: not seen | 2/2 | 4/4 |
+| Real squats (behind; side) | | | 2/2; 6/7 (the 7th was shallow, 128°) |
+| Real push-ups (side) | | | 6/6, bottoms 43–49° |
+| Real lunges (front and side) | | | counted; the squat-like kettlebell pick-up refused |
+| Honesty checks | real squats as a lunge set: refused; trainer lunges as a squat set: refused (45°, side) | | |
+
+**Phone ↔ TV, side by side (emulator + headless phone):** "Start anyway" with nobody in view → TV starts, phone switches to "SQUATS · SET 1 OF 3, 0 / 12" within ~1 s and says it can't see the person. "Start now" during the countdown → phone leaves "Starting in 2" for the set within ~0.2 s; counts follow the TV. "Done for today" → phone shows "Session done".
+
+**Still unverified on a real person:** lunges and curtsy lunges facing the camera (one real clip shows a lunge partly facing it), half squats facing the camera, knee push-ups, glute bridges. The trainer renders are not good enough for these; short phone recordings from the user would settle them.
+
 ## Known limits
 
 - **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other. Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.
