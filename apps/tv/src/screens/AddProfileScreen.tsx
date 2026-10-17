@@ -47,7 +47,7 @@ export function AddProfileScreen({ onSave, onCancel }: { onSave: (name: string) 
         />
       </View>
       <View style={{ marginTop: s(20), maxWidth: s(660) }}>
-        <Note size={19}>Type with the remote or the Fire TV app on your phone. They'll get their own streak, history and swaps.</Note>
+        <Note size={19}>Type with the remote or the Fire TV app on your phone. They'll get their own streak and history.</Note>
       </View>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(10), marginTop: 'auto', marginLeft: -s(6) }}>
         {clean ? <FocusButton label={`Add ${clean}`} onPress={() => onSave(clean)} /> : null}

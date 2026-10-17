@@ -194,7 +194,7 @@ export function spotterNote(s: WorkoutSummary): CoachNote {
   const finished = s.plannedTotal === 0 || s.counted >= s.plannedTotal * 0.9;
   let nextTime: string;
   if (s.counted === 0) nextTime = 'phone at hip height, about 2.5 m back, with your whole body in view.';
-  else if (!finished) nextTime = 'the whole session, every set — slower is fine.';
+  else if (!finished) nextTime = 'every set, start to finish — slower is fine.';
   else if (reason && reason.reason.startsWith('not deep') && reason.count >= 2) nextTime = `${Math.max(6, s.plannedReps - 2)} reps with a 2-second pause at the bottom.`;
   else if (top && top.reps.length >= 2) nextTime = `same reps, slower, ${top.fix}.`;
   else if ((s.cleanPct ?? 0) >= 90 && s.noReps <= 1) nextTime = `we add a set — ${s.plannedSets + 1} × ${s.plannedReps}.`;

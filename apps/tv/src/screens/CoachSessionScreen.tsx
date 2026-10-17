@@ -12,7 +12,7 @@ const REST_BETWEEN_MOVES_S = 20;
 
 /**
  * A whole session with the camera: only the moves the camera can check, each on the live screen
- * with the phone's picture (no warm-ups or trainer videos — those belong to Follow along). The phone
+ * with the phone's picture (no trainer videos — those belong to Follow along). Today it runs one move. The phone
  * is kept in step: it is told which exercise to judge and where the set is, and shows the TV's count.
  * Holds the video link for the whole session so it doesn't drop between moves.
  */
@@ -40,7 +40,7 @@ export function CoachSessionScreen({ channel, session, onFinish }: { channel: st
     else onFinish(moves.current, Math.round((Date.now() - startedAt.current) / 1000));
   }, [index, onFinish, steps.length]);
 
-  // A session with nothing the camera can check (every move swapped for a stretch or a hold) is
+  // A session with nothing the camera can check (a hold, say) is
   // simply followed along.
   if (!step) return <FollowScreen session={session} onFinish={() => onFinish([], Math.round((Date.now() - startedAt.current) / 1000))} />;
 

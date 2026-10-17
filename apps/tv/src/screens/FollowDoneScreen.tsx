@@ -4,27 +4,27 @@ import { Card, StatTile, WeekStrip } from '../components/Studio';
 import { Headline, Kicker, Note } from '../components/Type';
 import type { DayState } from '../storage';
 import { colors, fonts, useScale } from '../theme';
-import type { Session, Step } from '../workouts';
+import type { Step } from '../workouts';
 
 function amount(step: Step): string {
   return step.kind === 'timed' ? `${step.seconds} s` : `${step.sets} × ${step.reps}`;
 }
 
-/** End of a Core mode workout: what was done, and how the week looks now. */
+/** End of a follow-along move: what was done, how the week looks now, and what next. */
 export function FollowDoneScreen({
-  session,
+  move,
   reps,
   seconds,
   week,
+  onAnother,
   onHome,
-  onCoach,
 }: {
-  session: Session;
+  move: Step;
   reps: number;
   seconds: number;
   week: { day: string; state: DayState }[];
+  onAnother: () => void;
   onHome: () => void;
-  onCoach: () => void;
 }) {
   const s = useScale();
   const minutes = Math.max(1, Math.round(seconds / 60));
@@ -33,9 +33,13 @@ export function FollowDoneScreen({
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: s(44), paddingHorizontal: s(64), paddingBottom: s(40), flexDirection: 'row', gap: s(48) }}>
       <View style={{ flex: 1, gap: s(20) }}>
         <Kicker color={colors.accent}>FOLLOW ALONG · DONE</Kicker>
-        <Headline text={"That's the\nsession."} size={104} />
+        <Headline text={`That's\n${move.name}.`} size={96} />
         <View style={{ flexDirection: 'row', gap: s(12) }}>
-          <StatTile style={{ width: s(170) }} value={`${reps}`} label={reps === 1 ? 'REP' : 'REPS'} />
+          {move.kind === 'reps' ? (
+            <StatTile style={{ width: s(170) }} value={`${reps}`} label={reps === 1 ? 'REP' : 'REPS'} />
+          ) : (
+            <StatTile style={{ width: s(170) }} value={`${Math.min(seconds, move.seconds)}`} label="SECONDS HELD" />
+          )}
           <StatTile style={{ width: s(170) }} value={`${minutes}`} label={minutes === 1 ? 'MINUTE' : 'MINUTES'} />
           <StatTile style={{ width: s(170) }} value={`${days}`} label="DAYS THIS WEEK" color={colors.accent} />
         </View>
@@ -46,24 +50,21 @@ export function FollowDoneScreen({
         <View style={{ marginTop: 'auto', gap: s(14) }}>
           <View style={{ maxWidth: s(640) }}>
             <Note size={17} color={colors.muted}>
-              Counted by the beat, so it's as honest as you were. Want every rep checked? Smart coaching watches your form through your phone.
+              Counted by the beat, so it's as honest as you were. Want every rep checked? Coach me on camera watches your form through your phone.
             </Note>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(10), marginLeft: -s(6) }}>
-            <FocusButton label="Back home" onPress={onHome} preferredFocus />
-            <FocusButton label="Try Smart coaching" onPress={onCoach} variant="secondary" />
+            <FocusButton label="Another move" onPress={onAnother} preferredFocus />
+            <FocusButton label="Back home" onPress={onHome} variant="secondary" />
           </View>
         </View>
       </View>
 
-      <Card style={{ width: s(360), gap: s(4), alignSelf: 'flex-start', marginTop: s(36) }}>
-        <Kicker size={13}>{`${session.title}${session.titleItalic}`.replace(/\s*\n\s*/g, ' ').replace(/\.$/, '').toUpperCase()}</Kicker>
-        {session.steps.map((step) => (
-          <View key={step.id} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: s(8), borderTopWidth: s(1), borderTopColor: colors.line }}>
-            <Text style={{ fontFamily: fonts.sansSemi, fontSize: s(18), color: colors.text }}>{step.name}</Text>
-            <Text style={{ fontFamily: fonts.sans, fontSize: s(18), color: colors.muted }}>{amount(step)}</Text>
-          </View>
-        ))}
+      <Card style={{ width: s(360), gap: s(6), alignSelf: 'flex-start', marginTop: s(36) }}>
+        <Kicker size={13}>YOU DID</Kicker>
+        <Text style={{ fontFamily: fonts.display, fontSize: s(34), color: colors.text }}>{move.name.toUpperCase()}</Text>
+        <Text style={{ fontFamily: fonts.sansSemi, fontSize: s(18), color: colors.muted }}>{amount(move)}</Text>
+        <Note size={16}>{move.why}</Note>
       </Card>
     </View>
   );

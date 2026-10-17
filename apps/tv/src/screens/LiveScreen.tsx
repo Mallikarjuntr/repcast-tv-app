@@ -174,13 +174,14 @@ export function LiveScreen({
     if (finished.current) return;
     finished.current = true;
     hush();
-    onFinish(w.history, elapsed);
+    // A copy: the live history keeps growing if a rep lands in the moment after this.
+    onFinish([...w.history], elapsed);
   }, [elapsed, onFinish, w.history]);
 
   useEffect(() => {
     if (w.phase === 'done' && !finished.current) {
       finished.current = true;
-      onFinish(w.history, elapsed);
+      onFinish([...w.history], elapsed);
     }
   }, [w.phase, w.history, elapsed, onFinish]);
 
@@ -210,13 +211,9 @@ export function LiveScreen({
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(14) }}>
           <Text style={{ fontFamily: fonts.sansBold, fontSize: s(26), color: colors.text, fontVariant: ['tabular-nums'], marginRight: s(8) }}>{formatTime(elapsed)}</Text>
-          {w.phase === 'work' ? (
-            <>
-              <FocusButton label={paused ? 'Resume' : 'Pause'} onPress={() => setPaused((p) => !p)} variant="light" size="compact" preferredFocus />
-              {/* Moves on when reps can't be counted (camera trouble, a move you'd rather not do); what was done still counts. */}
-              <FocusButton label="Done with this" onPress={finishEarly} variant="secondary" size="compact" />
-            </>
-          ) : null}
+          {w.phase === 'work' ? <FocusButton label={paused ? 'Resume' : 'Pause'} onPress={() => setPaused((p) => !p)} variant="light" size="compact" preferredFocus /> : null}
+          {/* Ends the move, rests included (camera trouble, or enough for today); what was done still counts. */}
+          {w.phase !== 'done' ? <FocusButton label="Done with this" onPress={finishEarly} variant="secondary" size="compact" /> : null}
         </View>
       </View>
 

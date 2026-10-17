@@ -42,6 +42,22 @@ Status: **fixed** (2026-10-16, verified on the stick), **decided** (a product ca
 | 12 | The app icon and TV banner looked cheap (a sketched tally mark) | New mark: an orange tile with a figure mid-squat inside a rep ring; new icon, TV banner ("Your TV checks every rep"), splash, Appstore images and website icons (`tools/brand`) | fixed |
 | 13 | The website didn't say what Spotter is at first glance | New hero: "A workout app for Amazon Fire TV — Work out at home. Your TV checks every rep", what it does in one sentence, and what you need (a Fire TV, your phone, 2 m of floor) | fixed |
 
+## Emulator test by the user (2026-10-17) and what testing it turned up
+
+| # | What happened | Fix | Status |
+|---|---|---|---|
+| 19 | Most screens had no on-screen way back; only the remote's BACK key | A Back button (with a chevron) on Modes, Pick a move, Pair and Who's training (when opened from Home); Progress already had one | fixed |
+| 20 | "Legs, gently" as the Home title made no sense; its subtitle described a warm-up | No fixed session any more: Home says "Let's move." with one Start button and "Your progress"; you pick the move | decided |
+| 21 | Warm-ups (march on the spot and 8 others) | Removed from the app, with their trainer clips (APK 1 MB smaller) | decided |
+| 22 | Too many buttons on Home (Start, Follow along, Swap a move); swapping was hidden behind pressing OK to cycle | Start → choose the mode → Pick a move, every move on its own card in sections, "easier" ones marked. The Swap screen and "Put everything back" are gone | decided |
+| 23 | "Progress" was an underlined text link that didn't look like a button | "Your progress", a real button next to Start | fixed |
+| 24 | The receipt drew 9 attempts but said 1 rep | A rep landing in the moment after "Done with this" was added to the live list the receipt was drawing from; the receipt now gets its own copy | fixed |
+| 25 | After a move, the phone sometimes said "Lost your TV" instead of "Session done" (1 in 5) | The TV sent "done" and closed its connection straight away; it now says it twice and closes 2 s later (4 of 4 delivered after) | fixed |
+| 26 | On the second move the live picture didn't come back (the TV showed the outline) | The video link is kept open while you pick the next move, so it carries over | fixed on the emulator; check on the stick |
+| 27 | On Pick a move, UP from the top row couldn't reach Back | The list no longer scrolls (all six sections fit), so the D-pad moves out of it normally | fixed |
+| 28 | A move ended before any attempt still went into the history and streak | Not saved; the receipt still shows | fixed |
+| 29 | "Last time, Friday: 1 reps" | "1 rep" | fixed |
+
 ## Not ours
 
 - Fire OS shows "Allow USB debugging?" over a running app when a computer connects without "Always allow"; while it is up the app's timers stall (a rest took 74 s instead of 60). The phone correctly showed "Lost your TV" and recovered when the dialog closed.

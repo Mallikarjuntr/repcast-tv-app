@@ -37,7 +37,8 @@ export interface GuidedWorkout {
    * Read it every animation frame; it isn't React state, so reading it re-renders nothing.
    */
   motion: () => Motion;
-  finishSet: () => void;
+  /** Ends the move now ("Done with this"); the reps so far still count. */
+  finishMove: () => void;
   skipRest: () => void;
 }
 
@@ -212,9 +213,12 @@ export function useGuidedWorkout(session: Session, paused: boolean, finalLine: s
     return { depth, timedElapsed: 0, beat: within / 1000 };
   }, [elapsed, phase, session.steps, stepIndex]);
 
-  const finishSet = useCallback(() => {
-    if (phase === 'work') endSet();
-  }, [endSet, phase]);
+  const finishMove = useCallback(() => {
+    if (phaseRef.current === 'done') return;
+    hush();
+    setPhase('done');
+    if (finalLine) say(finalLine);
+  }, [finalLine, setPhase]);
 
   const moreSets = step.kind === 'reps' && setIndex + 1 < step.sets;
   return {
@@ -229,7 +233,7 @@ export function useGuidedWorkout(session: Session, paused: boolean, finalLine: s
     upcoming: moreSets ? step : (session.steps[stepIndex + 1] ?? null),
     totalReps: totalReps.current,
     motion,
-    finishSet,
+    finishMove,
     skipRest: advance,
   };
 }

@@ -144,6 +144,19 @@ On a **Fire TV Stick 4K (AFTMA08C15, Fire OS 8.1.8.2, Android 11, 32-bit, 1.7 GB
 
 Also checked: rest countdowns tick in step on both screens; pause on the remote shows "Paused on your TV" on the phone within ~30 ms and no reps are sent while paused; moving from squats to lunges switches the phone's judging the moment the TV starts the move (a squat then gets "Step one foot forward — that was a squat, this set is lunges"); a phone that reloads mid-set relinks, shows the TV's count again within 1.4 s and its video reconnects within 0.5 s; finishing (or leaving) the session shows "Session done" on the phone. Bugs found and fixed are in `docs/BUGS.md`.
 
+## 8. One move at a time (2026-10-17)
+
+From the user's emulator test: Home lost its fixed "Legs, gently" session, the Swap screen and the warm-ups. The flow is now Home **Start** → **Coach me on camera** or **Follow along** → **Pick a move** (sections: squats, lunges, jumping jacks, push-ups, glutes & calves, planks; "easier" versions marked) → the move → receipt with **Another move**. Every screen that can go back has an on-screen Back button as well as the remote's BACK.
+
+Checked on the Android TV emulator with the remote keys only, and a headless Chrome "phone" (the camera page from the dev server playing the Commons squat clip as its camera, `?code=…&src=…`), reading the phone's screen and the TV→phone messages over the DevTools protocol:
+
+- Follow along: plank → Done with this (13 s held, saved) → Another move → the list opens on Plank → Back home.
+- Camera: squats paired, counted down and started by itself; counts on phone and TV matched; Done with this → receipt (9 reps, 9 squares) → Another move → lunges paired with **the same code**, phone already linked, countdown, then an honest "No rep — that was a squat, this set is lunges". Repeated 4 times: the phone showed "Session done" each time.
+- Video on the second move: with the link kept open between moves (new), the picture carried over; before that it fell back to the outline (the emulator's network is unreliable for a fresh WebRTC link — check on the stick).
+- Back buttons: Who's training (from Home), Modes, Pick a move, Pair — each reachable with the D-pad and returning one screen.
+
+Bugs found and fixed on the way are in `docs/BUGS.md` (#19–#29). Not yet checked: the stick (performance of the new picker, video on the second move over real Wi-Fi), and a real phone.
+
 ## Known limits
 
 - **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other. Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.

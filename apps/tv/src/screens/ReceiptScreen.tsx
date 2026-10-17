@@ -50,14 +50,14 @@ export interface ReceiptProps {
   summary: WorkoutSummary;
   history: RepNote[];
   coach: { note: CoachNote; writing: boolean };
-  sessionNumber: number;
   streak: number;
   finishedAt: Date;
+  onAnother: () => void;
   onDone: () => void;
 }
 
 /** After a coached workout: what counted, every attempt set by set, and the coach's note. */
-export function ReceiptScreen({ summary, history, coach, sessionNumber, streak, finishedAt, onDone }: ReceiptProps) {
+export function ReceiptScreen({ summary, history, coach, streak, finishedAt, onAnother, onDone }: ReceiptProps) {
   const s = useScale();
   const headline = receiptHeadline(summary);
 
@@ -65,7 +65,7 @@ export function ReceiptScreen({ summary, history, coach, sessionNumber, streak, 
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(22) }}>
       <View style={{ gap: s(12) }}>
         <Kicker color={colors.accent}>
-          SESSION {String(sessionNumber).padStart(3, '0')} · {stamp(finishedAt)} · {formatDuration(summary.seconds)} · {streak} {streak === 1 ? 'DAY' : 'DAYS'} IN A ROW
+          {summary.name.toUpperCase()} · {stamp(finishedAt)} · {formatDuration(summary.seconds)} · {streak} {streak === 1 ? 'DAY' : 'DAYS'} IN A ROW
         </Kicker>
         <Headline text={`${headline.lead}${headline.italic}`.replace('\n', ' ')} size={72} />
       </View>
@@ -122,8 +122,9 @@ export function ReceiptScreen({ summary, history, coach, sessionNumber, streak, 
         </Card>
       </View>
 
-      <View style={{ flexDirection: 'row', marginLeft: -s(6) }}>
-        <FocusButton label="Done for today" onPress={onDone} preferredFocus />
+      <View style={{ flexDirection: 'row', gap: s(10), marginLeft: -s(6) }}>
+        <FocusButton label="Another move" onPress={onAnother} preferredFocus />
+        <FocusButton label="Done for today" onPress={onDone} variant="secondary" />
       </View>
     </View>
   );

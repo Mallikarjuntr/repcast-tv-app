@@ -233,9 +233,9 @@ function showTvState(): void {
     case undefined:
       return show(cmd.id ? name : 'FOLLOWING ALONG', ui.count.textContent ?? '0', 'reps', cmd.id ? undefined : 'Follow the trainer on the TV');
     case 'pair':
-      return show('GET READY', null, '', HINT_TEXT[framingHint ?? ''] ?? `Stand where the phone can see you${cmd.name ? ` — ${cmd.name.toLowerCase()} first` : ''}`);
+      return show('GET READY', null, '', HINT_TEXT[framingHint ?? ''] ?? `Stand where the phone can see you${cmd.name ? ` — ${cmd.name.toLowerCase()}` : ''}`);
     case 'countdown':
-      return show('GET READY', String(left ?? ''), 'starting', `Starting in ${left ?? ''}${cmd.name ? ` — ${cmd.name.toLowerCase()} first` : ''}`);
+      return show('GET READY', String(left ?? ''), 'starting', `Starting in ${left ?? ''}${cmd.name ? ` — ${cmd.name.toLowerCase()}` : ''}`);
     case 'work':
       return show(cmd.set && cmd.sets ? `${name} · SET ${cmd.set} OF ${cmd.sets}` : name, String(cmd.count ?? 0), cmd.target ? `/ ${cmd.target}` : 'reps');
     case 'rest':

@@ -17,8 +17,11 @@ export type PairingState =
       hint: FramingHint | null;
     };
 
-/** Creates a pairing session, listens on its channel and tracks the phone's connection and framing. */
-export function usePairing(): { state: PairingState; newCode: () => void; pose: PoseFeed } {
+/**
+ * Creates a pairing session, listens on its channel and tracks the phone's connection and framing.
+ * Given the session of the move before, it keeps that one, so a linked phone stays linked.
+ */
+export function usePairing(existing?: Session | null): { state: PairingState; newCode: () => void; pose: PoseFeed } {
   const [state, setState] = useState<PairingState>({ phase: 'loading' });
   const [attempt, setAttempt] = useState(0);
   // The phone's outline, for drawing over its video while the user gets into frame.
@@ -29,7 +32,8 @@ export function usePairing(): { state: PairingState; newCode: () => void; pose: 
     let close: (() => void) | undefined;
     setState({ phase: 'loading' });
 
-    createSession()
+    // "New code" (attempt > 0) always asks for a fresh session.
+    (existing && attempt === 0 ? Promise.resolve(existing) : createSession())
       .then((session) => {
         if (cancelled) return;
         setState({ phase: 'ready', session, live: 'connecting', phoneConnected: false, framing: null, sideOn: false, framingReady: null, hint: null });
@@ -56,6 +60,7 @@ export function usePairing(): { state: PairingState; newCode: () => void; pose: 
       cancelled = true;
       close?.();
     };
+    // `existing` is only read when the screen opens.
   }, [attempt, pose]);
 
   const newCode = useCallback(() => setAttempt((n) => n + 1), []);

@@ -4,6 +4,9 @@ import { useEffect, useRef } from 'react';
 /** Repeated this often, so a phone that (re)joins mid-session catches up within a couple of seconds. */
 const HEARTBEAT_MS = 2000;
 
+/** Time for the last "done" to leave before its socket closes. */
+const CLOSE_AFTER_DONE_MS = 2000;
+
 /** What the TV tells the phone: the exercise to judge and where the session is (see ExerciseCommand). */
 export type CoachCommand = Omit<ExerciseCommand, 'type' | 'at'>;
 
@@ -29,9 +32,16 @@ export function useExerciseCommand(sessionChannel: string | null, command: Coach
     return () => {
       clearInterval(timer);
       // Leaving the session (finished, or BACK): tell the phone at once rather than letting it time out.
-      if (endOnLeave) channel.current?.send({ type: 'exercise', id: null, phase: 'done', at: Date.now() }, true);
-      channel.current?.close();
+      // Said twice and the socket kept open a moment: in testing about one "done" in five sent just
+      // before closing never reached the phone, which then showed "Lost your TV".
+      const leaving = channel.current;
       channel.current = null;
+      if (endOnLeave && leaving) {
+        const done = () => leaving.send({ type: 'exercise', id: null, phase: 'done', at: Date.now() }, true);
+        done();
+        setTimeout(done, CLOSE_AFTER_DONE_MS / 2);
+        setTimeout(() => leaving.close(), CLOSE_AFTER_DONE_MS);
+      } else leaving?.close();
     };
   }, [sessionChannel]);
 

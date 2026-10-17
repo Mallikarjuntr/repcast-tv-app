@@ -1,4 +1,5 @@
 import { Pressable, Text, View } from 'react-native';
+import { BackButton } from '../components/FocusButton';
 import { Headline, Kicker } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { isFocused } from '../tv';
@@ -8,7 +9,7 @@ export type Mode = 'core' | 'coach';
 interface ModeCardProps {
   kicker: string;
   title: string;
-  /** What this mode runs today, e.g. "Squats, lunges and jumping jacks · about 6 min". */
+  /** What this mode offers, e.g. "12 moves, every rep checked". */
   today?: string;
   points: string[];
   action: string;
@@ -56,43 +57,36 @@ function ModeCard({ kicker, title, today, points, action, highlight, preferredFo
   );
 }
 
-export function ModesScreen({
-  sessionLabel,
-  coreToday,
-  coachToday,
-  onChoose,
-}: {
-  sessionLabel: string;
-  coreToday?: string;
-  coachToday?: string;
-  onChoose: (mode: Mode) => void;
-}) {
+export function ModesScreen({ coachToday, coreToday, onChoose, onBack }: { coachToday: string; coreToday: string; onChoose: (mode: Mode) => void; onBack: () => void }) {
   const s = useScale();
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: s(44), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(26) }}>
-      <View style={{ gap: s(12) }}>
-        <Kicker color={colors.accent}>{sessionLabel}</Kicker>
-        <Headline text="How shall we train?" size={76} />
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+        <View style={{ gap: s(12) }}>
+          <Kicker color={colors.accent}>START A SESSION</Kicker>
+          <Headline text="How shall we train?" size={76} />
+        </View>
+        <BackButton onPress={onBack} />
       </View>
 
       <View style={{ flex: 1, flexDirection: 'row', gap: s(22), marginHorizontal: -s(6) }}>
         <ModeCard
-          kicker="NO CAMERA"
-          title="Follow along"
-          today={coreToday}
-          points={['A voice that guides every move', 'Timers and a tempo beat to follow', 'Reps counted for you, on the beat', 'Streaks and progress, week by week']}
-          action="Start following along"
-          onPress={() => onChoose('core')}
-        />
-        <ModeCard
           kicker="WITH YOUR PHONE'S CAMERA"
           title="Coach me on camera"
           today={coachToday}
-          points={['Form checks on every single rep', 'Uses the phone or webcam you already own', "Your coach's note after every session", 'Plans that adapt to how you moved']}
-          action="Start coaching"
+          points={['Form checks on every single rep', 'Uses the phone or webcam you already own', 'Your live picture on the TV, skeleton drawn on', "A coach's note at the end"]}
+          action="Pick a move"
           highlight
           preferredFocus
           onPress={() => onChoose('coach')}
+        />
+        <ModeCard
+          kicker="NO CAMERA"
+          title="Follow along"
+          today={coreToday}
+          points={['A 3D trainer shows every move', 'A voice and a tempo beat to follow', 'Reps counted for you, on the beat', 'Planks and wall sits too']}
+          action="Pick a move"
+          onPress={() => onChoose('core')}
         />
       </View>
 

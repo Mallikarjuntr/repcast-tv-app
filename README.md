@@ -2,8 +2,8 @@
 
 **Your living-room spotter.** A Fire TV fitness coach that checks your form through the phone you already own — and calls out every rep like a coach in the room. Video goes only from your phone to your TV — never to the cloud.
 
-- **Follow along:** guided workouts with a 3D trainer, a coach's voice, timers, tempo-based rep counting, streaks and progress — no camera needed.
-- **Smart coaching:** your phone becomes the camera. It tracks your body with MediaPipe, judges every rep (good, needs a fix, or no rep — and why), and the TV shows your live picture with your skeleton drawn on it, the count, form notes, and a workout receipt at the end.
+- **Coach me on camera:** pick one of 12 moves the camera checks; your phone becomes the camera. It tracks your body with MediaPipe, judges every rep (good, needs a fix, or no rep — and why), and the TV shows your live picture with your skeleton drawn on it, the count, form notes, and a receipt at the end. Then pick another move — the phone stays linked.
+- **Follow along:** pick any of 17 moves (planks and wall sits too) and follow a 3D trainer, a coach's voice and a tempo beat that counts the reps — no camera needed. Streaks and progress for everyone in the house.
 
 > Built for Build, Ship, Shape: Amazon Developer Hackathon 2026 (Fire TV track).
 
@@ -90,10 +90,10 @@ Spotter then appears in the Fire TV's apps list. It also runs on the Android TV 
 
 ### Try a coached workout
 
-1. On the TV: **Start session → Start coaching**. The TV shows a QR code and a 6-digit code.
+1. On the TV: **Start → Coach me on camera → pick a move** (squats, lunges, jumping jacks, push-ups or glute bridges, each with an easier version). The TV shows a QR code and a 6-digit code.
 2. On a phone **on the same Wi-Fi as the TV**: scan the QR code (or open the camera page and type the code) and allow the camera. The camera starts by itself (on some browsers, tap **Start camera**).
-3. Prop the phone at hip height about 2–3 m away, turned about 45°, and step back until the TV ticks what it needs. The TV counts down from 5 and starts by itself (or press **Start now**). The session goes straight into the moves the camera checks — squats, lunges, jumping jacks; warm-ups and stretches are in Follow along.
-4. The TV runs the session and keeps the count; the phone shows the same count, set and rest, and the TV does the talking.
+3. Prop the phone at hip height about 2–3 m away, turned about 45°, and step back until the TV ticks what it needs. The TV counts down from 5 and starts by itself (or press **Start now**).
+4. The TV runs the move and keeps the count; the phone shows the same count, set and rest, and the TV does the talking. **Done with this** ends the move early. On the receipt, **Another move** goes back to the list with the phone still linked — no new code.
 
 No phone handy? `node tools/fake-phone.mjs <code> --start-after 8 --rest 32` plays a scripted 3 × 12 squat session against the code on the TV (no video). Or open the camera page on a computer with `?code=<code>&src=<clip url>` to send a recorded squat, with video, to the TV.
 

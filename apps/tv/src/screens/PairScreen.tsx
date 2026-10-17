@@ -1,8 +1,8 @@
-import { BODY_PARTS, config, type BodyPart } from '@spotter/shared';
+import { BODY_PARTS, config, type BodyPart, type Session } from '@spotter/shared';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import { FloorPlan } from '../components/FloorPlan';
-import { FocusButton } from '../components/FocusButton';
+import { BackButton, FocusButton } from '../components/FocusButton';
 import { LiveVideo } from '../components/LiveVideo';
 import { Cross, Tick } from '../components/Marks';
 import { QrCode } from '../components/QrCode';
@@ -55,9 +55,20 @@ function missingCue(missing: BodyPart[]): string {
   return `Step back a little — I can't see your ${missing.map((p) => PART_LABEL[p].toLowerCase()).join(' and ')}`;
 }
 
-export function PairScreen({ exercise, onReady }: { exercise: { id: string; name: string } | null; onReady: (channel: string) => void }) {
+export function PairScreen({
+  exercise,
+  session,
+  onReady,
+  onBack,
+}: {
+  exercise: { id: string; name: string } | null;
+  /** The pairing from the move before: the phone is still linked, so no new code. */
+  session?: Session | null;
+  onReady: (session: Session) => void;
+  onBack: () => void;
+}) {
   const s = useScale();
-  const { state, newCode, pose } = usePairing();
+  const { state, newCode, pose } = usePairing(session);
   const [panel, setPanel] = useState({ width: 0, height: 0 });
   const [startsAt, setStartsAt] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
@@ -75,8 +86,10 @@ export function PairScreen({ exercise, onReady }: { exercise: { id: string; name
   const hint = ready?.phoneConnected ? ready.hint : null;
   const phoneConnected = ready?.phoneConnected ?? false;
 
+  // Said once per pairing: not again when the next move reuses the link.
+  const linkedBefore = useRef(!!session);
   useEffect(() => {
-    if (phoneConnected) say(PHONE_LINKED_LINE);
+    if (phoneConnected && !linkedBefore.current) say(PHONE_LINKED_LINE);
   }, [phoneConnected]);
 
   // Starts by itself: once the camera is on and can see what the first move needs, a short countdown
@@ -85,7 +98,7 @@ export function PairScreen({ exercise, onReady }: { exercise: { id: string; name
   const start = useCallback(() => {
     if (started.current || !ready) return;
     started.current = true;
-    onReady(ready.session.channel);
+    onReady(ready.session);
   }, [onReady, ready]);
   useEffect(() => {
     if (canStart) {
@@ -182,7 +195,10 @@ export function PairScreen({ exercise, onReady }: { exercise: { id: string; name
       </View>
 
       <View style={{ flex: 1, gap: s(14) }}>
-        <Kicker>{showVideo ? 'STEP 2 OF 2 · YOU, RIGHT NOW' : 'STEP 2 OF 2 · SET IT DOWN'}</Kicker>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Kicker>{showVideo ? 'STEP 2 OF 2 · YOU, RIGHT NOW' : 'STEP 2 OF 2 · SET IT DOWN'}</Kicker>
+          <BackButton onPress={onBack} />
+        </View>
         <View
           style={{ flex: 1, backgroundColor: colors.surface, borderRadius: s(20), overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}
           onLayout={(e) => setPanel({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
@@ -216,7 +232,7 @@ export function PairScreen({ exercise, onReady }: { exercise: { id: string; name
           {secondsLeft !== null ? (
             <Text style={{ flexShrink: 1, fontFamily: fonts.display, fontSize: s(34), color: colors.accent }}>
               {`Starting in ${secondsLeft}…`}
-              <Text style={{ fontFamily: fonts.displaySemi, fontSize: s(24), color: colors.textSoft }}>{exercise ? `  ${exercise.name} first` : ''}</Text>
+              <Text style={{ fontFamily: fonts.displaySemi, fontSize: s(24), color: colors.textSoft }}>{exercise ? `  ${exercise.name}` : ''}</Text>
             </Text>
           ) : (
             <Text style={{ flexShrink: 1, fontFamily: fonts.displaySemi, fontSize: s(26), color: allVisible && !hint ? colors.text : colors.textSoft }}>{guidance}</Text>

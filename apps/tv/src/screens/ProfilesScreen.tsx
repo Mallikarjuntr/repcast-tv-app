@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Avatar, profileColour } from '../components/Avatar';
+import { BackButton } from '../components/FocusButton';
 import { Headline, Kicker, Note, Wordmark } from '../components/Type';
 import { lastSeen } from '../progress';
 import { loadSessions, MAX_PROFILES, streakDays, type Profile, type SessionRecord } from '../storage';
@@ -36,10 +37,23 @@ function Tile({ accessibilityLabel, preferred, onPress, children }: { accessibil
 }
 
 /**
- * "Who's training?" — everyone who trains on this TV keeps their own history, streak and swaps.
+ * "Who's training?" — everyone who trains on this TV keeps their own history and streak.
  * Nothing leaves the TV; no sign-in.
  */
-export function ProfilesScreen({ profiles, lastId, onChoose, onAdd }: { profiles: Profile[]; lastId: string | null; onChoose: (profile: Profile) => void; onAdd: () => void }) {
+export function ProfilesScreen({
+  profiles,
+  lastId,
+  onChoose,
+  onAdd,
+  onBack,
+}: {
+  profiles: Profile[];
+  lastId: string | null;
+  onChoose: (profile: Profile) => void;
+  onAdd: () => void;
+  /** Only when opened from Home; at launch there's nowhere to go back to. */
+  onBack?: () => void;
+}) {
   const s = useScale();
   const [histories, setHistories] = useState<Record<string, SessionRecord[]>>({});
   useEffect(() => {
@@ -49,7 +63,10 @@ export function ProfilesScreen({ profiles, lastId, onChoose, onAdd }: { profiles
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: s(44), paddingHorizontal: s(64), paddingBottom: s(40) }}>
-      <Wordmark />
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Wordmark />
+        {onBack ? <BackButton onPress={onBack} /> : null}
+      </View>
       <View style={{ marginTop: s(56), gap: s(14) }}>
         <Kicker color={colors.accent}>WHO'S TRAINING?</Kicker>
         <Headline text="Pick your name" size={92} />
@@ -78,7 +95,7 @@ export function ProfilesScreen({ profiles, lastId, onChoose, onAdd }: { profiles
       </View>
       <View style={{ marginTop: 'auto' }}>
         <Note size={17} color={colors.faint}>
-          Everyone keeps their own streak, history and swaps — all on this TV, no sign-in.
+          Everyone keeps their own streak and history — all on this TV, no sign-in.
         </Note>
       </View>
     </View>

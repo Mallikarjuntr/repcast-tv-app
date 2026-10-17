@@ -104,12 +104,9 @@ export function FollowScreen({
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(14) }}>
           <Text style={{ fontFamily: fonts.sansBold, fontSize: s(26), color: colors.text, fontVariant: ['tabular-nums'], marginRight: s(8) }}>{formatTime(elapsed)}</Text>
-          {w.phase === 'work' ? (
-            <>
-              <FocusButton label={paused ? 'Resume' : 'Pause'} onPress={() => setPaused((p) => !p)} variant="light" size="compact" preferredFocus />
-              <FocusButton label="Done with this" onPress={w.finishSet} variant="secondary" size="compact" />
-            </>
-          ) : null}
+          {w.phase === 'work' ? <FocusButton label={paused ? 'Resume' : 'Pause'} onPress={() => setPaused((p) => !p)} variant="light" size="compact" preferredFocus /> : null}
+          {/* Ends the move, rests included: what you did so far still counts. */}
+          {w.phase !== 'done' ? <FocusButton label="Done with this" onPress={w.finishMove} variant="secondary" size="compact" /> : null}
         </View>
       </View>
 

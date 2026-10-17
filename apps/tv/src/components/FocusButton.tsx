@@ -24,10 +24,12 @@ interface FocusButtonProps {
   size?: 'regular' | 'compact';
   /** A play triangle before the label, for the button that starts a workout. */
   play?: boolean;
+  /** A left chevron before the label, for Back. */
+  back?: boolean;
   preferredFocus?: boolean;
 }
 
-export function FocusButton({ label, onPress, variant = 'primary', size = 'regular', play, preferredFocus }: FocusButtonProps) {
+export function FocusButton({ label, onPress, variant = 'primary', size = 'regular', play, back, preferredFocus }: FocusButtonProps) {
   const s = useScale();
   const look = LOOK[variant];
   const compact = size === 'compact';
@@ -69,6 +71,11 @@ export function FocusButton({ label, onPress, variant = 'primary', size = 'regul
                 <Path d="M4 2 L16 9 L4 16 Z" fill={look.fg} />
               </Svg>
             ) : null}
+            {back ? (
+              <Svg width={s(14)} height={s(16)} viewBox="0 0 14 16">
+                <Path d="M10 2 L3 8 L10 14" fill="none" stroke={look.fg} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            ) : null}
             <Text
               style={{
                 fontFamily: look.font,
@@ -84,4 +91,12 @@ export function FocusButton({ label, onPress, variant = 'primary', size = 'regul
       }}
     </Pressable>
   );
+}
+
+/**
+ * The on-screen way back, top right of a screen's header. The remote's BACK key does the same;
+ * this is for people who look for a button.
+ */
+export function BackButton({ onPress, preferredFocus }: { onPress: () => void; preferredFocus?: boolean }) {
+  return <FocusButton label="Back" onPress={onPress} variant="secondary" size="compact" back preferredFocus={preferredFocus} />;
 }

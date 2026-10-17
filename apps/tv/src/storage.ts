@@ -5,7 +5,10 @@ export interface SessionRecord {
   /** ISO timestamp of when it finished. */
   at: string;
   mode: 'core' | 'coach';
+  /** The move's name (older records: the session's name). */
   title: string;
+  /** The move's id, e.g. "squat" (older records, from whole sessions, have none). */
+  move?: string;
   reps: number;
   seconds: number;
   /** Coach mode only: reps that counted cleanly, out of `reps`. */
@@ -30,6 +33,7 @@ const LEGACY_SWAPS_KEY = 'spotter.swaps.v1';
 const PROFILES_KEY = 'spotter.profiles.v1';
 const LAST_PROFILE_KEY = 'spotter.lastProfile.v1';
 const sessionsKey = (profileId: string) => `spotter.sessions.v1.${profileId}`;
+// Swaps from the old fixed session; still migrated and kept, no longer read (moves are picked now).
 const swapsKey = (profileId: string) => `spotter.swaps.v1.${profileId}`;
 const KEEP = 365;
 
@@ -135,13 +139,4 @@ export function streakDays(sessions: SessionRecord[], now = new Date()): number 
     day.setDate(day.getDate() - 1);
   }
   return streak;
-}
-
-/** Moves the person swapped out (original step id → replacement id); kept until they change them. */
-export async function loadSwaps(profileId: string): Promise<Record<string, string>> {
-  return readJson<Record<string, string>>(swapsKey(profileId), {});
-}
-
-export async function saveSwaps(profileId: string, swaps: Record<string, string>): Promise<void> {
-  await writeJson(swapsKey(profileId), swaps);
 }
