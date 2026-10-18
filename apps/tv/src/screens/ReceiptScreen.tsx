@@ -77,7 +77,7 @@ export function ReceiptScreen({ summary, history, coach, streak, finishedAt, onA
             <StatTile style={{ flex: 1 }} size={46} value={summary.cleanPct === null ? '—' : `${summary.cleanPct}%`} label="CLEAN FORM" color={colors.accent} />
             <StatTile style={{ flex: 1 }} size={46} value={`${summary.noReps}`} label="DIDN'T COUNT" />
           </View>
-          <Card style={{ flex: 1, gap: s(10), borderLeftWidth: s(5), borderLeftColor: colors.accent }}>
+          <Card style={{ flex: 1, gap: s(10) }}>
             <Kicker size={13} color={colors.accent}>
               YOUR COACH'S NOTE
             </Kicker>

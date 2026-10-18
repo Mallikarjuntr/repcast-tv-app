@@ -99,7 +99,7 @@ export function FollowScreen({
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(22) }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: s(54) }}>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: s(18) }}>
-          <Text style={{ fontFamily: fonts.display, fontSize: s(30), color: colors.text }}>{resting ? 'REST' : step.name.toUpperCase()}</Text>
+          <Text style={{ fontFamily: fonts.display, fontSize: s(30), color: colors.text }}>{resting ? 'Rest' : step.name}</Text>
           <Kicker size={16}>{[moveLabel, setLabel].filter(Boolean).join(' · ')}</Kicker>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(14) }}>

@@ -1,5 +1,5 @@
 import { Text, View } from 'react-native';
-import { FocusButton } from '../components/FocusButton';
+import { BackButton } from '../components/FocusButton';
 import { Card, StatTile } from '../components/Studio';
 import { Headline, Kicker, Note } from '../components/Type';
 import { bestStreak, calendarWeeks, cleanTrend, totals, type DayStat } from '../progress';
@@ -50,7 +50,7 @@ export function ProgressScreen({ profile, sessions, onBack }: { profile: Profile
           <Kicker color={colors.accent}>{profile.name.toUpperCase()} · LAST {WEEKS} WEEKS</Kicker>
           <Headline text={`${possessive} progress`} size={76} />
         </View>
-        <FocusButton label="Back" onPress={onBack} variant="light" preferredFocus />
+        <BackButton onPress={onBack} preferredFocus />
       </View>
 
       <View style={{ flexDirection: 'row', gap: s(14) }}>

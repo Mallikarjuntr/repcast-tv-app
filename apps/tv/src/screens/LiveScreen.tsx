@@ -204,7 +204,7 @@ export function LiveScreen({
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(40), gap: s(22) }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: s(54) }}>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: s(18) }}>
-          <Text style={{ fontFamily: fonts.display, fontSize: s(30), color: colors.text }}>{plan.name.toUpperCase()}</Text>
+          <Text style={{ fontFamily: fonts.display, fontSize: s(30), color: colors.text }}>{plan.name}</Text>
           <Kicker size={16}>
             SET {w.setIndex + 1} OF {plan.sets}
           </Kicker>

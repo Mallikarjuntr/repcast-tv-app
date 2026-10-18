@@ -32,6 +32,9 @@ export function coachIntroLine(name: string, reps: number): string {
 /** Said before the reason when an attempt doesn't count. */
 export const NO_REP_LINE = 'No rep.';
 
+/** Said when a new pairing screen opens: the live picture only reaches the TV across the home network. */
+export const WIFI_LINE = 'Scan the code with your phone. Keep your phone and TV on the same Wi-Fi.';
+
 /** Said once when the phone links on the pairing screen. */
 export const PHONE_LINKED_LINE = 'Phone connected. Now step into view.';
 

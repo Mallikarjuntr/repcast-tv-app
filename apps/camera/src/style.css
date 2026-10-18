@@ -13,9 +13,9 @@
   --live: #ff4d3d;
   --good: #6fc3a8;
   --fault: #ff6b5b;
-  --sans: 'Archivo', system-ui, sans-serif;
-  /* Condensed, upper-case: headlines and big numbers. */
-  --display: 'Archivo Narrow', 'Arial Narrow', system-ui, sans-serif;
+  --sans: 'Barlow', system-ui, sans-serif;
+  /* Semi-condensed: headlines and big numbers (Barlow, as on the TV). */
+  --display: 'Barlow Semi Condensed', 'Arial Narrow', system-ui, sans-serif;
   color-scheme: dark;
 }
 
@@ -87,10 +87,10 @@ body {
 h1 {
   margin: 10px 0 0;
   font-family: var(--display);
-  font-weight: 700;
-  font-size: 56px;
-  line-height: 0.9;
-  text-transform: uppercase;
+  font-weight: 800;
+  font-size: 52px;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
 }
 
 h1 em {
@@ -121,6 +121,10 @@ h1 em {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.intro p strong {
+  color: var(--text);
 }
 
 .intro .pair-status {

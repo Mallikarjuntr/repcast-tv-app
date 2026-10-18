@@ -91,6 +91,17 @@ export function Speaker({ size, color = colors.accent }: { size: number; color?:
   );
 }
 
+export function Wifi({ size, color = colors.accent }: { size: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path d="M2.5 9 C 8 4, 16 4, 21.5 9" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Path d="M5.5 12.5 C 9.5 9, 14.5 9, 18.5 12.5" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Path d="M8.5 16 C 10.5 14.3, 13.5 14.3, 15.5 16" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" />
+      <Path d="M12 19.5 L12 19.6" stroke={color} strokeWidth={3} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
 /** The privacy line, with a padlock. */
 export function PrivacyLine({ color = colors.faint, size = 14 }: { color?: string; size?: number }) {
   const s = useScale();

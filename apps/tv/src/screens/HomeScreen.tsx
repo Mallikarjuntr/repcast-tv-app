@@ -112,7 +112,7 @@ export function HomeScreen({
           <Headline text="Let's move." size={92} />
           <Note size={20}>Squats, lunges, push-ups and more. With your phone's camera, I check every rep.</Note>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(10), marginTop: s(6), marginLeft: -s(6) }}>
-            <FocusButton label="Start" onPress={onStart} play preferredFocus />
+            <FocusButton label="Start session" onPress={onStart} play preferredFocus />
             <FocusButton label="Your progress" onPress={onProgress} variant="secondary" />
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(8) }}>

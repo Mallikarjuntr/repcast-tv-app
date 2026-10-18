@@ -1,5 +1,5 @@
-import { Archivo_400Regular, Archivo_500Medium, Archivo_600SemiBold, Archivo_700Bold, Archivo_800ExtraBold } from '@expo-google-fonts/archivo';
-import { ArchivoNarrow_600SemiBold, ArchivoNarrow_700Bold } from '@expo-google-fonts/archivo-narrow';
+import { Barlow_400Regular, Barlow_500Medium, Barlow_600SemiBold, Barlow_700Bold, Barlow_800ExtraBold } from '@expo-google-fonts/barlow';
+import { BarlowSemiCondensed_700Bold, BarlowSemiCondensed_800ExtraBold } from '@expo-google-fonts/barlow-semi-condensed';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -92,13 +92,13 @@ function CoachReceipt({ data, onAnother, onDone }: { data: CoachReceiptData; onA
 
 export default function App() {
   const [fontsLoaded] = useFonts({
-    Archivo_400Regular,
-    Archivo_500Medium,
-    Archivo_600SemiBold,
-    Archivo_700Bold,
-    Archivo_800ExtraBold,
-    ArchivoNarrow_600SemiBold,
-    ArchivoNarrow_700Bold,
+    Barlow_400Regular,
+    Barlow_500Medium,
+    Barlow_600SemiBold,
+    Barlow_700Bold,
+    Barlow_800ExtraBold,
+    BarlowSemiCondensed_700Bold,
+    BarlowSemiCondensed_800ExtraBold,
   });
   const [history, setHistory] = useState<Screen[]>([{ name: 'home' }]);
   const screen = history[history.length - 1]!;

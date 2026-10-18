@@ -33,7 +33,7 @@ export function FollowDoneScreen({
     <View style={{ flex: 1, backgroundColor: colors.bg, paddingTop: s(44), paddingHorizontal: s(64), paddingBottom: s(40), flexDirection: 'row', gap: s(48) }}>
       <View style={{ flex: 1, gap: s(20) }}>
         <Kicker color={colors.accent}>FOLLOW ALONG · DONE</Kicker>
-        <Headline text={`That's\n${move.name}.`} size={96} />
+        <Headline text={`${move.name},\ndone.`} size={96} />
         <View style={{ flexDirection: 'row', gap: s(12) }}>
           {move.kind === 'reps' ? (
             <StatTile style={{ width: s(170) }} value={`${reps}`} label={reps === 1 ? 'REP' : 'REPS'} />
@@ -62,7 +62,7 @@ export function FollowDoneScreen({
 
       <Card style={{ width: s(360), gap: s(6), alignSelf: 'flex-start', marginTop: s(36) }}>
         <Kicker size={13}>YOU DID</Kicker>
-        <Text style={{ fontFamily: fonts.display, fontSize: s(34), color: colors.text }}>{move.name.toUpperCase()}</Text>
+        <Text style={{ fontFamily: fonts.display, fontSize: s(34), color: colors.text }}>{move.name}</Text>
         <Text style={{ fontFamily: fonts.sansSemi, fontSize: s(18), color: colors.muted }}>{amount(move)}</Text>
         <Note size={16}>{move.why}</Note>
       </Card>

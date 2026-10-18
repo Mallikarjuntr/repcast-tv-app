@@ -1,13 +1,5 @@
 [
   {
-    "id": "arms-out-wide-small-circles-then-1q9537a",
-    "text": "Arms out wide, small circles — then bigger"
-  },
-  {
-    "id": "arms-up-lean-slowly-side-to-side-8zh4cg",
-    "text": "Arms up, lean slowly side to side"
-  },
-  {
     "id": "back-against-the-wall-thighs-lev-1fz4iok",
     "text": "Back against the wall, thighs level — hold"
   },
@@ -112,14 +104,6 @@
     "text": "Half squats. Twelve reps. Only go halfway."
   },
   {
-    "id": "hands-on-your-hips-draw-big-slow-x76dop",
-    "text": "Hands on your hips, draw big slow circles"
-  },
-  {
-    "id": "heels-up-to-your-seat-quick-and-1pvdq0e",
-    "text": "Heels up to your seat, quick and light"
-  },
-  {
     "id": "hips-sagged-too-far-that-one-doe-2htub7",
     "text": "Hips sagged too far — that one doesn't count"
   },
@@ -176,10 +160,6 @@
     "text": "Knees down, straight line from shoulders to knees"
   },
   {
-    "id": "knees-up-to-hip-height-quick-fee-s68mhe",
-    "text": "Knees up to hip height — quick feet"
-  },
-  {
     "id": "leaned-too-far-forward-that-one-5kpoy",
     "text": "Leaned too far forward — that one doesn't count"
   },
@@ -214,10 +194,6 @@
   {
     "id": "make-a-straight-line-from-should-1au4ssz",
     "text": "Make a straight line from shoulders to heels"
-  },
-  {
-    "id": "march-on-the-spot-easy-pace-arms-zzhfnc",
-    "text": "March on the spot — easy pace, arms swinging"
   },
   {
     "id": "move-a-little-to-your-left-95z9h2",
@@ -268,62 +244,6 @@
     "text": "Push your knees out"
   },
   {
-    "id": "reach-up-tall-then-let-your-arms-uw32y2",
-    "text": "Reach up tall, then let your arms float down"
-  },
-  {
-    "id": "rest-next-calf-raises-hnk38n",
-    "text": "Rest. Next, calf raises."
-  },
-  {
-    "id": "rest-next-curtsy-lunges-1gfcf1e",
-    "text": "Rest. Next, curtsy lunges."
-  },
-  {
-    "id": "rest-next-forearm-plank-w2le6k",
-    "text": "Rest. Next, forearm plank."
-  },
-  {
-    "id": "rest-next-glute-bridges-nin217",
-    "text": "Rest. Next, glute bridges."
-  },
-  {
-    "id": "rest-next-half-squats-1ah0vmu",
-    "text": "Rest. Next, half squats."
-  },
-  {
-    "id": "rest-next-jumping-jacks-1fd5p0w",
-    "text": "Rest. Next, jumping jacks."
-  },
-  {
-    "id": "rest-next-knee-plank-36t2zn",
-    "text": "Rest. Next, knee plank."
-  },
-  {
-    "id": "rest-next-knee-push-ups-91eez6",
-    "text": "Rest. Next, knee push-ups."
-  },
-  {
-    "id": "rest-next-lunges-1yl7520",
-    "text": "Rest. Next, lunges."
-  },
-  {
-    "id": "rest-next-plank-6p2erk",
-    "text": "Rest. Next, plank."
-  },
-  {
-    "id": "rest-next-push-ups-12ccxlb",
-    "text": "Rest. Next, push-ups."
-  },
-  {
-    "id": "rest-next-reach-and-breathe-r59fy3",
-    "text": "Rest. Next, reach and breathe."
-  },
-  {
-    "id": "rest-next-reverse-lunges-1674k44",
-    "text": "Rest. Next, reverse lunges."
-  },
-  {
     "id": "rest-next-set-2-8idodk",
     "text": "Rest. Next, set 2."
   },
@@ -332,40 +252,16 @@
     "text": "Rest. Next, set 3."
   },
   {
-    "id": "rest-next-side-bends-1305g4b",
-    "text": "Rest. Next, side bends."
-  },
-  {
-    "id": "rest-next-split-squats-7tcyzb",
-    "text": "Rest. Next, split squats."
-  },
-  {
-    "id": "rest-next-squats-4jtvzf",
-    "text": "Rest. Next, squats."
-  },
-  {
-    "id": "rest-next-step-jacks-shtjf6",
-    "text": "Rest. Next, step jacks."
-  },
-  {
-    "id": "rest-next-sumo-squats-kf8s5r",
-    "text": "Rest. Next, sumo squats."
-  },
-  {
-    "id": "rest-next-torso-twists-15vdbv3",
-    "text": "Rest. Next, torso twists."
-  },
-  {
-    "id": "rest-next-wall-sit-dvlf4a",
-    "text": "Rest. Next, wall sit."
-  },
-  {
     "id": "reverse-lunges-ten-reps-at-your-uk34ln",
     "text": "Reverse lunges. Ten reps. At your own pace."
   },
   {
     "id": "reverse-lunges-ten-reps-step-bac-1e2lin6",
     "text": "Reverse lunges. Ten reps. Step back, then return."
+  },
+  {
+    "id": "scan-the-code-with-your-phone-ke-nfei2a",
+    "text": "Scan the code with your phone. Keep your phone and TV on the same Wi-Fi."
   },
   {
     "id": "set-2-10-reps-lygfh6",
@@ -464,10 +360,6 @@
     "text": "Step one foot forward — that was a squat, this set is lunges"
   },
   {
-    "id": "step-out-tap-in-side-to-side-eas-13us2gs",
-    "text": "Step out, tap in — side to side, easy rhythm"
-  },
-  {
     "id": "step-your-feet-a-little-wider-16yuhem",
     "text": "Step your feet a little wider"
   },
@@ -514,10 +406,6 @@
   {
     "id": "twenty-8ml93k",
     "text": "twenty"
-  },
-  {
-    "id": "twist-side-to-side-hips-facing-f-smqeq2",
-    "text": "Twist side to side, hips facing forward"
   },
   {
     "id": "two-377j8f",

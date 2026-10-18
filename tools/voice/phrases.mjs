@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const src = join(here, '..', '..', 'apps', 'tv', 'src');
 const { MOVES } = await import(join(src, 'workouts.ts'));
-const { coachIntroLine, countLine, ENGINE_CUES, FINISH_LINE, HINT_LINES, MAX_SPOKEN_COUNT, NO_REP_LINE, PHONE_LINKED_LINE, READY_LINE, restLine, setIntroLine, voiceId } =
+const { coachIntroLine, countLine, ENGINE_CUES, FINISH_LINE, HINT_LINES, MAX_SPOKEN_COUNT, NO_REP_LINE, PHONE_LINKED_LINE, READY_LINE, restLine, setIntroLine, voiceId, WIFI_LINE } =
   await import(join(src, 'voiceLines.ts'));
 // The movement engine's exercise definitions hold each exercise's own advice.
 const { EXERCISES } = await import(join(here, '..', '..', 'node_modules', 'spotter-movement', 'dist', 'index.js'));
@@ -31,7 +31,7 @@ for (const step of MOVES) {
 }
 
 // Camera coaching.
-for (const line of [NO_REP_LINE, PHONE_LINKED_LINE, READY_LINE, ...Object.values(HINT_LINES), ...ENGINE_CUES]) lines.add(line);
+for (const line of [NO_REP_LINE, PHONE_LINKED_LINE, READY_LINE, WIFI_LINE, ...Object.values(HINT_LINES), ...ENGINE_CUES]) lines.add(line);
 for (const step of MOVES) if (step.kind === 'reps') lines.add(coachIntroLine(step.name, step.reps));
 for (const exercise of Object.values(EXERCISES)) {
   const cues = [exercise.depth?.cue, exercise.depth?.noRepCue, exercise.stance?.cue, exercise.width?.cue, exercise.width?.noRepCue, ...(exercise.targets ?? []).map((t) => t.cue)];

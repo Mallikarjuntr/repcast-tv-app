@@ -6,7 +6,7 @@ import { BackButton, FocusButton } from '../components/FocusButton';
 import { LiveVideo } from '../components/LiveVideo';
 import { Cross, Tick } from '../components/Marks';
 import { QrCode } from '../components/QrCode';
-import { Card, PanelTag, PrivacyLine } from '../components/Studio';
+import { Card, PanelTag, PrivacyLine, Wifi } from '../components/Studio';
 import { Headline, Kicker, Note } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { latestOf } from '../poseFeed';
@@ -15,7 +15,7 @@ import { usePairing } from '../usePairing';
 import { useSpokenGuidance } from '../useSpokenGuidance';
 import { useVideoReceiver } from '../useVideoReceiver';
 import { say } from '../voice';
-import { HINT_LINES, PHONE_LINKED_LINE, READY_LINE } from '../voiceLines';
+import { HINT_LINES, PHONE_LINKED_LINE, READY_LINE, WIFI_LINE } from '../voiceLines';
 
 const NO_NOTES = { depth: false, knees: false, chest: false };
 
@@ -89,6 +89,11 @@ export function PairScreen({
   // Said once per pairing: not again when the next move reuses the link.
   const linkedBefore = useRef(!!session);
   useEffect(() => {
+    if (linkedBefore.current) return;
+    const timer = setTimeout(() => say(WIFI_LINE), 800);
+    return () => clearTimeout(timer);
+  }, []);
+  useEffect(() => {
     if (phoneConnected && !linkedBefore.current) say(PHONE_LINKED_LINE);
   }, [phoneConnected]);
 
@@ -153,6 +158,11 @@ export function PairScreen({
         <Kicker color={colors.accent}>STEP 1 OF 2 · PAIR</Kicker>
         <Headline text={'Your phone is\nthe camera'} size={66} />
         <Note size={18}>Scan this with your phone. It opens in the browser, so there's nothing to install.</Note>
+        {/* The live picture goes straight from phone to TV over the home network, so this matters. */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(10), backgroundColor: colors.surface, borderRadius: s(10), paddingVertical: s(9), paddingHorizontal: s(14), alignSelf: 'flex-start' }}>
+          <Wifi size={s(22)} />
+          <Text style={{ fontFamily: fonts.sansBold, fontSize: s(17), color: colors.text }}>Phone and TV on the same Wi-Fi</Text>
+        </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(22), minHeight: s(190) }}>
           {state.phase === 'ready' ? (

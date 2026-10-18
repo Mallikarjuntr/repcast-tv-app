@@ -38,10 +38,11 @@ function TightLines({ lines, size, leading, color, font, letterSpacing = 0 }: { 
   );
 }
 
-/** Big condensed upper-case headline; `\n` starts a new line. */
+/** Big headline in sentence case; `\n` starts a new line. */
 export function Headline({ text, size, color = colors.text }: { text: string; size: number; color?: string }) {
-  const lines = text.toUpperCase().split('\n').map((l) => l.trim()).filter(Boolean);
-  return <TightLines lines={lines} size={size} leading={0.9} color={color} font={fonts.display} />;
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  // A little more leading than all-caps needed: lower case has descenders (g, y, p).
+  return <TightLines lines={lines} size={size} leading={1} color={color} font={fonts.display} letterSpacing={-size * 0.01} />;
 }
 
 /** A huge count ("08") with an optional smaller suffix ("/ 12", "seconds") on its baseline. */

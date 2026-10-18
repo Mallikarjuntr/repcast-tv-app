@@ -32,15 +32,16 @@ export const colors = {
 /** Each person's avatar colour, in the order they were added. */
 export const PROFILE_COLOURS = ['#C0321B', '#5B6B4E', '#3D5A80', '#8E5572', '#A8741A', '#4A7C74'] as const;
 
+/** Barlow: athletic, scoreboard-like, and clear from the sofa (chosen by the user 2026-10-18). */
 export const fonts = {
-  /** Condensed, for headlines and big numbers. */
-  display: 'ArchivoNarrow_700Bold',
-  displaySemi: 'ArchivoNarrow_600SemiBold',
-  sans: 'Archivo_400Regular',
-  sansMedium: 'Archivo_500Medium',
-  sansSemi: 'Archivo_600SemiBold',
-  sansBold: 'Archivo_700Bold',
-  sansHeavy: 'Archivo_800ExtraBold',
+  /** Semi-condensed, for headlines and big numbers. */
+  display: 'BarlowSemiCondensed_800ExtraBold',
+  displaySemi: 'BarlowSemiCondensed_700Bold',
+  sans: 'Barlow_400Regular',
+  sansMedium: 'Barlow_500Medium',
+  sansSemi: 'Barlow_600SemiBold',
+  sansBold: 'Barlow_700Bold',
+  sansHeavy: 'Barlow_800ExtraBold',
 } as const;
 
 /** Screens are designed on a 1280x720 canvas; this scales any design value to the actual TV. */
