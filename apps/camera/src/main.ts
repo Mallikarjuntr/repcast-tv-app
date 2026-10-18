@@ -367,6 +367,9 @@ function onRep(rep: RepResult): void {
     depthOk: rep.depthOk,
     faults: rep.faults.map((f) => f.id),
     cues: rep.cues,
+    // For the TV's "Analyse with AI" report: depth and pace, rounded.
+    bottom: Math.round(rep.bottom),
+    durationMs: Math.round(rep.durationMs),
     at: Date.now(),
   });
 

@@ -23,6 +23,9 @@ export interface RepNote {
   depthOk: boolean | null;
   faults: string[];
   cues: string[];
+  /** Depth (degrees) and duration from newer phones, for the AI report. */
+  bottom?: number;
+  durationMs?: number;
   /** When the TV received it (ms). */
   at: number;
 }
@@ -102,6 +105,8 @@ export function useLiveWorkout(channel: string, plan: WorkoutPlan, paused: boole
             depthOk: event.depthOk,
             faults: event.faults ?? [],
             cues: event.cues,
+            bottom: event.bottom,
+            durationMs: event.durationMs,
             at: Date.now(),
           };
           history.current.push(note);

@@ -3,7 +3,7 @@ import { BarlowSemiCondensed_700Bold, BarlowSemiCondensed_800ExtraBold } from '@
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import type { Session as Pairing } from '@spotter/shared';
+import type { AnalysisReport, Session as Pairing } from '@spotter/shared';
 import { useCallback, useEffect, useState } from 'react';
 import { BackHandler, Linking, View } from 'react-native';
 import { HomeScreen } from './src/screens/HomeScreen';
@@ -17,6 +17,8 @@ import { PairScreen } from './src/screens/PairScreen';
 import { ProfilesScreen } from './src/screens/ProfilesScreen';
 import { ProgressScreen } from './src/screens/ProgressScreen';
 import { PickMoveScreen } from './src/screens/PickMoveScreen';
+import { AnalysisScreen } from './src/screens/AnalysisScreen';
+import { analysisRequest, type AnalysisSource } from './src/analysis';
 import { VideoTestScreen } from './src/screens/VideoTestScreen';
 import {
   addProfile,
@@ -54,6 +56,7 @@ type Screen =
   | { name: 'follow'; move: Step }
   | { name: 'followDone'; move: Step; result: FollowResult }
   | { name: 'receipt'; receipt: CoachReceiptData }
+  | { name: 'analysis'; source: AnalysisSource }
   | { name: 'videoTest' }
   | { name: 'who' }
   | { name: 'addProfile' }
@@ -64,6 +67,8 @@ interface CoachReceiptData {
   history: RepNote[];
   at: string;
   streak: number;
+  /** What "Analyse with AI" sends (numbers only). */
+  source: AnalysisSource;
 }
 
 /**
@@ -75,7 +80,7 @@ function KeepVideo({ channel }: { channel: string }) {
   return null;
 }
 
-function CoachReceipt({ data, onAnother, onDone }: { data: CoachReceiptData; onAnother: () => void; onDone: () => void }) {
+function CoachReceipt({ data, onAnother, onAnalyse, onDone }: { data: CoachReceiptData; onAnother: () => void; onAnalyse: () => void; onDone: () => void }) {
   const coach = useCoachNote(data.summary);
   return (
     <ReceiptScreen
@@ -85,6 +90,7 @@ function CoachReceipt({ data, onAnother, onDone }: { data: CoachReceiptData; onA
       streak={data.streak}
       finishedAt={new Date(data.at)}
       onAnother={onAnother}
+      onAnalyse={data.history.length > 0 ? onAnalyse : undefined}
       onDone={onDone}
     />
   );
@@ -146,8 +152,11 @@ export default function App() {
     if (profile) void saveSession(profile.id, record).then(setSessions);
   }, [profile]);
 
+  // AI reports already written, by workout (finish time), so going back and forth doesn't ask again.
+  const [reports, setReports] = useState<Record<string, AnalysisReport>>({});
+
   const finishLive = useCallback(
-    (move: Step, moves: MoveResult[], seconds: number) => {
+    (move: JudgedStep, pairing: Pairing, moves: MoveResult[], seconds: number) => {
       const { summary, history } = summarizeSession(moves, seconds);
       const record: SessionRecord = {
         at: new Date().toISOString(),
@@ -163,7 +172,20 @@ export default function App() {
       if (summary.attempts > 0) saveFor(record);
       swap({
         name: 'receipt',
-        receipt: { summary, history, at: record.at, streak: streakDays(summary.attempts > 0 ? [...sessions, record] : sessions) },
+        receipt: {
+          summary,
+          history,
+          at: record.at,
+          streak: streakDays(summary.attempts > 0 ? [...sessions, record] : sessions),
+          source: {
+            pairing: { code: pairing.code, channel: pairing.channel },
+            move: { id: move.id, name: move.name },
+            plan: { sets: move.sets, reps: move.reps },
+            seconds,
+            history,
+            at: record.at,
+          },
+        },
       });
     },
     [saveFor, sessions, swap],
@@ -268,9 +290,19 @@ export default function App() {
         />
       )}
       {screen.name === 'live' && (
-        <CoachSessionScreen channel={screen.pairing.channel} session={singleMove(screen.move)} onFinish={(moves, seconds) => finishLive(screen.move, moves, seconds)} />
+        <CoachSessionScreen channel={screen.pairing.channel} session={singleMove(screen.move)} onFinish={(moves, seconds) => finishLive(screen.move, screen.pairing, moves, seconds)} />
       )}
-      {screen.name === 'receipt' && <CoachReceipt data={screen.receipt} onAnother={back} onDone={home} />}
+      {screen.name === 'receipt' && (
+        <CoachReceipt data={screen.receipt} onAnother={back} onAnalyse={() => go({ name: 'analysis', source: screen.receipt.source })} onDone={home} />
+      )}
+      {screen.name === 'analysis' && (
+        <AnalysisScreen
+          request={analysisRequest(screen.source, sessions)}
+          cached={reports[screen.source.at]}
+          onReport={(report) => setReports((r) => ({ ...r, [screen.source.at]: report }))}
+          onBack={back}
+        />
+      )}
       {screen.name === 'follow' && <FollowScreen session={singleMove(screen.move)} onFinish={(result) => finishFollow(screen.move, result)} />}
       {screen.name === 'followDone' && (
         <FollowDoneScreen move={screen.move} reps={screen.result.reps} seconds={screen.result.seconds} week={weekView(sessions)} onAnother={back} onHome={home} />

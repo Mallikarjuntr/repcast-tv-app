@@ -53,11 +53,13 @@ export interface ReceiptProps {
   streak: number;
   finishedAt: Date;
   onAnother: () => void;
+  /** Opens the AI coach's report; absent when there's nothing to analyse. */
+  onAnalyse?: () => void;
   onDone: () => void;
 }
 
 /** After a coached workout: what counted, every attempt set by set, and the coach's note. */
-export function ReceiptScreen({ summary, history, coach, streak, finishedAt, onAnother, onDone }: ReceiptProps) {
+export function ReceiptScreen({ summary, history, coach, streak, finishedAt, onAnother, onAnalyse, onDone }: ReceiptProps) {
   const s = useScale();
   const headline = receiptHeadline(summary);
 
@@ -122,9 +124,15 @@ export function ReceiptScreen({ summary, history, coach, streak, finishedAt, onA
         </Card>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: s(10), marginLeft: -s(6) }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(10), marginLeft: -s(6) }}>
         <FocusButton label="Another move" onPress={onAnother} preferredFocus />
+        {onAnalyse ? <FocusButton label="Analyse with AI" onPress={onAnalyse} variant="secondary" /> : null}
         <FocusButton label="Done for today" onPress={onDone} variant="secondary" />
+        {onAnalyse ? (
+          <Text style={{ flexShrink: 1, marginLeft: s(10), fontFamily: fonts.sans, fontSize: s(14), lineHeight: s(19), color: colors.faint }}>
+            Analyse with AI sends your rep numbers (no video) to Claude on Amazon Bedrock.
+          </Text>
+        ) : null}
       </View>
     </View>
   );

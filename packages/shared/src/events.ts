@@ -52,6 +52,10 @@ export type SpotterEvent =
       faults: string[];
       /** What the coach says, most important first. */
       cues: string[];
+      /** The move's measure at the deepest point, in degrees (e.g. the knee angle). Newer phones only. */
+      bottom?: number;
+      /** How long the attempt took. Newer phones only. */
+      durationMs?: number;
       at: number;
     }
   | { type: 'bye'; at: number }

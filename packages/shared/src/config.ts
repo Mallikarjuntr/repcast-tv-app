@@ -16,6 +16,9 @@ export const config = {
    * spotter-tv.netlify.app/camera/, which Netlify serves from cameraAppUrl.
    */
   pairUrl: 'https://spotter-tv.netlify.app/go',
-  /** POST {apiUrl}/coach-note (Claude on Amazon Bedrock). Off until the backend route is live. */
+  /**
+   * An automatic AI note on every receipt (POST {apiUrl}/coach-note). Off: the receipt keeps Spotter's
+   * own instant note, and the AI coach writes on request instead ("Analyse with AI", POST /coach/analysis).
+   */
   aiCoach: false,
 } as const;
