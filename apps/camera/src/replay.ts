@@ -162,7 +162,20 @@ async function main(): Promise<void> {
     tiltMedian: tilts.length ? Math.round(tilts.sort((a, b) => a - b)[Math.floor(tilts.length / 2)]!) : null,
     timeline: timeline.join(' '),
     trace,
-    reps: reps.map((r) => ({ verdict: r.verdict, bottomDeg: Math.round(r.bottom), sec: +(r.durationMs / 1000).toFixed(2), cues: r.cues })),
+    reps: reps.map((r) => ({
+      verdict: r.verdict,
+      bottomDeg: Math.round(r.bottom),
+      sec: +(r.durationMs / 1000).toFixed(2),
+      cues: r.cues,
+      feet: r.feet && {
+        step: +r.feet.step.toFixed(2),
+        still: +r.feet.still.toFixed(2),
+        ahead: +r.feet.ahead.toFixed(2),
+        across: r.feet.across === null ? null : +r.feet.across.toFixed(2),
+        out: r.feet.out && r.feet.out.map((o) => +o.toFixed(2)),
+        n: r.feet.frames,
+      },
+    })),
   };
   window.spotterResult = summary;
   resultEl.textContent = JSON.stringify(summary, null, 1);

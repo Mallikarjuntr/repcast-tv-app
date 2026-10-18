@@ -22,4 +22,4 @@ Mixamo's terms allow its characters and animations to be used in apps, royalty-f
 
 ## In the app
 
-`apps/tv/src/trainerClips.ts` maps each move to its clip (reverse lunges and split squats share the lunge clip). `TrainerVideo` plays the loop muted, holds it at the first frame while the coach introduces the set, and nudges it back on the beat if it drifts more than 0.15 s. A move without a clip falls back to the drawn figure.
+`apps/tv/src/trainerClips.ts` maps each move to its clip; the lunges each show their own footwork (step forward, step back, back and across, or feet staying split). `TrainerVideo` plays the loop muted, holds it at the first frame while the coach introduces the set, and nudges it back on the beat if it drifts more than 0.15 s. A move without a clip falls back to the drawn figure.

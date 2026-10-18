@@ -139,7 +139,7 @@ def march(rig):
     return 36
 
 
-def lunge(rig, frames):
+def split_squat(rig, frames):
     """Split stance, lowering straight down: front knee over the ankle, back knee toward the floor."""
     front = ankle(rig, 'Left') + Vector((0, -0.34, 0))
     back = ankle(rig, 'Right') + Vector((0, 0.36, 0.02))
@@ -404,23 +404,67 @@ def wall_sit(rig):
     return 90
 
 
+def step_lunge(rig, frames, moving, to, hips, back_foot, hands=False):
+    """
+    From standing, one foot steps to `to`, the body lowers and rises, and the foot steps home: a
+    forward lunge, a reverse lunge or a curtsy, depending on where the foot goes. `hips` is how far
+    the hips travel with the step; `back_foot` points the back foot (heel up, on the toes).
+    """
+    still = 'Right' if moving == 'Left' else 'Left'
+    home_m = ankle(rig, moving)
+    home_s = ankle(rig, still)
+    forward_step = (to - home_m).dot(FORWARD) > 0
+
+    def arms():
+        if hands:
+            hands_on_hips(rig)
+
+    def lifted(frac):
+        rig.reset()
+        rig.move_hips(hips * (frac * 0.5))
+        rig.leg(still, home_s)
+        rig.leg(moving, home_m.lerp(to, frac) + Vector((0, 0, 0.13)))
+        arms()
+
+    def planted(drop):
+        rig.reset()
+        rig.move_hips(hips + Vector((0, 0, -drop)))
+        if forward_step:
+            rig.leg(moving, to)
+            rig.leg(still, home_s, foot=back_foot)
+        else:
+            rig.leg(still, home_s)
+            rig.leg(moving, to, foot=back_foot)
+        arms()
+
+    def standing():
+        rig.reset()
+        arms()
+
+    at = lambda frac: 1 + round(frames * frac)
+    standing(); rig.key(1)
+    lifted(0.5); rig.key(at(0.12))
+    planted(0.06); rig.key(at(0.26))
+    planted(0.42); rig.key(at(0.57))
+    planted(0.06); rig.key(at(0.8))
+    lifted(0.5); rig.key(at(0.91))
+    standing(); rig.key(1 + frames)
+    return frames
+
+
+def forward_lunge(rig, frames):
+    """Step forward into the lunge and push back to standing; the back heel lifts."""
+    return step_lunge(rig, frames, 'Left', ankle(rig, 'Left') + Vector((0, -0.62, 0)), Vector((0, -0.28, 0)), v(0, -0.55, -0.83))
+
+
+def reverse_lunge(rig, frames):
+    """Step back into the lunge, onto the toes, and return."""
+    return step_lunge(rig, frames, 'Right', ankle(rig, 'Right') + Vector((0, 0.62, 0.03)), Vector((0, 0.24, 0)), v(0, -0.55, -0.83))
+
+
 def curtsy_lunge(rig, frames):
     """The back foot steps behind and across the front one, like a curtsy, then lowers."""
-    front = ankle(rig, 'Left') + Vector((0.02, -0.1, 0))
-    back = ankle(rig, 'Right') + Vector((0.32, 0.38, 0.02))
-
-    def pose(drop):
-        rig.reset()
-        rig.move_hips(Vector((0.08, 0.05, -drop)))
-        rig.leg('Left', front)
-        rig.leg('Right', back, foot=v(0.2, -0.55, -0.81))
-        hands_on_hips(rig)
-
-    down = round(frames * 2.0 / 3.5)
-    pose(0.06); rig.key(1)
-    pose(0.36); rig.key(1 + down)
-    pose(0.06); rig.key(1 + frames)
-    return frames
+    return step_lunge(rig, frames, 'Right', ankle(rig, 'Right') + Vector((0.32, 0.4, 0.03)), Vector((0.08, 0.14, 0)), v(0.2, -0.55, -0.81), hands=True)
 
 
 X_AXIS = Vector((1, 0, 0))
@@ -538,7 +582,9 @@ def glute_bridge(rig, frames):
 
 MOVES = {
     'march': lambda rig: march(rig),
-    'lunge': lambda rig: lunge(rig, 105),
+    'lunge': lambda rig: forward_lunge(rig, 105),
+    'reverse-lunge': lambda rig: reverse_lunge(rig, 105),
+    'split-squat': lambda rig: split_squat(rig, 105),
     'reach': lambda rig: reach(rig),
     'sumo-squat': lambda rig: sumo_squat(rig, 105),
     'step-touch': lambda rig: step_touch(rig),

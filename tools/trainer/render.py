@@ -46,6 +46,8 @@ CLIPS = {
     'step-touch': {'fbx': 'Idle', 'pose': 'step-touch', 'yaw': FRONT_YAW},
     'sumo-squat': {'fbx': 'Idle', 'pose': 'sumo-squat', 'yaw': FRONT_YAW},
     'lunge': {'fbx': 'Idle', 'pose': 'lunge', 'yaw': 55},
+    'reverse-lunge': {'fbx': 'Idle', 'pose': 'reverse-lunge', 'yaw': 55},
+    'split-squat': {'fbx': 'Idle', 'pose': 'split-squat', 'yaw': 55},
     'step-jack': {'fbx': 'Idle', 'pose': 'step-jack', 'yaw': FRONT_YAW, 'scale': TALL_SCALE, 'target_z': 1.0},
     'knee-plank': {'fbx': 'Plank', 'pose': 'knee-plank', 'yaw': SIDE_YAW, 'target_z': 0.6, 'shadow': (1.0, 0.22)},
     'reach': {'fbx': 'Idle', 'pose': 'reach', 'yaw': FRONT_YAW, 'scale': TALL_SCALE, 'target_z': 1.0},

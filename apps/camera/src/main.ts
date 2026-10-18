@@ -101,6 +101,7 @@ function poseEvent(pose: NormalizedLandmark[]): Extract<SpotterEvent, { type: 'p
 }
 
 async function linkToTv(code: string): Promise<void> {
+  linkedCode = code;
   ui.pairStatus.className = 'pair-status';
   ui.pairStatus.textContent = `Looking for TV ${code}…`;
   try {
@@ -136,8 +137,7 @@ function reportFraming(pose: NormalizedLandmark[] | undefined, now: number): voi
     BODY_PARTS.map((part) => [part, !!pose && PART_POINTS[part].every((i) => (pose[i]?.visibility ?? 0) >= 0.5)]),
   ) as Record<BodyPart, boolean>;
   const sideOn = !!pose && isSideOn({ t: now, landmarks: pose, aspect: ui.video.videoWidth / ui.video.videoHeight }, 0.5) === true;
-  // Floor exercises are filmed side-on on purpose, so that isn't a problem to fix there.
-  const view = framing(pose, exercise?.required ?? UNJUDGED_REQUIRED, sideOn && !exercise?.lying);
+  const view = framing(pose, exercise?.required ?? UNJUDGED_REQUIRED, sideOn && needsFrontView());
   const hint = steadyHint.update(view.hint, now);
   const ready = steadyReady.update(view.ready, now);
   framingHint = hint;
@@ -151,6 +151,17 @@ function reportFraming(pose: NormalizedLandmark[] | undefined, now: number): voi
 }
 
 const modelKind = new URLSearchParams(location.search).get('model') === 'full' ? 'full' : 'lite';
+
+/**
+ * Moves judged as well from the side as from the front: the lunges (which foot is in front shows in
+ * the knee heights from any angle). Floor moves are filmed side-on on purpose. The rest need to see
+ * across the body (knees caving, stance width, feet jumping out, a foot crossing behind), so a
+ * side-on phone is asked to turn.
+ */
+const SIDE_VIEW_OK = new Set(['lunge', 'reverse-lunge', 'split-squat']);
+function needsFrontView(): boolean {
+  return !!exercise && !exercise.lying && !SIDE_VIEW_OK.has(exercise.id);
+}
 /** What the coach is judging now: squats until the TV says otherwise; null between judged moves. */
 let exercise: RepExercise | null = squat;
 let detector = new RepDetector(squat);
@@ -252,6 +263,12 @@ let stream: MediaStream | null = null;
 let facing: 'user' | 'environment' = 'user';
 let wakeLock: WakeLockSentinel | null = null;
 let lastVideoTime = -1;
+/** When the camera last gave a new frame: a long gap while on screen means it stalled. */
+let lastNewFrameAt = 0;
+/** GPU unless the phone couldn't run the model there (much slower on CPU). */
+let delegate: 'GPU' | 'CPU' | null = null;
+/** The TV's pairing code, to link again after the page is restored. */
+let linkedCode: string | null = null;
 let lastFrameAt = 0;
 let fps = 0;
 let frames = 0;
@@ -273,8 +290,11 @@ async function loadLandmarker(): Promise<PoseLandmarker> {
     numPoses: 1,
   });
   try {
-    return await PoseLandmarker.createFromOptions(vision, options('GPU'));
+    const gpu = await PoseLandmarker.createFromOptions(vision, options('GPU'));
+    delegate = 'GPU';
+    return gpu;
   } catch {
+    delegate = 'CPU';
     return PoseLandmarker.createFromOptions(vision, options('CPU'));
   }
 }
@@ -302,7 +322,9 @@ async function startCamera(): Promise<void> {
   } else {
     stream = await navigator.mediaDevices.getUserMedia({
       audio: false,
-      video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
+      // MediaPipe works on a 256-pixel copy and the TV gets 480p at most: a smaller capture
+      // leaves the phone more time for both.
+      video: { facingMode: facing, width: { ideal: 960 }, height: { ideal: 540 } },
     });
     ui.video.srcObject = stream;
     await ui.video.play();
@@ -311,12 +333,17 @@ async function startCamera(): Promise<void> {
   ui.overlay.height = ui.video.videoHeight;
   ui.stage.classList.toggle('mirrored', facing === 'user');
   lastVideoTime = -1;
-  video?.setTrack(stream.getVideoTracks()[0] ?? null);
+  lastNewFrameAt = performance.now();
+  const track = stream.getVideoTracks()[0] ?? null;
+  track?.addEventListener('ended', () => void resume());
+  video?.setTrack(track);
 }
 
 async function keepScreenOn(): Promise<void> {
   try {
-    wakeLock = await navigator.wakeLock?.request('screen');
+    wakeLock = (await navigator.wakeLock?.request('screen')) ?? null;
+    // The system drops it whenever the page is hidden (screen off, another app); then ask again on return.
+    wakeLock?.addEventListener('release', () => (wakeLock = null));
   } catch {
     // Not supported or denied: the test still works, the screen may just dim.
   }
@@ -410,7 +437,7 @@ function render(update: RepUpdate): void {
   } else if (update.phase === 'top' && reps.length === 0) {
     setCue(`Ready — ${exercise?.name.toLowerCase() ?? 'go'} when you are`);
   }
-  ui.hint.textContent = sideOnSince !== null && performance.now() - sideOnSince > 2000
+  ui.hint.textContent = needsFrontView() && sideOnSince !== null && performance.now() - sideOnSince > 2000
     ? 'Turn the phone about 45° — from the side I can’t see both legs'
     : update.usingFallback
       ? 'Feet out of view — estimating from your thighs (*)'
@@ -422,6 +449,7 @@ function loop(): void {
   if (landmarker && video.readyState >= 2 && video.currentTime !== lastVideoTime) {
     lastVideoTime = video.currentTime;
     const now = performance.now();
+    lastNewFrameAt = now;
     const result = landmarker.detectForVideo(video, now);
     const pose = result.landmarks[0];
     draw(pose);
@@ -450,6 +478,7 @@ function results(): string {
     {
       exercise: exercise?.id ?? 'none',
       model: modelKind,
+      delegate,
       camera: facing,
       device: navigator.userAgent,
       video: `${ui.video.videoWidth}x${ui.video.videoHeight}`,
@@ -466,6 +495,15 @@ function results(): string {
         faults: r.faults.map((f) => `${f.id}:${f.severity}`),
         cues: r.cues,
         sec: +(r.durationMs / 1000).toFixed(2),
+        // What the feet did, for tuning: step, still, ahead, across, out, split (see spotter-movement footwork).
+        feet: r.feet && {
+          step: +r.feet.step.toFixed(2),
+          still: +r.feet.still.toFixed(2),
+          ahead: +r.feet.ahead.toFixed(2),
+          across: r.feet.across === null ? null : +r.feet.across.toFixed(2),
+          out: r.feet.out && r.feet.out.map((o) => +o.toFixed(2)),
+          split: +r.feet.split.toFixed(2),
+        },
       })),
     },
     null,
@@ -564,6 +602,49 @@ window.addEventListener('pagehide', () => {
   video?.close();
 });
 
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && stream && !wakeLock) void keepScreenOn();
+// Restored from the back/forward cache: the links to the TV were closed on the way out.
+window.addEventListener('pageshow', (e) => {
+  if (!e.persisted || !linkedCode) return;
+  void linkToTv(linkedCode).then(() => resume(true));
 });
+
+/**
+ * Back from the screen going off or another app. Android pauses the video and may stop the camera
+ * while the page is hidden, and nothing restarts them by itself: the phone stopped judging and the
+ * TV kept the last picture until the page was reloaded. `force` reopens the camera even if its
+ * track still claims to be live.
+ */
+let resuming = false;
+async function resume(force = false): Promise<void> {
+  if (!stream || resuming || document.visibilityState !== 'visible') return;
+  resuming = true;
+  try {
+    if (!wakeLock) await keepScreenOn();
+    const track = stream.getVideoTracks()[0];
+    if (!clipUrl && (force || !track || track.readyState === 'ended')) await startCamera();
+    else await ui.video.play();
+    lastNewFrameAt = performance.now();
+  } catch (err) {
+    setCue(`Couldn't restart the camera — ${err instanceof Error ? err.message : String(err)}. Reload the page.`, true);
+  } finally {
+    resuming = false;
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') void resume();
+});
+
+// A camera that stops while the page is on screen gets reopened: its track ended or stayed muted
+// (the video's clock keeps running on a dead camera stream, so frame times alone can't tell), or no
+// new frame arrived.
+const STALLED_MS = 2500;
+let mutedSince: number | null = null;
+setInterval(() => {
+  if (!stream || clipUrl || document.visibilityState !== 'visible') return;
+  const now = performance.now();
+  const track = stream.getVideoTracks()[0];
+  mutedSince = track?.muted ? (mutedSince ?? now) : null;
+  const dead = !track || track.readyState === 'ended' || (mutedSince !== null && now - mutedSince > STALLED_MS);
+  if (dead || now - lastNewFrameAt > STALLED_MS) void resume(true);
+}, 1000);

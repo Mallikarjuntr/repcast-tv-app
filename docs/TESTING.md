@@ -210,6 +210,31 @@ On the Fire TV Stick 4K (AFTMA08C15, Fire OS 8, 32-bit), release build, with the
 
 Test runs add sessions to the "Me" profile's history on the stick (five on 2026-10-18).
 
+## 11. Telling look-alike moves apart (2026-10-18)
+
+**From a phone test** (the user's Android phone, results in `Live-Phone-Testing/`, outside the repos): full squats counted in a half-squat set; lunges, reverse lunges, split squats and curtsy lunges all counted for each other; real lunges called squats (6 of 17); step jacks counted jumping jacks; jumping jacks never counted (the phone ran at 7 fps); the phone's video froze after the screen went off; the "turn the phone 45°" line repeated; the three lunges shared one trainer clip.
+
+**What the engine does now.** Before each rep it notes where the feet stood (the standing frames with the feet closest together, since people step out before they bend), and at the bottom which foot moved and how far, whether it became the front foot (its knee higher than the other: at the bottom of any lunge the front knee is up and the back knee down, from any angle), whether it crossed behind the other (facing the camera), and in jacks whether one or both feet stepped out. Each move declares the footwork it expects; a clear mismatch is a no-rep that names the move done instead, unclear footwork keeps the benefit of the doubt, and a clear step is never a squat. The knee-height stance guess is only used when the feet can't be seen.
+
+**Evidence.** 71 unit tests (15 new, one per look-alike pair). Replay bench with the phone's pose model:
+
+| Footage | Result |
+|---|---|
+| Rendered forward lunge, 45° / side-on | as lunge 4/4, 4/4; as split squat, squat 0/4 |
+| Rendered reverse lunge, side-on | as reverse lunge 4/4; as lunge, split squat, squat 0/4 |
+| Rendered split squat, 45° / side-on | as split squat 4/4, 3/3; as lunge 1/4, 0/3; as squat 0/4 |
+| Rendered curtsy, side-on | as curtsy 4/4; as split squat, squat 0/4 (as reverse lunge 4/4: side-on the crossing can't be seen) |
+| Rendered jumping jack, front / 45° | as jumping jack 5/5, 6/6; as step jack 0/5, 0/6; at 7 fps 5/5 |
+| Rendered step jack, front / 45° | as step jack 3/4, 6/6; as jumping jack 2/4 → 0/6 at 45° |
+| Real forward lunges (3 Commons clips) | as lunge 5/7, 4/5, 1/1; as split squat 0/7; as squat 0/8 |
+| Real reverse lunges (kettlebell clip) | as reverse lunge 10/12 (was 3/12) |
+| Real half-squat demo / real full squats | as half squat 5/6 (was 0/6: four false "that's a lunge") / 0/2 ("that was a full squat") |
+| Real jumping jacks at 7 fps | 9/9 |
+
+The renders now use a phone-like camera (perspective, hip height, 2.4 m; `tools/trainer/views.py`): the trainer clips' orthographic camera has no perspective, so a foot stepping towards it doesn't move down the picture. Known limits: the pose model doesn't read the mannequin's knee bend straight from the front (0° renders), so those aren't used for depth; at an angle where a curtsy's step points straight at the camera the step barely shows; side-on, telling a forward from a reverse lunge is often unclear and then isn't judged.
+
+**Phone ↔ TV, side by side** with a fake-camera phone (headless Chrome, `--use-fake-device-for-media-stream`) and the stick: camera track stopped → reopened in ~2 s with the TV picture carrying on; video paused → reopened in ~3.5 s; page shown again → playing in 0.8 s. "Watch trainer" during a lunges set: the clip and cues, the phone shows the pause, BACK returns to the set running. New trainer clips checked on the stick's move picker.
+
 ## Known limits
 
 - **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other. Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.

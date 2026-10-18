@@ -3,6 +3,7 @@ import { Text, View } from 'react-native';
 import { FocusButton } from '../components/FocusButton';
 import { LiveVideo } from '../components/LiveVideo';
 import { PoseFigure, type Annotations, type PoseFrame } from '../components/PoseFigure';
+import { TrainerOverlay } from '../components/TrainerOverlay';
 import { CoachCard, PanelTag, PausedOverlay, PrivacyLine, Segments } from '../components/Studio';
 import { BigNumber, Kicker, Note } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
@@ -104,6 +105,16 @@ export function LiveScreen({
 }) {
   const s = useScale();
   const [paused, setPaused] = useState(false);
+  // Watching the trainer pauses the set; closing it puts the pause back as it was.
+  const [watching, setWatching] = useState<{ wasPaused: boolean } | null>(null);
+  const watchTrainer = useCallback(() => {
+    setWatching({ wasPaused: paused });
+    setPaused(true);
+  }, [paused]);
+  const closeTrainer = useCallback(() => {
+    if (watching) setPaused(watching.wasPaused);
+    setWatching(null);
+  }, [watching]);
   const [elapsed, setElapsed] = useState(0);
   const [panel, setPanel] = useState({ width: 0, height: 0 });
   const w = useLiveWorkout(channel, plan, paused);
@@ -117,11 +128,11 @@ export function LiveScreen({
   // Remote keys only reach the app while something on screen has focus, which the Pause
   // button below provides. Android reports each press twice (down = 0, up = 1); act on release.
   const onRemote = useCallback((evt: TVRemoteEvent) => {
-    if (evt.eventKeyAction === 0) return;
+    if (evt.eventKeyAction === 0 || watching) return;
     if (evt.eventType === 'playPause') setPaused((p) => !p);
     else if (evt.eventType === 'pause') setPaused(true);
     else if (evt.eventType === 'play') setPaused(false);
-  }, []);
+  }, [watching]);
   useTVEventHandler(onRemote);
 
   // The coach's voice, on the TV. Counts and verdicts come from the phone's engine; the lines are
@@ -149,7 +160,8 @@ export function LiveScreen({
   useEffect(() => {
     if (paused) hush();
   }, [paused]);
-  useSpokenGuidance(w.hint ? HINT_LINES[w.hint] : null, w.phase === 'work' && !paused);
+  // "Turn the phone" is said once: repeating it mid-set nags someone who chose that spot.
+  useSpokenGuidance(w.hint ? HINT_LINES[w.hint] : null, w.phase === 'work' && !paused, w.hint !== 'turn-phone');
 
   const nextUp = w.phase === 'rest' ? (w.restBeforeNextMove && next ? next : `${plan.name}, set ${w.setIndex + 2}`) : undefined;
   useEffect(() => {
@@ -211,6 +223,8 @@ export function LiveScreen({
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(14) }}>
           <Text style={{ fontFamily: fonts.sansBold, fontSize: s(26), color: colors.text, fontVariant: ['tabular-nums'], marginRight: s(8) }}>{formatTime(elapsed)}</Text>
+          {/* For anyone unsure how the move goes: the trainer clip, without leaving the set. */}
+          {w.phase === 'work' ? <FocusButton label="Watch trainer" onPress={watchTrainer} variant="secondary" size="compact" /> : null}
           {w.phase === 'work' ? <FocusButton label={paused ? 'Resume' : 'Pause'} onPress={() => setPaused((p) => !p)} variant="light" size="compact" preferredFocus /> : null}
           {/* Ends the move, rests included (camera trouble, or enough for today); what was done still counts. */}
           {w.phase !== 'done' ? <FocusButton label="Done with this" onPress={finishEarly} variant="secondary" size="compact" /> : null}
@@ -266,7 +280,8 @@ export function LiveScreen({
         </View>
       </View>
 
-      {paused ? <PausedOverlay /> : null}
+      {paused && !watching ? <PausedOverlay /> : null}
+      {watching ? <TrainerOverlay moveId={plan.exercise} onClose={closeTrainer} /> : null}
     </View>
   );
 }

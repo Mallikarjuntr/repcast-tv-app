@@ -1,17 +1,15 @@
 // The 3D trainer clips rendered by tools/trainer/render.py, by move id. Each loops exactly one beat
 // of its move (holds loop their own cycle). Moves without a clip use the drawn figure.
 const SQUAT = require('../assets/trainer/squat.mp4');
-const LUNGE = require('../assets/trainer/lunge.mp4');
 
 export const TRAINER_CLIPS: Record<string, number> = {
   squat: SQUAT,
   'half-squat': require('../assets/trainer/half-squat.mp4'),
   'sumo-squat': require('../assets/trainer/sumo-squat.mp4'),
-  // Lunges are shown as a split stance lowering straight down, which is also how the reverse lunge
-  // and split squat look at the bottom of each rep.
-  lunge: LUNGE,
-  'reverse-lunge': LUNGE,
-  'split-squat': LUNGE,
+  // Each lunge shows its own footwork: step forward, step back, or feet staying split.
+  lunge: require('../assets/trainer/lunge.mp4'),
+  'reverse-lunge': require('../assets/trainer/reverse-lunge.mp4'),
+  'split-squat': require('../assets/trainer/split-squat.mp4'),
   'jumping-jack': require('../assets/trainer/jumping-jack.mp4'),
   'step-jack': require('../assets/trainer/step-jack.mp4'),
   plank: require('../assets/trainer/plank.mp4'),
