@@ -1,6 +1,7 @@
 import { Barlow_400Regular, Barlow_500Medium, Barlow_600SemiBold, Barlow_700Bold, Barlow_800ExtraBold } from '@expo-google-fonts/barlow';
 import { BarlowSemiCondensed_700Bold, BarlowSemiCondensed_800ExtraBold } from '@expo-google-fonts/barlow-semi-condensed';
 import { useFonts } from 'expo-font';
+import { useKeepAwake } from 'expo-keep-awake';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import type { AnalysisReport, Session as Pairing } from '@spotter/shared';
@@ -94,6 +95,15 @@ function CoachReceipt({ data, onAnother, onAnalyse, onDone }: { data: CoachRecei
       onDone={onDone}
     />
   );
+}
+
+/**
+ * Holds off the Fire TV screensaver while mounted: mid-workout nobody touches the remote, and the
+ * screensaver would send Spotter to the background after ~5 minutes, dropping the phone and video.
+ */
+function StayAwake() {
+  useKeepAwake('spotter-workout');
+  return null;
 }
 
 export default function App() {
@@ -243,6 +253,7 @@ export default function App() {
     <View style={{ flex: 1, backgroundColor: colors.bg }}>
       <StatusBar hidden />
       {linked ? <KeepVideo channel={linked.channel} /> : null}
+      {screen.name === 'pair' || screen.name === 'live' || screen.name === 'follow' ? <StayAwake /> : null}
       {screen.name === 'home' && (
         <HomeScreen
           sessions={sessions}

@@ -196,6 +196,20 @@ Prompted by the user's phone test: 9 of 9 jumping jacks were rejected as "The ca
 
 **Still unverified on a real person:** lunges and curtsy lunges facing the camera (one real clip shows a lunge partly facing it), half squats facing the camera, knee push-ups, glute bridges. The trainer renders are not good enough for these; short phone recordings from the user would settle them.
 
+## 10. Fire TV Stick 4K: smoothness, long sessions, every main flow (2026-10-18)
+
+On the Fire TV Stick 4K (AFTMA08C15, Fire OS 8, 32-bit), release build, with the "phone" being headless Chrome on the Mac playing the Commons squat clip through the camera page (dev server), over home Wi-Fi.
+
+**Live screen with video, 60 s.** 1,185 frames (≈ 20 a second, one per skeleton update), 50% over Android's 16 ms mark, median / p90 / p99 16 / 23 / 29 ms; app memory 165–172 MB, app CPU ~130% of 400%, ~450 MB free. Split by stage (median): ~6 ms applying the skeleton's native-driven values on the UI thread, ~7–8 ms issuing draw commands (the whole window redraws per update), GPU ~6 ms. The video itself, measured on its own surface layer (`dumpsys SurfaceFlinger --latency`), ran at ~24 fps with no gap over 100 ms. Because the screen only changes ~20 times a second, a 20–25 ms frame still lands before the next update: the "janky" share is Android's 60 fps yardstick, not visible stutter. Two tweaks were tried and measured (no rounded clip around the video; skipping unchanged opacity values): no measurable difference, so neither was kept. Per thread: JS 21%, UI 14%, RenderThread 15%, WebRTC and decoder threads a few percent each.
+
+**Follow along (trainer video), 30 s:** 0.4% of frames over 16 ms, median 6 ms, 194 MB.
+
+**Flows checked:** a full 3 × 12 camera workout to the receipt (36 counted, phone and TV in step all the way); Pause from the button and Resume from the remote's play/pause (phone shows "Paused on your TV"); "Done with this" after 6 reps (honest short receipt, phone "Session done"); "Another move" → Lunges reusing the pairing and video link (the phone switched within the countdown and refused the clip's squats: "that was a squat, this set is lunges"; TV and phone counted the same no-reps); Follow along; Progress; profile picker; BACK from each.
+
+**Long session:** the first 8-minute hands-off run on the Live screen ended at ~5 minutes when the Fire TV screensaver started (bug #37): Spotter went to the background and the phone said "Lost your TV". With the screen kept on during Pair, camera workouts and Follow along, a second 8-minute hands-off run stayed in the app throughout: same process, app memory 165–185 MB with no upward drift, CPU 80–136%.
+
+Test runs add sessions to the "Me" profile's history on the stick (five on 2026-10-18).
+
 ## Known limits
 
 - **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other. Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.

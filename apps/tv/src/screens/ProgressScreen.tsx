@@ -84,7 +84,7 @@ export function ProgressScreen({ profile, sessions, onBack }: { profile: Profile
             <Kicker size={14}>{trend.length > 0 ? `CLEAN FORM · LAST ${trend.length} ON CAMERA` : 'CLEAN FORM'}</Kicker>
             {trend.length > 1 && first !== undefined && latest !== undefined ? (
               <Text style={{ fontFamily: fonts.sans, fontSize: s(15), color: colors.textSoft }}>
-                {latest >= first ? `up from ${first}% to ${latest}%` : `${first}% then, ${latest}% now`}
+                {latest > first ? `up from ${first}% to ${latest}%` : latest === first ? `steady at ${latest}%` : `${first}% then, ${latest}% now`}
               </Text>
             ) : null}
           </View>

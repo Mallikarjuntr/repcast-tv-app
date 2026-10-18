@@ -69,6 +69,8 @@ Status: **fixed** (2026-10-16, verified on the stick), **decided** (a product ca
 | 34 | Half squats never counted side-on (straight legs read ~150°) | The start-of-rep line follows the person's own standing line | fixed |
 | 35 | Curtsy lunges at 45° rejected ("step back and across") on the trainer render | Not changed: the render is shallow and there is no real footage | open — needs a real clip |
 | 36 | "Start anyway" / "Start now" and phone sync | Checked side by side: the phone follows within 0.2–1 s | works |
+| 37 | Fire TV screensaver started mid-workout (~5 min after the last remote press): Spotter went to the background, the video and session dropped, the phone said "Lost your TV" | Pair, camera workout and Follow along keep the screen on (`expo-keep-awake`, already in the APK via Expo); other screens still allow the screensaver. Checked: 8 min hands-off on the Live screen, no screensaver | fixed |
+| 38 | Progress said "up from 100% to 100%" when clean form hadn't changed | Says "steady at 100%" when first and latest are equal | fixed |
 
 ## Not ours
 
