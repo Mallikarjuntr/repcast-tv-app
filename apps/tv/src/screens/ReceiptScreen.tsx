@@ -89,7 +89,7 @@ export function ReceiptScreen({ summary, history, coach, streak, finishedAt, onA
               {coach.writing
                 ? 'Your coach is still writing…'
                 : coach.note.source === 'ai'
-                  ? 'Written by your AI coach · Claude on Amazon Bedrock'
+                  ? 'Written by your AI coach on Amazon Bedrock'
                   : 'Written by Spotter from your reps'}
             </Text>
           </Card>
@@ -130,7 +130,7 @@ export function ReceiptScreen({ summary, history, coach, streak, finishedAt, onA
         <FocusButton label="Done for today" onPress={onDone} variant="secondary" />
         {onAnalyse ? (
           <Text style={{ flexShrink: 1, marginLeft: s(10), fontFamily: fonts.sans, fontSize: s(14), lineHeight: s(19), color: colors.faint }}>
-            Analyse with AI sends your rep numbers (no video) to Claude on Amazon Bedrock.
+            Analyse with AI sends your rep numbers (no video) to an AI model on Amazon Bedrock.
           </Text>
         ) : null}
       </View>

@@ -34,7 +34,7 @@ export function findSession(code: string): Promise<Session> {
   return request(`/sessions/${encodeURIComponent(code)}`);
 }
 
-/** The AI coach's report on one camera workout (Claude on Amazon Bedrock, via POST /coach/analysis). */
+/** The AI coach's report on one camera workout (a model on Amazon Bedrock, via POST /coach/analysis). */
 export interface AnalysisReport {
   headline: string;
   coachNote: string;
@@ -42,6 +42,8 @@ export interface AnalysisReport {
   numbers: { title: string; detail: string }[];
   comparedWithLastTime: string;
   nextSession: { plan: string; drill: string };
+  /** Which model wrote it, e.g. "Amazon Nova" (older backends leave it out). */
+  writtenBy?: string;
 }
 
 /** One attempt as sent for analysis: numbers only, no video or body points. */

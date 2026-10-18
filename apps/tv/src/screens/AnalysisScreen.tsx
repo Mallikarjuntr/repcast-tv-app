@@ -68,7 +68,7 @@ function Report({ report }: { report: AnalysisReport }) {
 }
 
 /**
- * "Analyse with AI": the AI coach's report on one camera workout, written by Claude on Amazon
+ * "Analyse with AI": the AI coach's report on one camera workout, written by a model on Amazon
  * Bedrock from the rep numbers alone.
  */
 export function AnalysisScreen({
@@ -107,7 +107,7 @@ export function AnalysisScreen({
           <ActivityIndicator size="large" color={colors.accent} style={{ alignSelf: 'flex-start' }} />
           <View style={{ maxWidth: s(760) }}>
             <Note size={22}>
-              Claude on Amazon Bedrock is looking at your {attempts} {attempts === 1 ? 'attempt' : 'attempts'}: how deep, how fast, and what the camera spotted. This takes a few seconds.
+              Your AI coach on Amazon Bedrock is looking at your {attempts} {attempts === 1 ? 'attempt' : 'attempts'}: how deep, how fast, and what the camera spotted. This takes a few seconds.
             </Note>
           </View>
         </View>
@@ -124,7 +124,8 @@ export function AnalysisScreen({
       )}
 
       <Text style={{ fontFamily: fonts.sans, fontSize: s(14), color: colors.faint }}>
-        Written by AI (Claude on Amazon Bedrock) from your rep numbers only — no video or pictures were sent. Not medical advice.
+        Written by AI ({state.phase === 'done' && state.report.writtenBy ? `${state.report.writtenBy} on Amazon Bedrock` : 'Amazon Bedrock'}) from your rep numbers only — no video or pictures were
+        sent. Not medical advice.
       </Text>
     </View>
   );
