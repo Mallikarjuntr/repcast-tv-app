@@ -77,7 +77,10 @@ for (const [setIndex, attempts] of SETS.entries()) {
       await sleep(200);
     }
     if (attempt.counted) count += 1;
-    await publish(channel, { type: 'rep', exercise: 'squat', count, ...attempt });
+    // Knee angle at the bottom and rep time like a real phone's: shallow no-reps, slower later sets.
+    const bottom = Math.round((attempt === SHALLOW ? 124 : attempt === KNEES ? 96 : 82) + setIndex * 3 + Math.random() * 8);
+    const durationMs = Math.round(REP_MS + setIndex * 150 + Math.random() * 300);
+    await publish(channel, { type: 'rep', exercise: 'squat', count, ...attempt, bottom, durationMs });
     console.log(`set ${setIndex + 1}: ${attempt.verdict}${attempt.counted ? ` (${count})` : ''}`);
   }
   if (setIndex < SETS.length - 1) {
