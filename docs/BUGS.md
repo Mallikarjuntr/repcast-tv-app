@@ -82,6 +82,19 @@ Status: **fixed** (2026-10-16, verified on the stick), **decided** (a product ca
 | 47 | Phone test: jumping jacks never counted on a phone running at 7 fps | The smoothing was per frame (tuned at 15 fps) and lagged behind fast moves; it now speeds up for slower frames. Rendered jacks at 7 fps: 5/5 and 6/6 | fixed |
 | 48 | The phone page ran MediaPipe on a 1280×720 capture | Asks for 960×540: MediaPipe works on a 256-pixel copy and the TV gets 480p at most; results now say whether the model runs on the GPU or CPU | changed |
 
+## Phone test round 2 and gym clips (2026-10-19)
+
+| # | What happened | Fix | Status |
+|---|---|---|---|
+| 49 | Squats with half the body in view (phone close, feet cut off): "camera moved" and "that was a lunge"; the phone never said to step back | The pose model also guesses feet below the picture, with confidence 0.5–0.7. The engine and the phone page now treat any point outside the picture as unseen, so off-picture feet judge nothing. The user's office squat clip: wrong "lunge" no-reps 1 → 0 | fixed |
+| 50 | "The camera moved" when the phone hadn't moved (squats, half squats, every move) | Both feet moving means the person moved (walking about, coming nearer): the cue now says "You moved off your spot — stay in one place for each rep, and keep the phone still", and such reps aren't judged on footwork | fixed |
+| 51 | Ordinary squats, feet planted, called "That's a lunge" (trainer at 0°, sumo at 0° and 45°) | Which way is "forward" came from the toes; turned-out toes made the sideways gap between the feet read as one foot in front of the other. Both feet's directions are now averaged | fixed |
+| 52 | Sumo squats / half squats: "this set is squats"; reverse lunges: "this set is lunges" | Each squat-style move names its own set ("this set is sumo squats, feet wide"); reverse lunges say "reverse lunges" | fixed |
+| 53 | Curtsy lunges: nearly every rep "sink lower" (phone bottoms 88–121°) | Curtsy depth target 115°, no-rep above 130° (the crossed back leg keeps the front knee less bent than a lunge) | fixed |
+| 54 | Split squats: 8 of 9 reps "that was a lunge" (phone), 3 of 8 in the gym clips | Side-on, a split squat's heel lift and the hidden ankle read as steps of 0.15–0.63, overlapping real lunges (0.15–0.33). A split-squat set no longer calls anything a lunge; feet side by side still don't count. Depth and form are judged as before | changed (honest limit) |
+| 55 | No "step back" / "come closer" during a set | Standing moves ask to step back until both feet are in the picture; "come closer" when the torso is under 12% of the picture (was 10%). The TV says them during sets: "Step back a little, so I can see all of you." / "Come a little closer to the phone." | fixed |
+| 56 | Pairing code 6 digits felt slow to type | Back to 4 digits; the code lookup route is limited to 2 requests a second, so trying every code takes over 80 minutes (codes live 2 hours). 6-digit codes still accepted | fixed (backend) |
+
 ## Not ours
 
 - Fire OS shows "Allow USB debugging?" over a running app when a computer connects without "Always allow"; while it is up the app's timers stall (a rest took 74 s instead of 60). The phone correctly showed "Lost your TV" and recovered when the dialog closed.

@@ -132,7 +132,7 @@ async function main(): Promise<void> {
       const w = result.worldLandmarks[0];
       const wTorso = w ? Math.hypot((w[11]!.x + w[12]!.x - w[23]!.x - w[24]!.x) / 2, (w[11]!.y + w[12]!.y - w[23]!.y - w[24]!.y) / 2, (w[11]!.z + w[12]!.z - w[23]!.z - w[24]!.z) / 2) : 0;
       const wky = w && wTorso > 0 ? Math.abs(w[25]!.y - w[26]!.y) / wTorso : -1;
-      const feet = `sr=${shoulderRatio(pose, ax).toFixed(2)} fd=${fd.toFixed(2)} ky=${(Math.abs(lm(25).y - lm(26).y) / leg).toFixed(2)} wky=${wky.toFixed(2)} kv=${(lm(25).visibility ?? 0).toFixed(2)},${(lm(26).visibility ?? 0).toFixed(2)} av=${(lm(27).visibility ?? 0).toFixed(2)},${(lm(28).visibility ?? 0).toFixed(2)}`;
+      const feet = `sr=${shoulderRatio(pose, ax).toFixed(2)} fd=${fd.toFixed(2)} ky=${(Math.abs(lm(25).y - lm(26).y) / leg).toFixed(2)} wky=${wky.toFixed(2)} kv=${(lm(25).visibility ?? 0).toFixed(2)},${(lm(26).visibility ?? 0).toFixed(2)} av=${(lm(27).visibility ?? 0).toFixed(2)},${(lm(28).visibility ?? 0).toFixed(2)} ay=${lm(27).y.toFixed(2)},${lm(28).y.toFixed(2)} kny=${lm(25).y.toFixed(2)}`;
       trace.push(`${time.toFixed(2)} ${feet} m=${f(update.metric)} ${update.phase} top=${f(d.topLine)} stand=${f(d.standingAngle)} up=${isUpright(frame, 30, 0.5) ? 1 : 0} tilt=${f(tilt)} st=${stance(frame, 0.5, leg) ?? '-'} drift=${f(d.drift, 2)} stag=${f(d.staggeredShare, 2)}`);
     }
     // One sample per second: time, knee angle, phase, torso tilt.
@@ -173,6 +173,7 @@ async function main(): Promise<void> {
         ahead: +r.feet.ahead.toFixed(2),
         across: r.feet.across === null ? null : +r.feet.across.toFixed(2),
         out: r.feet.out && r.feet.out.map((o) => +o.toFixed(2)),
+        split: +r.feet.split.toFixed(2),
         n: r.feet.frames,
       },
     })),

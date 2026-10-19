@@ -24,8 +24,8 @@
     "text": "Chest dropped too far — that one doesn't count"
   },
   {
-    "id": "come-a-little-closer-1ptu5wu",
-    "text": "Come a little closer."
+    "id": "come-a-little-closer-to-the-phon-pkbkgc",
+    "text": "Come a little closer to the phone."
   },
   {
     "id": "cross-your-back-foot-behind-your-1pcgix5",
@@ -150,10 +150,6 @@
   {
     "id": "keep-your-chest-up-pe3q9h",
     "text": "Keep your chest up"
-  },
-  {
-    "id": "keep-your-feet-where-they-are-th-1olmmen",
-    "text": "Keep your feet where they are — that was a lunge, this set is split squats"
   },
   {
     "id": "keep-your-standing-leg-straight-sbj8bz",
@@ -356,8 +352,8 @@
     "text": "Stay down in position for the whole rep"
   },
   {
-    "id": "step-back-a-little-co4d9r",
-    "text": "Step back a little."
+    "id": "step-back-a-little-so-i-can-see-6s7lvk",
+    "text": "Step back a little, so I can see all of you."
   },
   {
     "id": "step-back-and-across-into-each-l-12758zm",
@@ -396,10 +392,6 @@
     "text": "Step one foot back and across — this set is curtsy lunges"
   },
   {
-    "id": "step-one-foot-back-that-was-a-sq-10k71id",
-    "text": "Step one foot back — that was a squat, this set is lunges"
-  },
-  {
     "id": "step-one-foot-back-that-was-a-sq-9s4wo1",
     "text": "Step one foot back — that was a squat, this set is reverse lunges"
   },
@@ -428,8 +420,16 @@
     "text": "ten"
   },
   {
+    "id": "that-s-a-lunge-this-set-is-half-1ee9uq9",
+    "text": "That's a lunge — this set is half squats, feet side by side"
+  },
+  {
     "id": "that-s-a-lunge-this-set-is-squat-ltf5p2",
     "text": "That's a lunge — this set is squats, feet side by side"
+  },
+  {
+    "id": "that-s-a-lunge-this-set-is-sumo-13b339a",
+    "text": "That's a lunge — this set is sumo squats, feet wide"
   },
   {
     "id": "that-s-the-session-well-done-1oing97",
@@ -438,10 +438,6 @@
   {
     "id": "that-was-a-full-squat-this-set-i-12juwec",
     "text": "That was a full squat — this set is half squats, stop about halfway down"
-  },
-  {
-    "id": "the-camera-moved-keep-the-phone-f6931i",
-    "text": "The camera moved — keep the phone still"
   },
   {
     "id": "thirteen-1kq063s",
@@ -466,5 +462,9 @@
   {
     "id": "two-377j8f",
     "text": "two"
+  },
+  {
+    "id": "you-moved-off-your-spot-stay-in-1v5m31i",
+    "text": "You moved off your spot — stay in one place for each rep, and keep the phone still"
   }
 ]

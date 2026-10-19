@@ -17,8 +17,8 @@ async function request(path: string, init?: RequestInit): Promise<Session> {
 }
 
 /**
- * A pairing code as shown on the TV: 6 digits (4 from older backends, still accepted so phones and
- * TVs keep working while the backend is updated).
+ * A pairing code as shown on the TV: 4 digits (6 from the backend between 2026-10-16 and 10-19,
+ * still accepted so phones and TVs keep working while either side is updated).
  */
 export function isPairingCode(code: string): boolean {
   return /^(\d{4}|\d{6})$/.test(code);

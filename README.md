@@ -20,11 +20,11 @@
 ```
 Phone (web page, camera)                       AWS                          Fire TV (React Native)
 MediaPipe pose ─▶ spotter-movement ─ reps ──▶ AppSync Events channel ──▶ rep count, verdicts, receipt
-        │                                       (pairing via 6-digit code)
+        │                                       (pairing via 4-digit code)
         └─ camera video + pose points ── WebRTC, straight over home Wi-Fi ──▶ live picture + skeleton
 ```
 
-1. The TV asks the backend for a 6-digit code and shows it with a QR code.
+1. The TV asks the backend for a 4-digit code and shows it with a QR code.
 2. The phone opens the camera page from the QR code (nothing to install), links to the TV, and runs pose tracking and rep judging on the phone.
 3. Reps, verdicts and framing go to the TV over an AppSync Events channel. The camera picture and pose points go straight from phone to TV over WebRTC on the home Wi-Fi; the set-up messages for that connection use the same channel.
 
@@ -90,7 +90,7 @@ Spotter then appears in the Fire TV's apps list. It also runs on the Android TV 
 
 ### Try a coached workout
 
-1. On the TV: **Start → Coach me on camera → pick a move** (squats, lunges, jumping jacks, push-ups or glute bridges, each with an easier version). The TV shows a QR code and a 6-digit code.
+1. On the TV: **Start → Coach me on camera → pick a move** (squats, lunges, jumping jacks, push-ups or glute bridges, each with an easier version). The TV shows a QR code and a 4-digit code.
 2. On a phone **on the same Wi-Fi as the TV**: scan the QR code (or open the camera page and type the code) and allow the camera. The camera starts by itself (on some browsers, tap **Start camera**).
 3. Prop the phone at hip height about 2–3 m away, turned about 45°, and step back until the TV ticks what it needs. The TV counts down from 5 and starts by itself (or press **Start now**).
 4. The TV runs the move and keeps the count; the phone shows the same count, set and rest, and the TV does the talking. **Done with this** ends the move early. On the receipt, **Another move** goes back to the list with the phone still linked — no new code.

@@ -44,8 +44,8 @@ export const READY_LINE = "I can see you. Press start when you're ready.";
 /** Getting into frame, from the person's own point of view (the phone works out which way). */
 export const HINT_LINES: Record<FramingHint, string> = {
   'step-in': "I can't see you. Step into view of the phone.",
-  'step-back': 'Step back a little.',
-  'come-closer': 'Come a little closer.',
+  'step-back': 'Step back a little, so I can see all of you.',
+  'come-closer': 'Come a little closer to the phone.',
   'move-left': 'Move a little to your left.',
   'move-right': 'Move a little to your right.',
   'turn-phone': 'Turn the phone about forty-five degrees, so I can see both legs.',
@@ -55,7 +55,7 @@ export const HINT_LINES: Record<FramingHint, string> = {
  * Rep advice the movement engine gives for any exercise (spotter-movement rep-detector.ts); each
  * exercise's own cues are read from its definition by tools/voice/phrases.mjs. Keep in sync.
  */
-export const ENGINE_CUES = ['The camera moved — keep the phone still', 'Finish each rep standing tall', 'Stay down in position for the whole rep'];
+export const ENGINE_CUES = ['You moved off your spot — stay in one place for each rep, and keep the phone still', 'Finish each rep standing tall', 'Stay down in position for the whole rep'];
 
 /** Stable id for a spoken line, used as its audio file name. */
 export function voiceId(text: string): string {

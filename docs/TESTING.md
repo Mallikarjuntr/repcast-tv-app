@@ -235,8 +235,32 @@ The renders now use a phone-like camera (perspective, hip height, 2.4 m; `tools/
 
 **Phone ↔ TV, side by side** with a fake-camera phone (headless Chrome, `--use-fake-device-for-media-stream`) and the stick: camera track stopped → reopened in ~2 s with the TV picture carrying on; video paused → reopened in ~3.5 s; page shown again → playing in 0.8 s. "Watch trainer" during a lunges set: the clip and cues, the phone shows the pause, BACK returns to the set running. New trainer clips checked on the stick's move picker.
 
+## 12. Phone test round 2 and real gym clips (2026-10-19)
+
+**From the user's phone test** (results in `Copied-Results-and -live-gym-clips/`, outside the repos): "camera moved" with the phone untouched (squats, half squats, every move); squats with half the body in view called lunges and no "step back"; sumo and half squats told "this set is squats"; reverse lunges told "this set is lunges"; split squats 8 of 9 "that was a lunge"; curtsy lunges nearly all "sink lower"; no "come closer" when far. Plus five clips filmed at a gym and an office: two front-on Smith-machine/bodyweight squat sets, two side-on dumbbell split-squat sets (sent as "lunges": the feet stay apart the whole time), one pull-up set (not a Spotter move).
+
+**What the data showed.** Every false "camera moved" and most false "lunge" calls came from reps where *both* feet moved 0.4–0.6 of leg length (the person walked or came nearer), or from feet below the picture: the pose model still places them, with confidence 0.5–0.7. Squats with planted feet were also called lunges at an angle, because "forward" came from the toe direction and turned-out toes made the sideways gap between the feet look like one foot ahead. Side-on, real split squats "step" 0.15–0.63 (heel lift, the hidden ankle) and real lunges 0.15–0.33: the two can't be told apart from the side.
+
+**Changes** (BUGS #49–56): off-picture points count as unseen (engine and phone page); both feet moving = "You moved off your spot", not judged on footwork; toe directions averaged over both feet; squat sets call a lunge only when a foot stepped; split-squat sets no longer call anything a lunge (feet side by side still don't count); each move names its own set in its cues; curtsy depth target 115°, no-rep above 130°; standing moves ask to step back until both feet are in the picture, and to come closer when the torso is under 12% of the picture.
+
+**Evidence.** 72 unit tests (a squat whose guessed feet wander below the picture fails on the old engine). Replay bench, every judged move rendered at 0°, 45° and 90° (3 reps each), Commons clips and the gym clips:
+
+| Footage | Result |
+|---|---|
+| Gym: friend's squats, front-on (Smith machine) | as squat 5/5; as lunge 0/5 ("that was a squat"); as half squat 2/5 (the rest "that was a full squat") |
+| Gym: split squats side-on, two sets | as split squat 5/5 and 3/3 (was 4/5 and 2/3); as squat 0/5 and 1/3 ("that's a lunge"); as lunge or reverse lunge they count too (honest limit, above) |
+| Office: squats with the phone close (feet and, at the bottom, knees out of the picture) | 0 reps counted and no false "lunge" (was 1 "lunge"); the phone now asks to step back |
+| Rendered squat / half / sumo, 45° and side-on | 3/3 each (sumo at 45° was 0/3 "that's a lunge") |
+| Rendered lunge, reverse lunge, split squat, curtsy, 45° and side-on | 3/3, 3/3 (45°), 3/3 and 2/2, 3/3 and 2/3 |
+| Rendered push-up, knee push-up, glute bridge, jumping jack, 45° and side-on | 3/3 3/3, 2/3 3/3, 2/2 3/3, 3/3 3/3 |
+| Rendered step jack | 45°: 3/3; side-on: 1/3 (a sideways step can't be seen side-on; the phone asks to turn for jacks) |
+| Commons squats (3 clips), half squat, push-ups | 2/2, 6/7, 2/2; 4/4; 6/6 |
+| Commons forward lunges (2 clips) | 4/5, 5/7 (no-reps: not standing tall, leaning, one squat-like rep) |
+
+0° renders aren't used for knee depth (the pose model misreads the mannequin head-on), so 0/0 there is expected.
+
 ## Known limits
 
-- **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other. Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.
+- **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other, nor a split squat from a lunge (heel lift and the hidden ankle look like a step). Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.
 - Very low light and loose clothing reduce pose accuracy (MediaPipe limitation).
 - **Live video needs the phone and TV on the same network.** There is no relay server (so the video never touches the cloud); Wi-Fi that stops devices from seeing each other, such as many office and guest networks, blocks it. The TV then shows the drawn outline instead, and reps still count.

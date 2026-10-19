@@ -1,7 +1,7 @@
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
 import { BODY_PARTS, controlChannel, findSession, isPairingCode, openChannel, POSE_SOURCE_INDEX, type BodyPart, type ExerciseCommand, type LiveChannel, type SpotterEvent } from '@spotter/shared';
 import { EXERCISES, isSideOn, RepDetector, squat, type PointName, type RepExercise, type RepResult, type RepUpdate } from 'spotter-movement';
-import { framing, Steady, SteadyHint } from './framing';
+import { framing, inView, Steady, SteadyHint } from './framing';
 import { VideoLink } from './video-link';
 
 const MODEL_URL = {
@@ -94,7 +94,7 @@ function poseEvent(pose: NormalizedLandmark[]): Extract<SpotterEvent, { type: 'p
   const p: number[] = [];
   for (const i of POSE_SOURCE_INDEX) {
     const lm = pose[i];
-    const seen = lm && (lm.visibility ?? 0) >= 0.5;
+    const seen = lm && inView(lm);
     p.push(seen ? Math.round(lm.x * 1000) / 1000 : -1, seen ? Math.round(lm.y * 1000) / 1000 : -1);
   }
   return { type: 'pose', p, aspect: ui.video.videoWidth / ui.video.videoHeight, mirrored: facing === 'user', at: Date.now() };
@@ -134,10 +134,10 @@ async function linkToTv(code: string): Promise<void> {
 function reportFraming(pose: NormalizedLandmark[] | undefined, now: number): void {
   if (!tv) return;
   const visible = Object.fromEntries(
-    BODY_PARTS.map((part) => [part, !!pose && PART_POINTS[part].every((i) => (pose[i]?.visibility ?? 0) >= 0.5)]),
+    BODY_PARTS.map((part) => [part, !!pose && PART_POINTS[part].every((i) => inView(pose[i]))]),
   ) as Record<BodyPart, boolean>;
   const sideOn = !!pose && isSideOn({ t: now, landmarks: pose, aspect: ui.video.videoWidth / ui.video.videoHeight }, 0.5) === true;
-  const view = framing(pose, exercise?.required ?? UNJUDGED_REQUIRED, sideOn && needsFrontView());
+  const view = framing(pose, exercise?.required ?? UNJUDGED_REQUIRED, sideOn && needsFrontView(), !exercise?.lying);
   const hint = steadyHint.update(view.hint, now);
   const ready = steadyReady.update(view.ready, now);
   framingHint = hint;
@@ -214,8 +214,8 @@ function judging(now: number): boolean {
 
 const HINT_TEXT: Record<string, string> = {
   'step-in': 'Step into view of the phone',
-  'step-back': 'Step back a little',
-  'come-closer': 'Come a little closer',
+  'step-back': 'Step back a little, so the phone sees all of you',
+  'come-closer': 'Come a little closer to the phone',
   'move-left': 'Move a little to your left',
   'move-right': 'Move a little to your right',
   'turn-phone': 'Turn the phone about 45° to you',
