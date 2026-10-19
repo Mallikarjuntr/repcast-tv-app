@@ -53,9 +53,18 @@ body {
 }
 
 .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   font-weight: 800;
   font-size: 26px;
   letter-spacing: -0.015em;
+}
+
+.wordmark .mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
 }
 
 .dot {

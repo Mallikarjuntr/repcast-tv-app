@@ -37,7 +37,7 @@
       "package": "com.mallikarjuntr.spotter",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#EE6A35"
+        "backgroundColor": "#1B1714"
       }
     },
     "name": "Spotter",
