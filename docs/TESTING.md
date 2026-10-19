@@ -259,6 +259,8 @@ The renders now use a phone-like camera (perspective, hip height, 2.4 m; `tools/
 
 0° renders aren't used for knee depth (the pose model misreads the mannequin head-on), so 0/0 there is expected.
 
+**Phone and TV together** (stick with the released APK f83eaa9, headless-Chrome phone on `camera-dev` playing the clips as its camera, 4-digit code 7908): pairing, the 5 s countdown and the phone following the TV's set all worked; the friend's gym squats came through as live video with the skeleton aligned and counted 6/6 on both the phone and the TV, all clean, with voice. With the office clip (feet out of the picture) nothing was counted, no false "lunge" or "moved", and the TV said "Step back a little, so I can see all of you." three times, 15 s apart (logcat: three plays of exactly the clip's 2.856 s). The hint is spoken only; the TV's coach card doesn't show it.
+
 ## Known limits
 
 - **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other, nor a split squat from a lunge (heel lift and the hidden ankle look like a step). Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.
