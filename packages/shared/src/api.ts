@@ -44,6 +44,8 @@ export interface AnalysisReport {
   nextSession: { plan: string; drill: string };
   /** Which model wrote it, e.g. "Amazon Nova" (older backends leave it out). */
   writtenBy?: string;
+  /** AI notes still allowed for this move and for the whole pairing session (newer backends). */
+  left?: { move: number; session: number };
 }
 
 /** One attempt as sent for analysis: numbers only, no video or body points. */
@@ -77,7 +79,7 @@ export async function requestAnalysis(body: AnalysisRequest, signal?: AbortSigna
     body: JSON.stringify(body),
     signal,
   });
-  const json = (await res.json().catch(() => ({}))) as { report?: AnalysisReport; error?: string };
+  const json = (await res.json().catch(() => ({}))) as { report?: AnalysisReport; left?: AnalysisReport['left']; error?: string };
   if (!res.ok || !json.report) throw new Error(json.error ?? `Request failed (${res.status})`);
-  return json.report;
+  return json.left ? { ...json.report, left: json.left } : json.report;
 }

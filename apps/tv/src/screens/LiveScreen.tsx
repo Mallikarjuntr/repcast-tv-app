@@ -4,7 +4,11 @@ import { FocusButton } from '../components/FocusButton';
 import { LiveVideo } from '../components/LiveVideo';
 import { PoseFigure, type Annotations, type PoseFrame } from '../components/PoseFigure';
 import { TrainerOverlay } from '../components/TrainerOverlay';
-import { CoachCard, PanelTag, PausedOverlay, PrivacyLine, Segments } from '../components/Studio';
+import { CoachCard, NoVideoNotice, PanelTag, PausedOverlay, PrivacyLine, Segments } from '../components/Studio';
+import { TrainerVideo } from '../components/TrainerVideo';
+import { REST_CLIP, TRAINER_CLIPS } from '../trainerClips';
+import { MOVES } from '../workouts';
+import { useVideoMissing } from '../useVideoMissing';
 import { BigNumber, Kicker, Note } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { useTVEventHandler, type TVRemoteEvent } from '../tv';
@@ -24,6 +28,14 @@ export interface LiveState {
   target: number;
   secondsLeft?: number;
   next?: string;
+}
+
+const freeLoop = () => null;
+
+/** The trainer clip for a judged move (plans name the engine's exercise id). */
+function clipFor(exercise: string): number | undefined {
+  const move = MOVES.find((m) => m.id === exercise || (m.kind === 'reps' && m.engine === exercise));
+  return TRAINER_CLIPS[move?.id ?? exercise];
 }
 
 /** How long the coach's marks stay on the outline after a rep. */
@@ -117,10 +129,16 @@ export function LiveScreen({
   }, [watching]);
   const [elapsed, setElapsed] = useState(0);
   const [panel, setPanel] = useState({ width: 0, height: 0 });
+  const [inset, setInset] = useState({ width: 0, height: 0 });
   const w = useLiveWorkout(channel, plan, paused);
   const video = useVideoReceiver(channel);
   // The phone's picture with the skeleton on it; the drawn outline stands in whenever it drops.
   const showVideo = video.state === 'connected' && video.streamUrl !== null && panel.width > 0;
+  // No picture for a while (usually phone and TV on different Wi-Fi): show how the move goes, with
+  // the drawn outline of the person in a corner, and say why.
+  const videoMissing = useVideoMissing(showVideo, panel.width > 0);
+  const clip = clipFor(plan.exercise);
+  const fallback = !showVideo && videoMissing && clip !== undefined;
   const { getPose, subscribePose } = w;
   const videoPose = useMemo(() => latestOf(video.pose, { getPose, subscribePose }), [video.pose, getPose, subscribePose]);
   const finished = useRef(false);
@@ -263,20 +281,41 @@ export function LiveScreen({
         >
           {showVideo ? (
             <LiveVideo streamUrl={video.streamUrl!} getPose={videoPose.getPose} subscribePose={videoPose.subscribePose} notes={notes} width={panel.width} height={panel.height} />
+          ) : fallback ? (
+            <View style={{ flex: 1, flexDirection: 'row' }}>
+              <View style={{ flex: 0.6 }}>
+                {/* At ease during rests, as in Follow along; keyed so the player swaps clips. */}
+                <TrainerVideo key={w.phase === 'rest' ? 'rest' : 'move'} clip={w.phase === 'rest' ? REST_CLIP : clip!} paused={paused || w.phase === 'done'} position={freeLoop} />
+              </View>
+              <View style={{ flex: 0.4, paddingTop: s(16), paddingRight: s(16), paddingBottom: s(16), gap: s(12) }}>
+                <NoVideoNotice compact />
+                <View
+                  style={{ flex: 1, backgroundColor: colors.bg, borderRadius: s(14), overflow: 'hidden' }}
+                  onLayout={(e) => setInset({ width: e.nativeEvent.layout.width, height: e.nativeEvent.layout.height })}
+                >
+                  {inset.width > 0 ? <LivePose getPose={w.getPose} subscribePose={w.subscribePose} notes={notes} width={inset.width} height={inset.height} /> : null}
+                  <View style={{ position: 'absolute', top: s(10), left: s(12) }}>
+                    <PanelTag>YOU</PanelTag>
+                  </View>
+                </View>
+              </View>
+            </View>
           ) : (
             <LivePose getPose={w.getPose} subscribePose={w.subscribePose} notes={notes} width={panel.width} height={panel.height} />
           )}
           <View style={{ position: 'absolute', top: s(16), left: s(18) }}>
-            <PanelTag dot={showVideo ? colors.live : undefined}>{showVideo ? 'YOU · LIVE' : 'YOU, RIGHT NOW'}</PanelTag>
+            <PanelTag dot={showVideo ? colors.live : undefined}>{showVideo ? 'YOU · LIVE' : fallback ? 'LIKE THIS' : 'YOU, RIGHT NOW'}</PanelTag>
           </View>
           {noRep ? (
             <View style={{ position: 'absolute', top: s(16), right: s(18), backgroundColor: colors.bg, borderRadius: s(8), borderWidth: s(3), borderColor: colors.fault, paddingHorizontal: s(14), paddingVertical: s(5) }}>
               <Text style={{ fontFamily: fonts.display, fontSize: s(28), letterSpacing: s(2), color: colors.fault }}>NO REP</Text>
             </View>
           ) : null}
-          <View style={{ position: 'absolute', left: s(18), bottom: s(14) }}>
-            <PrivacyLine color={colors.textSoft} />
-          </View>
+          {fallback ? null : (
+            <View style={{ position: 'absolute', left: s(18), bottom: s(14) }}>
+              <PrivacyLine color={colors.textSoft} />
+            </View>
+          )}
         </View>
       </View>
 

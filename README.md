@@ -5,7 +5,44 @@
 - **Coach me on camera:** pick one of 12 moves the camera checks; your phone becomes the camera. It tracks your body with MediaPipe, judges every rep (good, needs a fix, or no rep — and why), and the TV shows your live picture with your skeleton drawn on it, the count, form notes, and a receipt at the end. Then pick another move — the phone stays linked.
 - **Follow along:** pick any of 17 moves (planks and wall sits too) and follow a 3D trainer, a coach's voice and a tempo beat that counts the reps — no camera needed. Streaks and progress for everyone in the house.
 
-> Built for Build, Ship, Shape: Amazon Developer Hackathon 2026 (Fire TV track).
+> Built for **Build, Ship, Shape: Amazon Developer Hackathon 2026** — Fire TV track, plus the AWS Builder and Open Source mini challenges.
+
+**Try it:** [phone camera page](https://mallikarjuntr.github.io/spotter-tv-app/) · [website](https://spotter-tv.netlify.app) · [open-source engine](https://github.com/Mallikarjuntr/spotter-movement) · [how it's tested](docs/TESTING.md) · [friction log](docs/FRICTION.md)
+
+## Why Spotter
+
+- **Runs on the cheapest Fire TV.** Built and measured on a **Fire TV Stick 3rd gen: 32-bit Fire OS, about 1 GB of RAM** — live phone video, a skeleton over it at ~20 updates a second, voice and rep judging, using ~140–200 MB of memory with no low-memory kills in 10-minute soaks. Also runs on the Fire TV Stick 4K. Numbers in [TESTING §5–6](docs/TESTING.md).
+- **No camera to buy.** The phone you own is the camera: scan a QR code, nothing to install. Pose tracking runs *on the phone*; the video goes straight from phone to TV over your Wi-Fi — never to the cloud.
+- **An honest spotter.** Every rep is judged: clean, counted with a note, or **no rep — and why** ("Not low enough", "That's a lunge — this set is squats"). 12 moves, each told apart from its look-alikes (squat vs lunge, reverse vs forward lunge, step jack vs jumping jack) and checked from the front, 45° and the side.
+- **Tested on real people and real footage**, not just demos: the user's own phone tests, gym and office clips, and public exercise videos, all replayed through the exact phone pipeline ([TESTING §9–12](docs/TESTING.md)). Friend's gym squats: 5 of 5 counted, and refused in a lunge set; gym split squats: 5 of 5 and 3 of 3.
+- **Made for the living room.** Every screen works with the remote; a coach's voice (Amazon Polly) counts reps and says what to fix; profiles for everyone in the house, each with their own streak and history, kept on the TV.
+
+## On a real Fire TV Stick
+
+Screenshots from the Fire TV Stick, taken over ADB (the live picture is a [Wikimedia Commons squat demonstration](https://commons.wikimedia.org/wiki/File:Squat_-_exercise_demonstration_video.webm) played as the phone's camera).
+
+| | |
+|---|---|
+| ![Live set: the phone's video on the TV with the skeleton drawn on it, the count and the coach's line](docs/screenshots/stick/1-live-video.jpg) | ![Workout analysis: stat tiles, a bar for every attempt, form breakdown, trend and the AI coach's note](docs/screenshots/stick/2-analysis.jpg) |
+| **Live set:** your picture with the skeleton, count, verdicts and the coach's voice | **Workout analysis:** charts worked out on the TV, plus an AI coach's note from Amazon Nova on Bedrock |
+| ![A year of training as a GitHub-style calendar, with streaks, clean-form trend and most-trained moves](docs/screenshots/stick/3-progress.jpg) | ![When the video can't reach the TV: the trainer clip, a same-Wi-Fi notice, and the person's outline](docs/screenshots/stick/4-no-video-fallback.jpg) |
+| **Progress:** a year at a glance, per person | **No video?** The trainer shows the move, the outline still follows you, reps still count |
+| ![Pick a move: 12 camera-checked moves in four groups](docs/screenshots/stick/5-pick-a-move.jpg) | ![Pairing: QR code and 4-digit code, with the set-up plan](docs/screenshots/stick/6-pair.jpg) |
+| **Pick a move:** 12 moves the camera checks | **Pair:** scan the QR code or type 4 digits |
+
+## For judges
+
+| Criterion | Where to look |
+|---|---|
+| **Technical implementation** | Phone ↔ TV over AppSync Events + WebRTC with a data channel for pose ([how it works](#how-it-works)); native-driven skeleton for a 1 GB stick ([friction #14](docs/FRICTION.md#14)); an open-source rep engine with 72 unit tests ([spotter-movement](https://github.com/Mallikarjuntr/spotter-movement)); replay bench + renders from three angles; infrastructure as code, deployed only by GitHub Actions with OIDC ([spotter-backend](https://github.com/Mallikarjuntr/spotter-backend)) |
+| **Design** | One accent, big numbers, readable from the sofa; D-pad first; the TV leads and the phone follows; a 5-second countdown starts the set when you're in frame. Screenshots in [docs/screenshots](docs/screenshots/) |
+| **Potential impact** | Turns any Fire TV + any phone into form coaching, with no hardware, account or subscription; privacy by design (video never leaves the home); free |
+| **Quality of the idea** | Computer-vision fitness on Fire TV without a TV camera; multi-modal (phone camera + remote + voice + TV picture) in one flow |
+| **AWS Builder** | AppSync Events (live link), API Gateway + Lambda + DynamoDB (pairing), Amazon Polly (all 117 coach lines, recorded in CI), Amazon Bedrock with Amazon Nova (workout analysis), Budgets, SAM/CloudFormation via GitHub OIDC — [why each](https://github.com/Mallikarjuntr/spotter-backend#readme) |
+| **Open Source** | [spotter-movement](https://github.com/Mallikarjuntr/spotter-movement) (MIT): a separate library any app can use to count and judge reps from MediaPipe landmarks |
+| **Friction log** | [docs/FRICTION.md](docs/FRICTION.md): 21 entries, each with task, steps, expected vs actual, severity, workaround and suggestion |
+
+**What's real and what isn't:** everything in the demo is real and runs on a real Fire TV Stick, with the deployed backend. Test-only helpers are labelled as such: `tools/fake-phone.mjs` plays a phone's messages without a phone, and the camera page's `?src=` option plays a recorded clip instead of the camera.
 
 ## Repositories
 
@@ -42,6 +79,8 @@ MediaPipe pose ─▶ spotter-movement ─ reps ──▶ AppSync Events channel
 | `docs/` | [How it's tested](docs/TESTING.md), [friction log](docs/FRICTION.md), screenshots |
 
 ## Run it
+
+Tested on **macOS (Apple silicon)**. On **Windows**, use WSL 2 (Ubuntu) and run the same commands; the Fire TV build also works from PowerShell with the environment variables set as `$env:EXPO_TV=1; $env:CI=1` (not tested by us). Easiest of all: no build needed to try the phone side — open the published camera page.
 
 You need **Node.js 24** and npm. Install everything once from the repo root:
 

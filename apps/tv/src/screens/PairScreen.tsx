@@ -6,7 +6,8 @@ import { BackButton, FocusButton } from '../components/FocusButton';
 import { LiveVideo } from '../components/LiveVideo';
 import { Cross, Tick } from '../components/Marks';
 import { QrCode } from '../components/QrCode';
-import { Card, PanelTag, PrivacyLine, Wifi } from '../components/Studio';
+import { Card, NoVideoNotice, PanelTag, PrivacyLine, Wifi } from '../components/Studio';
+import { useVideoMissing } from '../useVideoMissing';
 import { Headline, Kicker, Note } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
 import { latestOf } from '../poseFeed';
@@ -85,6 +86,7 @@ export function PairScreen({
   const allVisible = ready?.framingReady ?? (missing !== null && missing.length === 0);
   const hint = ready?.phoneConnected ? ready.hint : null;
   const phoneConnected = ready?.phoneConnected ?? false;
+  const videoMissing = useVideoMissing(showVideo, phoneConnected, 8000);
 
   // Said once per pairing: not again when the next move reuses the link.
   const linkedBefore = useRef(!!session);
@@ -221,6 +223,10 @@ export function PairScreen({
           {showVideo ? (
             <View style={{ position: 'absolute', left: s(18), top: s(16) }}>
               <PanelTag dot={colors.live}>YOU · LIVE</PanelTag>
+            </View>
+          ) : videoMissing ? (
+            <View style={{ position: 'absolute', left: s(16), bottom: s(16), maxWidth: panel.width * 0.62 }}>
+              <NoVideoNotice compact />
             </View>
           ) : null}
           {ready?.phoneConnected && missing ? (

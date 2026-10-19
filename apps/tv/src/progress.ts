@@ -101,3 +101,68 @@ export function lastSeen(sessions: SessionRecord[], now = new Date()): string | 
   if (days < 7) return `${days} days ago`;
   return new Date(last.at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }
+
+/** One square of the year grid. */
+export interface YearDay {
+  date: Date;
+  reps: number;
+  sessions: number;
+  /** 0 = nothing; 1–4 = how much, by quartile of the person's own active days (as GitHub does). */
+  level: 0 | 1 | 2 | 3 | 4;
+  isToday: boolean;
+  isFuture: boolean;
+}
+
+export interface YearGrid {
+  /** Weeks, oldest first, each Monday to Sunday. */
+  weeks: YearDay[][];
+  /** Month name over the first week that starts in it, by week index. */
+  months: { week: number; label: string }[];
+  reps: number;
+  activeDays: number;
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** A year of training, GitHub-calendar style: one square per day, darker for more reps. */
+export function yearGrid(sessions: SessionRecord[], now = new Date(), weekCount = 53): YearGrid {
+  const weeks = calendarWeeks(sessions, weekCount, now);
+  const active = weeks.flat().filter((d) => d.sessions > 0);
+  // Follow-along sessions without reps still count as a light day.
+  const amounts = active.map((d) => Math.max(1, d.reps)).sort((a, b) => a - b);
+  const q = (p: number) => amounts[Math.min(amounts.length - 1, Math.floor(p * amounts.length))] ?? 0;
+  const [q1, q2, q3] = [q(0.25), q(0.5), q(0.75)];
+  const level = (d: DayStat): YearDay['level'] => {
+    if (d.sessions === 0) return 0;
+    const n = Math.max(1, d.reps);
+    return n <= q1 ? 1 : n <= q2 ? 2 : n <= q3 ? 3 : 4;
+  };
+  const months: YearGrid['months'] = [];
+  weeks.forEach((week, i) => {
+    const month = week[0]!.date.getMonth();
+    if (i === 0 || month !== weeks[i - 1]![0]!.date.getMonth()) months.push({ week: i, label: MONTHS[month]! });
+  });
+  // The first label is usually a partial month squeezed against the next: drop it if so.
+  if (months.length > 1 && months[1]!.week - months[0]!.week < 3) months.shift();
+  return {
+    weeks: weeks.map((week) => week.map((d) => ({ date: d.date, reps: d.reps, sessions: d.sessions, level: level(d), isToday: d.isToday, isFuture: d.isFuture }))),
+    months,
+    reps: active.reduce((n, d) => n + d.reps, 0),
+    activeDays: active.length,
+  };
+}
+
+/** Which moves someone trains most, by reps (sessions for moves without reps), for the last year. */
+export function moveShare(sessions: SessionRecord[], now = new Date(), top = 5): { name: string; reps: number; share: number }[] {
+  const since = now.getTime() - 365 * 86_400_000;
+  const byMove = new Map<string, number>();
+  for (const s of sessions) {
+    if (new Date(s.at).getTime() < since) continue;
+    byMove.set(s.title, (byMove.get(s.title) ?? 0) + Math.max(1, s.reps));
+  }
+  const total = [...byMove.values()].reduce((a, b) => a + b, 0);
+  const sorted = [...byMove.entries()].sort((a, b) => b[1] - a[1]);
+  const shown = sorted.slice(0, top).map(([name, reps]) => ({ name, reps, share: reps / total }));
+  const rest = sorted.slice(top).reduce((n, [, reps]) => n + reps, 0);
+  return rest > 0 ? [...shown, { name: 'Other', reps: rest, share: rest / total }] : shown;
+}

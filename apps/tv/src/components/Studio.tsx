@@ -102,6 +102,27 @@ export function Wifi({ size, color = colors.accent }: { size: number; color?: st
   );
 }
 
+/**
+ * Shown when the phone's live picture doesn't reach the TV, almost always because they're on
+ * different networks (or Wi-Fi that keeps devices apart): the video only travels inside the home.
+ */
+export function NoVideoNotice({ compact = false }: { compact?: boolean }) {
+  const s = useScale();
+  return (
+    <View style={{ flexDirection: 'row', gap: s(12), alignItems: 'flex-start', backgroundColor: colors.bg, borderRadius: s(12), paddingVertical: s(10), paddingHorizontal: s(14) }}>
+      <View style={{ marginTop: s(2) }}>
+        <Wifi size={s(compact ? 20 : 24)} />
+      </View>
+      <View style={{ flexShrink: 1, gap: s(2) }}>
+        <Text style={{ fontFamily: fonts.sansBold, fontSize: s(compact ? 15 : 17), color: colors.text }}>No live picture from your phone</Text>
+        <Text style={{ fontFamily: fonts.sans, fontSize: s(compact ? 13 : 15), lineHeight: s(compact ? 18 : 21), color: colors.textSoft }}>
+          Put the phone and TV on the same Wi-Fi to see yourself here. Your reps still count.
+        </Text>
+      </View>
+    </View>
+  );
+}
+
 /** The privacy line, with a padlock. */
 export function PrivacyLine({ color = colors.faint, size = 14 }: { color?: string; size?: number }) {
   const s = useScale();

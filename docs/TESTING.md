@@ -261,6 +261,15 @@ The renders now use a phone-like camera (perspective, hip height, 2.4 m; `tools/
 
 **Phone and TV together** (stick with the released APK f83eaa9, headless-Chrome phone on `camera-dev` playing the clips as its camera, 4-digit code 7908): pairing, the 5 s countdown and the phone following the TV's set all worked; the friend's gym squats came through as live video with the skeleton aligned and counted 6/6 on both the phone and the TV, all clean, with voice. With the office clip (feet out of the picture) nothing was counted, no false "lunge" or "moved", and the TV said "Step back a little, so I can see all of you." three times, 15 s apart (logcat: three plays of exactly the clip's 2.856 s). The hint is spoken only; the TV's coach card doesn't show it.
 
+## 13. Analysis dashboard, year calendar, no-video fallback (2026-10-19)
+
+On the Fire TV Stick 4K with the release APK, phone = `tools/fake-phone.mjs` (no video) and the camera page in headless Chrome playing the Commons squat demo (with video):
+
+- **Progress:** the year grid draws 53 weeks × 7 days (371 plain Views) with month labels, today ringed and four orange levels by the person's own quartiles; streak tiles, clean-form trend and the moves bar underneath.
+- **No video:** with the fake phone (which sends no video) the Live panel switches after 6 s to the move's trainer clip, the "No live picture — same Wi-Fi" notice and the drawn outline of the person in a corner; during rests the trainer stands at ease. Reps kept counting. With the clip phone, live video showed as before.
+- **Analysis:** tiles (counted vs planned, clean %, deepest knee angle, seconds per rep, time, change since last time), a bar per attempt by set, the form breakdown with what the camera flagged, and the trend over earlier sessions all appear at once, before the AI answers; Amazon Nova's note arrived in ~10 s. The model once claimed "first session on record" with earlier sessions in the request, so the comparison line is now stated by the TV from the numbers and the model's headline isn't shown; only the coach's note and the next-session plan are the model's.
+- Test workouts added to the "Me" history today: 19:04 (24 reps), ~19:08 (12) and ~19:11 (12).
+
 ## Known limits
 
 - **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other, nor a split squat from a lunge (heel lift and the hidden ankle look like a step). Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.
