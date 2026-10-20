@@ -8,7 +8,7 @@ export function Kicker({ children, color = colors.muted, size = 15 }: { children
   return <Text style={{ fontFamily: fonts.sansBold, fontSize: s(size), letterSpacing: s(size * 0.18), color }}>{children}</Text>;
 }
 
-/** The spotter wordmark: lower-case, with an orange full stop. */
+/** The repcast wordmark: lower-case, with an orange full stop. */
 export function Wordmark({ size = 30 }: { size?: number }) {
   const s = useScale();
   return (
