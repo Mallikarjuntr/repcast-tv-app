@@ -1,6 +1,6 @@
 # Friction log
 
-Problems hit while building Spotter, logged as they happened. Each entry: the task, the steps, what was expected and what happened, how bad it was, the workaround and a suggestion.
+Problems hit while building RepCast, logged as they happened. Each entry: the task, the steps, what was expected and what happened, how bad it was, the workaround and a suggestion.
 
 | # | Date | Area | Problem | Severity |
 |---|---|---|---|---|

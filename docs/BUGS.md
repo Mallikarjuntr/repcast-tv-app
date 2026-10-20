@@ -40,7 +40,7 @@ Status: **fixed** (2026-10-16, verified on the stick), **decided** (a product ca
 | # | What happened | Fix | Status |
 |---|---|---|---|
 | 12 | The app icon and TV banner looked cheap (a sketched tally mark) | New mark: an orange tile with a figure mid-squat inside a rep ring; new icon, TV banner ("Your TV checks every rep"), splash, Appstore images and website icons (`tools/brand`) | fixed |
-| 13 | The website didn't say what Spotter is at first glance | New hero: "A workout app for Amazon Fire TV — Work out at home. Your TV checks every rep", what it does in one sentence, and what you need (a Fire TV, your phone, 2 m of floor) | fixed |
+| 13 | The website didn't say what RepCast is at first glance | New hero: "A workout app for Amazon Fire TV — Work out at home. Your TV checks every rep", what it does in one sentence, and what you need (a Fire TV, your phone, 2 m of floor) | fixed |
 
 ## Emulator test by the user (2026-10-17) and what testing it turned up
 
@@ -69,7 +69,7 @@ Status: **fixed** (2026-10-16, verified on the stick), **decided** (a product ca
 | 34 | Half squats never counted side-on (straight legs read ~150°) | The start-of-rep line follows the person's own standing line | fixed |
 | 35 | Curtsy lunges at 45° rejected ("step back and across") on the trainer render | Not changed: the render is shallow and there is no real footage | open — needs a real clip |
 | 36 | "Start anyway" / "Start now" and phone sync | Checked side by side: the phone follows within 0.2–1 s | works |
-| 37 | Fire TV screensaver started mid-workout (~5 min after the last remote press): Spotter went to the background, the video and session dropped, the phone said "Lost your TV" | Pair, camera workout and Follow along keep the screen on (`expo-keep-awake`, already in the APK via Expo); other screens still allow the screensaver. Checked: 8 min hands-off on the Live screen, no screensaver | fixed |
+| 37 | Fire TV screensaver started mid-workout (~5 min after the last remote press): RepCast went to the background, the video and session dropped, the phone said "Lost your TV" | Pair, camera workout and Follow along keep the screen on (`expo-keep-awake`, already in the APK via Expo); other screens still allow the screensaver. Checked: 8 min hands-off on the Live screen, no screensaver | fixed |
 | 38 | Progress said "up from 100% to 100%" when clean form hadn't changed | Says "steady at 100%" when first and latest are equal | fixed |
 | 39 | Phone test: after the phone's screen went off, the TV kept the last picture and the phone page never came back to life until reloaded | The page re-takes the screen wake lock whenever the system drops it (it never noticed before, so the phone could sleep mid-workout), restarts a paused video or a stopped camera when it is shown again, and a watchdog reopens a camera whose track ended, stayed muted or stopped giving frames for 2.5 s (the video's clock keeps running on a dead camera, so frame times alone missed it). Checked with a fake-camera phone against the stick: stopped camera → new camera in ~2 s, paused video → reopened in ~3.5 s, page shown again → playing in 0.8 s; the TV picture carried on without re-pairing | fixed |
 | 40 | Phone test: full squats (51–55°) counted in a half-squat set | Half squats refuse reps under 66° ("That was a full squat — this set is half squats"); real half squats measured 72–137°, real full squats 39–60° | fixed |

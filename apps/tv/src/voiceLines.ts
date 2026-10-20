@@ -52,7 +52,7 @@ export const HINT_LINES: Record<FramingHint, string> = {
 };
 
 /**
- * Rep advice the movement engine gives for any exercise (spotter-movement rep-detector.ts); each
+ * Rep advice the movement engine gives for any exercise (repcast-movement rep-detector.ts); each
  * exercise's own cues are read from its definition by tools/voice/phrases.mjs. Keep in sync.
  */
 export const ENGINE_CUES = ['You moved off your spot — stay in one place for each rep, and keep the phone still', 'Finish each rep standing tall', 'Stay down in position for the whole rep'];

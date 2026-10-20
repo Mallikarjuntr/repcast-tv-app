@@ -1,8 +1,8 @@
-# How Spotter's rep counting is tested
+# How RepCast's rep counting is tested
 
-Spotter has to be an **honest spotter**: count good reps, say plainly when a rep doesn't count and why, and never count things that aren't the exercise. It is tested at three levels.
+RepCast has to be an **honest spotter**: count good reps, say plainly when a rep doesn't count and why, and never count things that aren't the exercise. It is tested at three levels.
 
-## 1. Unit tests (`spotter-movement`, 29 tests)
+## 1. Unit tests (`repcast-movement`, 29 tests)
 
 Synthetic pose sequences for every rule, including the failure cases reported in the first real-phone test:
 
@@ -23,7 +23,7 @@ Synthetic pose sequences for every rule, including the failure cases reported in
 
 ## 2. Replay test bench (real video)
 
-`apps/camera/replay.html` runs a recorded video through **the exact pipeline the phone uses** — MediaPipe Pose Landmarker (lite) and the `spotter-movement` engine — stepping frame by frame at the phone's frame rate (≈15 fps), and reports every verdict plus a per-frame trace of the engine's internal measurements.
+`apps/camera/replay.html` runs a recorded video through **the exact pipeline the phone uses** — MediaPipe Pose Landmarker (lite) and the `repcast-movement` engine — stepping frame by frame at the phone's frame rate (≈15 fps), and reports every verdict plus a per-frame trace of the engine's internal measurements.
 
 ```
 replay.html?src=<video url>&exercise=squat|lunge&fps=15&model=lite|full&trace=17-25&until=40
@@ -161,9 +161,9 @@ Bugs found and fixed on the way are in `docs/BUGS.md` (#19–#29). Not yet check
 
 Prompted by the user's phone test: 9 of 9 jumping jacks were rejected as "The camera moved", and lunges facing the phone were called squats. Rather than guess per report, every judged move was replayed from three phone positions.
 
-**Method.** `tools/trainer/views.py` renders each judged move with the 3D trainer from the front (0°), at 45° and side-on (90°), as portrait phone-shaped clips without the outline pass (~12–40 s each, kept in the git-ignored `tools/trainer/views-out/`). The replay bench (`apps/camera/replay.html`) gained `&repeat=N` to loop a one-rep clip, and a `wky` (3D knee gap) column in its trace. `SPOTTER_MOVEMENT_SRC=1` makes the camera dev server use the engine source from the sibling `spotter-movement` checkout (launch config `camera-engine`, port 5174), so engine changes can be replayed before publishing. A headless Chrome runs the bench three tabs at a time and collects `window.spotterResult`. Real footage: Wikimedia Commons clips (CC/public domain) — "Squat - exercise demonstration video" (from behind), "Squat and Frontal Raise" (side), "Strength Training Circuit- Forward Lunge" and "Forward lunge training" (front and side), "Interval Push-ups" (side).
+**Method.** `tools/trainer/views.py` renders each judged move with the 3D trainer from the front (0°), at 45° and side-on (90°), as portrait phone-shaped clips without the outline pass (~12–40 s each, kept in the git-ignored `tools/trainer/views-out/`). The replay bench (`apps/camera/replay.html`) gained `&repeat=N` to loop a one-rep clip, and a `wky` (3D knee gap) column in its trace. `SPOTTER_MOVEMENT_SRC=1` makes the camera dev server use the engine source from the sibling `repcast-movement` checkout (launch config `camera-engine`, port 5174), so engine changes can be replayed before publishing. A headless Chrome runs the bench three tabs at a time and collects `window.spotterResult`. Real footage: Wikimedia Commons clips (CC/public domain) — "Squat - exercise demonstration video" (from behind), "Squat and Frontal Raise" (side), "Strength Training Circuit- Forward Lunge" and "Forward lunge training" (front and side), "Interval Push-ups" (side).
 
-**Found and fixed in spotter-movement (each with a unit test):**
+**Found and fixed in repcast-movement (each with a unit test):**
 
 | Problem | Evidence | Fix |
 |---|---|---|
@@ -206,7 +206,7 @@ On the Fire TV Stick 4K (AFTMA08C15, Fire OS 8, 32-bit), release build, with the
 
 **Flows checked:** a full 3 × 12 camera workout to the receipt (36 counted, phone and TV in step all the way); Pause from the button and Resume from the remote's play/pause (phone shows "Paused on your TV"); "Done with this" after 6 reps (honest short receipt, phone "Session done"); "Another move" → Lunges reusing the pairing and video link (the phone switched within the countdown and refused the clip's squats: "that was a squat, this set is lunges"; TV and phone counted the same no-reps); Follow along; Progress; profile picker; BACK from each.
 
-**Long session:** the first 8-minute hands-off run on the Live screen ended at ~5 minutes when the Fire TV screensaver started (bug #37): Spotter went to the background and the phone said "Lost your TV". With the screen kept on during Pair, camera workouts and Follow along, a second 8-minute hands-off run stayed in the app throughout: same process, app memory 165–185 MB with no upward drift, CPU 80–136%.
+**Long session:** the first 8-minute hands-off run on the Live screen ended at ~5 minutes when the Fire TV screensaver started (bug #37): RepCast went to the background and the phone said "Lost your TV". With the screen kept on during Pair, camera workouts and Follow along, a second 8-minute hands-off run stayed in the app throughout: same process, app memory 165–185 MB with no upward drift, CPU 80–136%.
 
 Test runs add sessions to the "Me" profile's history on the stick (five on 2026-10-18).
 
@@ -237,7 +237,7 @@ The renders now use a phone-like camera (perspective, hip height, 2.4 m; `tools/
 
 ## 12. Phone test round 2 and real gym clips (2026-10-19)
 
-**From the user's phone test** (results in `Copied-Results-and -live-gym-clips/`, outside the repos): "camera moved" with the phone untouched (squats, half squats, every move); squats with half the body in view called lunges and no "step back"; sumo and half squats told "this set is squats"; reverse lunges told "this set is lunges"; split squats 8 of 9 "that was a lunge"; curtsy lunges nearly all "sink lower"; no "come closer" when far. Plus five clips filmed at a gym and an office: two front-on Smith-machine/bodyweight squat sets, two side-on dumbbell split-squat sets (sent as "lunges": the feet stay apart the whole time), one pull-up set (not a Spotter move).
+**From the user's phone test** (results in `Copied-Results-and -live-gym-clips/`, outside the repos): "camera moved" with the phone untouched (squats, half squats, every move); squats with half the body in view called lunges and no "step back"; sumo and half squats told "this set is squats"; reverse lunges told "this set is lunges"; split squats 8 of 9 "that was a lunge"; curtsy lunges nearly all "sink lower"; no "come closer" when far. Plus five clips filmed at a gym and an office: two front-on Smith-machine/bodyweight squat sets, two side-on dumbbell split-squat sets (sent as "lunges": the feet stay apart the whole time), one pull-up set (not a RepCast move).
 
 **What the data showed.** Every false "camera moved" and most false "lunge" calls came from reps where *both* feet moved 0.4–0.6 of leg length (the person walked or came nearer), or from feet below the picture: the pose model still places them, with confidence 0.5–0.7. Squats with planted feet were also called lunges at an angle, because "forward" came from the toe direction and turned-out toes made the sideways gap between the feet look like one foot ahead. Side-on, real split squats "step" 0.15–0.63 (heel lift, the hidden ankle) and real lunges 0.15–0.33: the two can't be told apart from the side.
 

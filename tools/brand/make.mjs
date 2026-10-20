@@ -1,5 +1,5 @@
-// Draws Spotter's app icon, TV banner, splash, Appstore images and web icons: the Leap-ring mark
-// (an athlete leaping inside an orange ring) on a dark tile, the "spotter." wordmark and the app's
+// Draws RepCast's app icon, TV banner, splash, Appstore images and web icons: the Leap-ring mark
+// (an athlete leaping inside an orange ring) on a dark tile, the "repcast." wordmark and the app's
 // "Studio" colours, with the app's own fonts turned into outlines so every image renders the same.
 //
 //   cd tools/brand && npm install && npm run build
@@ -65,10 +65,10 @@ function mark(x, y, size, { tile = true, radius = 22, color = TEXT, ring = ACCEN
   return `<svg x="${x}" y="${y}" width="${size}" height="${size}" viewBox="0 0 100 100">${bg}${circle}${athlete}</svg>`;
 }
 
-/** The "spotter." wordmark (components/Type.Wordmark), the full stop in the accent; left edge at x, baseline at y. */
+/** The "repcast." wordmark (components/Type.Wordmark), the full stop in the accent; left edge at x, baseline at y. */
 function wordmark(x, y, size) {
-  const word = text(display, 'spotter', x, y, size);
-  const dot = text(display, '.', x + display.getAdvanceWidth('spotter', size), y, size, { fill: ACCENT });
+  const word = text(display, 'repcast', x, y, size);
+  const dot = text(display, '.', x + display.getAdvanceWidth('repcast', size), y, size, { fill: ACCENT });
   const w = word.box.x2 - word.box.x1;
   return { svg: word.svg + dot.svg, width: w, box: word.box };
 }
@@ -85,20 +85,20 @@ function glow(w, h, cx, cy, r) {
 }
 
 /**
- * Landscape lockup: the tile, then "spotter." with a tagline under it, centred in a safe box.
+ * Landscape lockup: the tile, then "repcast." with a tagline under it, centred in a safe box.
  * `tagline` may be empty.
  */
 function lockup(w, h, safeW, safeH, { tagline = 'Your TV checks every rep', glowing = true } = {}) {
   const tile = safeH * 0.62;
   const size = tile * 0.62;
-  const m = measure(display, 'spotter.', size);
+  const m = measure(display, 'repcast.', size);
   const tagSize = size * 0.24;
   const gap = tile * 0.16;
   let total = tile + gap + m.width;
   const fit = Math.min(1, (safeW * 0.96) / total);
   const T = tile * fit;
   const S = size * fit;
-  const M = measure(display, 'spotter.', S);
+  const M = measure(display, 'repcast.', S);
   const G = gap * fit;
   total = T + G + M.width;
   const left = (w - total) / 2;
@@ -142,7 +142,7 @@ await write(background(1920, 1080), join(STORE, 'fire-tv-background-1920x1080.jp
 await write(svg(512, 512, mark(0, 0, 512, { radius: 0 }), null), join(STORE, 'icon-512.png'));
 await write(svg(512, 512, mark(0, 0, 512, { radius: 0 }), null), join(STORE, 'icon-114.png'), { width: 114, height: 114 });
 
-// Web: the phone camera page and the website (copied into spotter-tv-landing-page/assets/img).
+// Web: the phone camera page and the website (copied into repcast-tv-landing-page/assets/img).
 const WEB = join(STORE, 'web');
 await write(svg(512, 512, mark(0, 0, 512), null), join(WEB, 'favicon.png'), { width: 64, height: 64 });
 await write(svg(512, 512, mark(0, 0, 512, { radius: 0 }), null), join(WEB, 'apple-touch-icon.png'), { width: 180, height: 180 });

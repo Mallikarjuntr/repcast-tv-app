@@ -7,11 +7,11 @@ const ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }];
 const RECOVER_MS = 5000;
 const RETRY_MS = 1000;
 /**
- * Pose frames reach the TV sooner than the picture they belong to: the video also goes through the
- * phone's encoder, the jitter buffer (~15 ms) and the stick's hardware decoder (~90 ms), the pose
- * only through MediaPipe and the network. Holding poses back this long keeps the skeleton on the body.
+ * How long pose frames are held back to match the picture. The 3rd-gen stick decodes video slowly
+ * (~90 ms), so 80 ms suited it; on the Fire TV Stick 4K a recording of a live set showed the skeleton
+ * trailing the body by ~200 ms with that hold-back, so poses are now shown as soon as they arrive.
  */
-export const POSE_DELAY_MS = 80;
+export const POSE_DELAY_MS = 0;
 
 type Candidate = NonNullable<RtcSignal['candidate']>;
 
@@ -124,7 +124,8 @@ export class VideoReceiver {
         const pose = parseEvent(String((message as { data: unknown }).data));
         if (pose?.type !== 'pose') return;
         const frame = { p: pose.p, aspect: pose.aspect, mirrored: pose.mirrored };
-        setTimeout(() => this.pose.push(frame), POSE_DELAY_MS);
+        if (POSE_DELAY_MS > 0) setTimeout(() => this.pose.push(frame), POSE_DELAY_MS);
+        else this.pose.push(frame);
       };
     };
     pc.onicecandidate = (event: unknown) => {

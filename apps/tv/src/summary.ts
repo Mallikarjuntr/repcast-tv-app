@@ -153,7 +153,7 @@ export function summarizeSession(moves: MoveResult[], seconds: number): { summar
 export interface CoachNote {
   note: string;
   nextTime: string;
-  /** Who wrote it: the AI coach on Bedrock, or Spotter's own rules from the rep data. */
+  /** Who wrote it: the AI coach on Bedrock, or RepCast's own rules from the rep data. */
   source: 'ai' | 'spotter';
 }
 

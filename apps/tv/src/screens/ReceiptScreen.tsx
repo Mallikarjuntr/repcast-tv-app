@@ -90,7 +90,7 @@ export function ReceiptScreen({ summary, history, coach, streak, finishedAt, onA
                 ? 'Your coach is still writing…'
                 : coach.note.source === 'ai'
                   ? 'Written by your AI coach on Amazon Bedrock'
-                  : 'Written by Spotter from your reps'}
+                  : 'Written by RepCast from your reps'}
             </Text>
           </Card>
         </View>

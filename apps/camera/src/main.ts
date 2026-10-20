@@ -1,6 +1,7 @@
 import { FilesetResolver, PoseLandmarker, type NormalizedLandmark } from '@mediapipe/tasks-vision';
 import { BODY_PARTS, controlChannel, findSession, isPairingCode, openChannel, POSE_SOURCE_INDEX, type BodyPart, type ExerciseCommand, type LiveChannel, type SpotterEvent } from '@spotter/shared';
-import { EXERCISES, isSideOn, RepDetector, squat, type PointName, type RepExercise, type RepResult, type RepUpdate } from 'spotter-movement';
+import { EXERCISES, isSideOn, RepDetector, squat, type PointName, type RepExercise, type RepResult, type RepUpdate } from 'repcast-movement';
+import { DisplayPose } from './display-pose';
 import { framing, inView, Steady, SteadyHint } from './framing';
 import { VideoLink } from './video-link';
 
@@ -238,7 +239,7 @@ function showTvState(): void {
   };
   if (!cmd) return show('LINKED TO TV', null, '', 'Start a session on your TV');
   // A finished session stays finished; any other silence means the TV has gone.
-  if (cmd.phase !== 'done' && now - tvCommandAt > TV_SILENT_MS) return show('TV NOT FOUND', null, '', 'Lost your TV — is Spotter still open on it?');
+  if (cmd.phase !== 'done' && now - tvCommandAt > TV_SILENT_MS) return show('TV NOT FOUND', null, '', 'Lost your TV — is RepCast still open on it?');
   const name = (cmd.name ?? exercise?.name ?? '').toUpperCase();
   switch (cmd.phase) {
     case undefined:
@@ -349,11 +350,15 @@ async function keepScreenOn(): Promise<void> {
   }
 }
 
+const displayPose = new DisplayPose();
+
 function draw(pose: NormalizedLandmark[] | undefined): void {
   const ctx = ui.overlay.getContext('2d');
   if (!ctx) return;
   const { width: w, height: h } = ui.overlay;
-  ctx.clearRect(0, 0, w, h);
+  // The frame the pose came from is painted under the skeleton, so the two can't drift apart on
+  // screen (the <video> behind keeps playing while MediaPipe works on a frame).
+  ctx.drawImage(ui.video, 0, 0, w, h);
   if (!pose) return;
 
   const visible = (i: number) => (pose[i]?.visibility ?? 0) >= 0.5;
@@ -452,9 +457,11 @@ function loop(): void {
     lastNewFrameAt = now;
     const result = landmarker.detectForVideo(video, now);
     const pose = result.landmarks[0];
-    draw(pose);
+    // People see the steadied skeleton (here and on the TV); framing and the rep engine use raw points.
+    const shown = displayPose.update(pose, now);
+    draw(shown);
     reportFraming(pose, now);
-    streamPose(pose, now);
+    streamPose(shown, now);
     frames++;
     if (pose) {
       noPersonFrames = 0;
@@ -495,7 +502,7 @@ function results(): string {
         faults: r.faults.map((f) => `${f.id}:${f.severity}`),
         cues: r.cues,
         sec: +(r.durationMs / 1000).toFixed(2),
-        // What the feet did, for tuning: step, still, ahead, across, out, split (see spotter-movement footwork).
+        // What the feet did, for tuning: step, still, ahead, across, out, split (see repcast-movement footwork).
         feet: r.feet && {
           step: +r.feet.step.toFixed(2),
           still: +r.feet.still.toFixed(2),

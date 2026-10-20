@@ -1,4 +1,4 @@
-"""Renders Spotter's 3D trainer clips: one looping MP4 per move, timed to the app's beat.
+"""Renders RepCast's 3D trainer clips: one looping MP4 per move, timed to the app's beat.
 
     Blender --background --factory-startup --python tools/trainer/render.py -- <mixamo-dir> <out-dir> [clip ...]
 

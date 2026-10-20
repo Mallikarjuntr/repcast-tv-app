@@ -17,7 +17,7 @@ export interface SessionRecord {
   nextTime?: string;
 }
 
-/** Someone who trains on this TV. Everything Spotter remembers is kept per person, on the TV only. */
+/** Someone who trains on this TV. Everything RepCast remembers is kept per person, on the TV only. */
 export interface Profile {
   id: string;
   name: string;

@@ -17,8 +17,8 @@ async function askAiCoach(summary: WorkoutSummary, signal: AbortSignal): Promise
 }
 
 /**
- * The receipt's note: Spotter's own note straight away, replaced by the AI coach's when it
- * answers in time. Any failure just keeps Spotter's note — the receipt never waits or breaks.
+ * The receipt's note: RepCast's own note straight away, replaced by the AI coach's when it
+ * answers in time. Any failure just keeps RepCast's note — the receipt never waits or breaks.
  */
 export function useCoachNote(summary: WorkoutSummary): { note: CoachNote; writing: boolean } {
   const [note, setNote] = useState<CoachNote>(() => spotterNote(summary));

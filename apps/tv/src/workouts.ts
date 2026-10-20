@@ -31,7 +31,7 @@ export type Step =
       restSeconds: number;
       /** Spoken at the start of the set, then the down and up cues alternate on screen. */
       cues: { start: string; down: string; up: string };
-      /** The spotter-movement exercise that judges this move on camera; without one it is followed, not judged. */
+      /** The repcast-movement exercise that judges this move on camera; without one it is followed, not judged. */
       engine?: string;
     })
   | (StepBase & {

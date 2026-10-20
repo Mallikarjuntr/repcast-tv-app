@@ -1,5 +1,5 @@
 import type { FramingHint } from '@spotter/shared';
-import { POINTS, type PointName } from 'spotter-movement';
+import { POINTS, type PointName } from 'repcast-movement';
 
 /** A pose landmark, normalised to the camera frame (as MediaPipe gives it, never mirrored). */
 export interface Point {

@@ -99,7 +99,7 @@ function CoachReceipt({ data, onAnother, onAnalyse, onDone }: { data: CoachRecei
 
 /**
  * Holds off the Fire TV screensaver while mounted: mid-workout nobody touches the remote, and the
- * screensaver would send Spotter to the background after ~5 minutes, dropping the phone and video.
+ * screensaver would send RepCast to the background after ~5 minutes, dropping the phone and video.
  */
 function StayAwake() {
   useKeepAwake('spotter-workout');

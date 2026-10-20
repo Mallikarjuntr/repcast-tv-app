@@ -1,4 +1,4 @@
-"""Shared look for Spotter's 3D trainer: a pale mannequin with dark outlines on the app's dark studio panel."""
+"""Shared look for RepCast's 3D trainer: a pale mannequin with dark outlines on the app's dark studio panel."""
 import math
 
 import bpy

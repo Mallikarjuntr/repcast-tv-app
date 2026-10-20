@@ -69,7 +69,7 @@ export type SpotterEvent =
 export type CoachPhase = 'pair' | 'countdown' | 'work' | 'rest' | 'paused' | 'done';
 
 /**
- * The TV telling the phone which exercise to judge now (an engine exercise id from spotter-movement),
+ * The TV telling the phone which exercise to judge now (an engine exercise id from repcast-movement),
  * or null between judged moves. Sent on the session's `controlChannel` whenever it changes and every
  * couple of seconds, so a phone that joins late catches up.
  *

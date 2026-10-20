@@ -1,19 +1,21 @@
-# Spotter
+# RepCast
 
-**Your living-room spotter.** A Fire TV fitness coach that checks your form through the phone you already own — and calls out every rep like a coach in the room. Video goes only from your phone to your TV — never to the cloud.
+**The coach on your TV that sees every rep.** A Fire TV fitness coach that checks your form through the phone you already own — and calls out every rep like a coach in the room. Video goes only from your phone to your TV — never to the cloud.
 
 - **Coach me on camera:** pick one of 12 moves the camera checks; your phone becomes the camera. It tracks your body with MediaPipe, judges every rep (good, needs a fix, or no rep — and why), and the TV shows your live picture with your skeleton drawn on it, the count, form notes, and a receipt at the end. Then pick another move — the phone stays linked.
 - **Follow along:** pick any of 17 moves (planks and wall sits too) and follow a 3D trainer, a coach's voice and a tempo beat that counts the reps — no camera needed. Streaks and progress for everyone in the house.
 
 > Built for **Build, Ship, Shape: Amazon Developer Hackathon 2026** — Fire TV track, plus the AWS Builder and Open Source mini challenges.
 
-**Try it:** [phone camera page](https://mallikarjuntr.github.io/spotter-tv-app/) · [website](https://spotter-tv.netlify.app) · [open-source engine](https://github.com/Mallikarjuntr/spotter-movement) · [how it's tested](docs/TESTING.md) · [friction log](docs/FRICTION.md)
+**Try it:** [phone camera page](https://mallikarjuntr.github.io/repcast-tv-app/) · [website](https://repcast.netlify.app) · [open-source engine](https://github.com/Mallikarjuntr/repcast-movement) · [how it's tested](docs/TESTING.md) · [friction log](docs/FRICTION.md)
 
-## Why Spotter
+**Built with:** ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white) ![React Native for TV](https://img.shields.io/badge/React_Native_for_TV-20232A?logo=react&logoColor=61DAFB) ![Expo](https://img.shields.io/badge/Expo-1C2024?logo=expo&logoColor=white) ![MediaPipe](https://img.shields.io/badge/MediaPipe_Pose-0097A7?logo=mediapipe&logoColor=white) ![WebRTC](https://img.shields.io/badge/WebRTC-333333?logo=webrtc&logoColor=white) ![Vite](https://img.shields.io/badge/Vite-9135FF?logo=vite&logoColor=white) ![Vitest](https://img.shields.io/badge/Vitest-2C2C2C?logo=vitest&logoColor=00FF74) ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?logo=githubactions&logoColor=white) ![License: MIT](https://img.shields.io/badge/License-MIT-3DA639?logo=opensourceinitiative&logoColor=white)
+
+## Why RepCast
 
 - **Runs on the cheapest Fire TV.** Built and measured on a **Fire TV Stick 3rd gen: 32-bit Fire OS, about 1 GB of RAM** — live phone video, a skeleton over it at ~20 updates a second, voice and rep judging, using ~140–200 MB of memory with no low-memory kills in 10-minute soaks. Also runs on the Fire TV Stick 4K. Numbers in [TESTING §5–6](docs/TESTING.md).
 - **No camera to buy.** The phone you own is the camera: scan a QR code, nothing to install. Pose tracking runs *on the phone*; the video goes straight from phone to TV over your Wi-Fi — never to the cloud.
-- **An honest spotter.** Every rep is judged: clean, counted with a note, or **no rep — and why** ("Not low enough", "That's a lunge — this set is squats"). 12 moves, each told apart from its look-alikes (squat vs lunge, reverse vs forward lunge, step jack vs jumping jack) and checked from the front, 45° and the side.
+- **An honest coach.** Every rep is judged: clean, counted with a note, or **no rep — and why** ("Not low enough", "That's a lunge — this set is squats"). 12 moves, each told apart from its look-alikes (squat vs lunge, reverse vs forward lunge, step jack vs jumping jack) and checked from the front, 45° and the side.
 - **Tested on real people and real footage**, not just demos: the user's own phone tests, gym and office clips, and public exercise videos, all replayed through the exact phone pipeline ([TESTING §9–12](docs/TESTING.md)). Friend's gym squats: 5 of 5 counted, and refused in a lunge set; gym split squats: 5 of 5 and 3 of 3.
 - **Made for the living room.** Every screen works with the remote; a coach's voice (Amazon Polly) counts reps and says what to fix; profiles for everyone in the house, each with their own streak and history, kept on the TV.
 
@@ -34,12 +36,12 @@ Screenshots from the Fire TV Stick, taken over ADB. The live picture is our own 
 
 | Criterion | Where to look |
 |---|---|
-| **Technical implementation** | Phone ↔ TV over AppSync Events + WebRTC with a data channel for pose ([how it works](#how-it-works)); native-driven skeleton for a 1 GB stick ([friction #14](docs/FRICTION.md#14)); an open-source rep engine with 72 unit tests ([spotter-movement](https://github.com/Mallikarjuntr/spotter-movement)); replay bench + renders from three angles; infrastructure as code, deployed only by GitHub Actions with OIDC ([spotter-backend](https://github.com/Mallikarjuntr/spotter-backend)) |
+| **Technical implementation** | Phone ↔ TV over AppSync Events + WebRTC with a data channel for pose ([how it works](#how-it-works)); native-driven skeleton for a 1 GB stick ([friction #14](docs/FRICTION.md#14)); an open-source rep engine with 72 unit tests ([repcast-movement](https://github.com/Mallikarjuntr/repcast-movement)); replay bench + renders from three angles; infrastructure as code, deployed only by GitHub Actions with OIDC ([spotter-backend](https://github.com/Mallikarjuntr/spotter-backend)) |
 | **Design** | One accent, big numbers, readable from the sofa; D-pad first; the TV leads and the phone follows; a 5-second countdown starts the set when you're in frame. Screenshots in [docs/screenshots](docs/screenshots/) |
 | **Potential impact** | Turns any Fire TV + any phone into form coaching, with no hardware, account or subscription; privacy by design (video never leaves the home); free |
 | **Quality of the idea** | Computer-vision fitness on Fire TV without a TV camera; multi-modal (phone camera + remote + voice + TV picture) in one flow |
 | **AWS Builder** | AppSync Events (live link), API Gateway + Lambda + DynamoDB (pairing), Amazon Polly (all 117 coach lines, recorded in CI), Amazon Bedrock with Amazon Nova (workout analysis), Budgets, SAM/CloudFormation via GitHub OIDC — [why each](https://github.com/Mallikarjuntr/spotter-backend#readme) |
-| **Open Source** | [spotter-movement](https://github.com/Mallikarjuntr/spotter-movement) (MIT): a separate library any app can use to count and judge reps from MediaPipe landmarks |
+| **Open Source** | [repcast-movement](https://github.com/Mallikarjuntr/repcast-movement) (MIT): a separate library any app can use to count and judge reps from MediaPipe landmarks |
 | **Friction log** | [docs/FRICTION.md](docs/FRICTION.md): 21 entries, each with task, steps, expected vs actual, severity, workaround and suggestion |
 
 **What's real and what isn't:** everything in the demo is real and runs on a real Fire TV Stick, with the deployed backend. Test-only helpers are labelled as such: `tools/fake-phone.mjs` plays a phone's messages without a phone, and the camera page's `?src=` option plays a recorded clip instead of the camera.
@@ -48,15 +50,15 @@ Screenshots from the Fire TV Stick, taken over ADB. The live picture is our own 
 
 | Repo | What's inside |
 |---|---|
-| [spotter-tv-app](https://github.com/Mallikarjuntr/spotter-tv-app) | Fire TV app + phone camera web app (this repo) |
+| [repcast-tv-app](https://github.com/Mallikarjuntr/repcast-tv-app) | Fire TV app + phone camera web app (this repo) |
 | [spotter-backend](https://github.com/Mallikarjuntr/spotter-backend) | AWS stack (SAM): pairing API, live link (AppSync Events), coach voice (Polly) — deployed by GitHub Actions |
-| [spotter-movement](https://github.com/Mallikarjuntr/spotter-movement) | Open-source movement engine: rep and hold detection and form checks from pose landmarks |
+| [repcast-movement](https://github.com/Mallikarjuntr/repcast-movement) | Open-source movement engine: rep and hold detection and form checks from pose landmarks |
 
 ## How it works
 
 ```
 Phone (web page, camera)                       AWS                          Fire TV (React Native)
-MediaPipe pose ─▶ spotter-movement ─ reps ──▶ AppSync Events channel ──▶ rep count, verdicts, receipt
+MediaPipe pose ─▶ repcast-movement ─ reps ──▶ AppSync Events channel ──▶ rep count, verdicts, receipt
         │                                       (pairing via 4-digit code)
         └─ camera video + pose points ── WebRTC, straight over home Wi-Fi ──▶ live picture + skeleton
 ```
@@ -88,11 +90,11 @@ You need **Node.js 24** and npm. Install everything once from the repo root:
 npm ci
 ```
 
-The apps use the deployed Spotter backend out of the box (public endpoints in `packages/shared/src/config.ts`), so there is nothing to configure. To run your own backend, deploy [spotter-backend](https://github.com/Mallikarjuntr/spotter-backend) and put its stack outputs in that file.
+The apps use the deployed RepCast backend out of the box (public endpoints in `packages/shared/src/config.ts`), so there is nothing to configure. To run your own backend, deploy [spotter-backend](https://github.com/Mallikarjuntr/spotter-backend) and put its stack outputs in that file.
 
 ### Phone camera app
 
-The published version is at **https://mallikarjuntr.github.io/spotter-tv-app/**. The TV's QR code opens the short link **https://spotter-tv.netlify.app/go?code=…** on the [website](https://github.com/Mallikarjuntr/spotter-tv-landing-page), which opens the same page at **https://spotter-tv.netlify.app/camera/** (Netlify serves it from GitHub Pages, so it is still built and published from here).
+The published version is at **https://mallikarjuntr.github.io/repcast-tv-app/**. The TV's QR code opens the short link **https://repcast.netlify.app/go?code=…** on the [website](https://github.com/Mallikarjuntr/repcast-tv-landing-page), which opens the same page at **https://repcast.netlify.app/camera/** (Netlify serves it from GitHub Pages, so it is still built and published from here).
 
 To run it locally:
 
@@ -125,7 +127,7 @@ adb connect <fire-tv-ip>:5555        # accept the prompt on the TV
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
-Spotter then appears in the Fire TV's apps list. It also runs on the Android TV emulator.
+RepCast then appears in the Fire TV's apps list. It also runs on the Android TV emulator.
 
 ### Try a coached workout
 
@@ -143,7 +145,7 @@ npm run build:camera                      # typecheck + build the camera app (wh
 cd apps/tv && npx tsc --noEmit            # typecheck the TV app
 ```
 
-The rep engine has its own unit tests in [spotter-movement](https://github.com/Mallikarjuntr/spotter-movement) (`npm test`), and `apps/camera/replay.html` replays recorded videos through the exact phone pipeline (`&repeat=N` loops a clip). `tools/trainer/views.py` renders every judged move from the front, 45° and the side to check the judging wherever the phone stands. Results, device measurements and known limits are in [docs/TESTING.md](docs/TESTING.md).
+The rep engine has its own unit tests in [repcast-movement](https://github.com/Mallikarjuntr/repcast-movement) (`npm test`), and `apps/camera/replay.html` replays recorded videos through the exact phone pipeline (`&repeat=N` loops a clip). `tools/trainer/views.py` renders every judged move from the front, 45° and the side to check the judging wherever the phone stands. Results, device measurements and known limits are in [docs/TESTING.md](docs/TESTING.md).
 
 ## License
 

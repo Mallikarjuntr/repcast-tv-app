@@ -16,7 +16,7 @@ const { MOVES } = await import(join(src, 'workouts.ts'));
 const { coachIntroLine, countLine, ENGINE_CUES, FINISH_LINE, HINT_LINES, MAX_SPOKEN_COUNT, NO_REP_LINE, PHONE_LINKED_LINE, READY_LINE, restLine, setIntroLine, voiceId, WIFI_LINE } =
   await import(join(src, 'voiceLines.ts'));
 // The movement engine's exercise definitions hold each exercise's own advice.
-const { EXERCISES } = await import(join(here, '..', '..', 'node_modules', 'spotter-movement', 'dist', 'index.js'));
+const { EXERCISES } = await import(join(here, '..', '..', 'node_modules', 'repcast-movement', 'dist', 'index.js'));
 
 const lines = new Set([FINISH_LINE]);
 for (let n = 1; n <= MAX_SPOKEN_COUNT; n++) lines.add(countLine(n));

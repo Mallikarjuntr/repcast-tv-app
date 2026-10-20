@@ -13,7 +13,7 @@ export function Wordmark({ size = 30 }: { size?: number }) {
   const s = useScale();
   return (
     <Text style={{ fontFamily: fonts.sansHeavy, fontSize: s(size), letterSpacing: -s(size * 0.015), color: colors.text }}>
-      spotter<Text style={{ color: colors.accent }}>.</Text>
+      repcast<Text style={{ color: colors.accent }}>.</Text>
     </Text>
   );
 }

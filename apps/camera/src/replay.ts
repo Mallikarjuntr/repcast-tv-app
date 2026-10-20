@@ -2,7 +2,7 @@
 // phone, frame by frame, and reports every rep verdict. Lets the engine be tested on real movement
 // without someone exercising in front of a camera.
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
-import { EXERCISES, isUpright, RepDetector, stance, torsoTilt, type RepExercise, type RepResult } from 'spotter-movement';
+import { EXERCISES, isUpright, RepDetector, stance, torsoTilt, type RepExercise, type RepResult } from 'repcast-movement';
 
 function shoulderRatio(p: { x: number; y: number }[], ax: number): number {
   const sw = Math.hypot((p[11]!.x - p[12]!.x) * ax, p[11]!.y - p[12]!.y);

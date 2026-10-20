@@ -3,7 +3,7 @@
   "private": true,
   "license": "MIT",
   "type": "module",
-  "description": "Generates Spotter's app icon, TV banner, splash and Appstore images from SVG.",
+  "description": "Generates RepCast's app icon, TV banner, splash and Appstore images from SVG.",
   "scripts": {
     "build": "node make.mjs"
   },

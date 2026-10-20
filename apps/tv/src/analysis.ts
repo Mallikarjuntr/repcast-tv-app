@@ -83,7 +83,7 @@ export function useAnalysis(request: AnalysisRequest, cached: AnalysisReport | u
         const message = abort.signal.aborted
           ? 'Your coach took too long to answer. Try again.'
           : err instanceof TypeError
-            ? "Couldn't reach Spotter. Check the TV's internet and try again."
+            ? "Couldn't reach RepCast. Check the TV's internet and try again."
             : err instanceof Error
               ? err.message
               : String(err);

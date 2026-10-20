@@ -182,11 +182,11 @@ export function PairScreen({
               </View>
             </>
           ) : state.phase === 'loading' ? (
-            <Note size={20}>Getting a code from Spotter…</Note>
+            <Note size={20}>Getting a code from RepCast…</Note>
           ) : (
             <View style={{ gap: s(10) }}>
               <Note size={20} color={colors.text}>
-                {"I couldn't reach Spotter. Check the TV's internet."}
+                {"I couldn't reach RepCast. Check the TV's internet."}
               </Note>
               <Kicker size={12}>{state.message.toUpperCase()}</Kicker>
             </View>

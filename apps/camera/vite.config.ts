@@ -11,14 +11,15 @@ const https =
     : undefined;
 
 // `SPOTTER_MOVEMENT_SRC=1 npm run dev` uses the movement engine's source from a sibling checkout
-// (../spotter-movement next to this repo) instead of the installed package, to test engine changes
+// (../repcast-movement next to this repo) instead of the installed package, to test engine changes
 // on the replay bench before publishing them.
-const engineSrc = resolve(import.meta.dirname, '../../../spotter-movement/src/index.ts');
-const alias: Record<string, string> = process.env.SPOTTER_MOVEMENT_SRC === '1' && existsSync(engineSrc) ? { 'spotter-movement': engineSrc } : {};
+// The engine's checkout may still sit in a folder with its old name.
+const engineSrc = ['repcast-movement', 'spotter-movement'].map((d) => resolve(import.meta.dirname, `../../../${d}/src/index.ts`)).find((p) => existsSync(p)) ?? '';
+const alias: Record<string, string> = process.env.SPOTTER_MOVEMENT_SRC === '1' && existsSync(engineSrc) ? { 'repcast-movement': engineSrc } : {};
 
 export default defineConfig({
   resolve: { alias },
-  // Relative paths so the same build works on GitHub Pages (/spotter-tv-app/) and locally.
+  // Relative paths so the same build works on GitHub Pages (/repcast-tv-app/) and locally.
   base: './',
   server: { https },
   build: {
