@@ -131,7 +131,7 @@ The Studio Live screen gives the video a much larger panel, which costs some smo
 
 ## 7. Phone and TV side by side (2026-10-16)
 
-The phone and the TV used to drift apart (the phone counting squats on the pairing screen, the phone showing 24 while the TV showed 4), so both are now tested together. A watcher (Node, using the app's own AppSync client) subscribes to the session and logs, with timestamps, every phone→TV message, every TV→phone message and the WebRTC set-up, and reads the phone page's screen (status, count, coach line) over Chrome DevTools twice a second. The phone is the camera page in headless Chrome playing a recorded squat clip; the TV is driven and photographed over ADB. A checker then flags any rep the phone sent outside a TV set, and any moment the phone's count differed from the TV's for more than 1.5 s.
+The phone and the TV used to drift apart (the phone counting squats on the pairing screen, the phone showing 24 while the TV showed 4), so both are now tested together. A watcher (Node, using the app's own AppSync client) subscribes to the session and logs, with timestamps, every phone→TV message, every TV→phone message and the WebRTC set-up, and reads the phone page's screen (status, count, coach line) over Chrome DevTools twice a second. The phone's part is played by the camera page in headless Chrome playing a recorded squat clip; the TV is driven and photographed over ADB. A checker then flags any rep the phone sent outside a TV set, and any moment the phone's count differed from the TV's for more than 1.5 s.
 
 On a **Fire TV Stick 4K (AFTMA08C15, Fire OS 8.1.8.2, Android 11, 32-bit, 1.7 GB)**:
 
