@@ -1,5 +1,5 @@
 /**
- * Public endpoints of the RepCast backend (spotter-backend stack outputs, ap-south-1).
+ * Public endpoints of the RepCast backend (repcast-backend stack outputs, ap-south-1).
  * The AppSync key is a public client key: it only allows publishing to and subscribing on
  * session channels, and it expires (rotated on each backend deploy).
  */

@@ -36,11 +36,11 @@ Screenshots from the Fire TV Stick, taken over ADB. The live picture is our own 
 
 | Criterion | Where to look |
 |---|---|
-| **Technical implementation** | Phone ↔ TV over AppSync Events + WebRTC with a data channel for pose ([how it works](#how-it-works)); native-driven skeleton for a 1 GB stick ([friction #14](docs/FRICTION.md#14)); an open-source rep engine with 72 unit tests ([repcast-movement](https://github.com/Mallikarjuntr/repcast-movement)); replay bench + renders from three angles; infrastructure as code, deployed only by GitHub Actions with OIDC ([spotter-backend](https://github.com/Mallikarjuntr/spotter-backend)) |
+| **Technical implementation** | Phone ↔ TV over AppSync Events + WebRTC with a data channel for pose ([how it works](#how-it-works)); native-driven skeleton for a 1 GB stick ([friction #14](docs/FRICTION.md#14)); an open-source rep engine with 72 unit tests ([repcast-movement](https://github.com/Mallikarjuntr/repcast-movement)); replay bench + renders from three angles; infrastructure as code, deployed only by GitHub Actions with OIDC ([repcast-backend](https://github.com/Mallikarjuntr/repcast-backend)) |
 | **Design** | One accent, big numbers, readable from the sofa; D-pad first; the TV leads and the phone follows; a 5-second countdown starts the set when you're in frame. Screenshots in [docs/screenshots](docs/screenshots/) |
 | **Potential impact** | Turns any Fire TV + any phone into form coaching, with no hardware, account or subscription; privacy by design (video never leaves the home); free |
 | **Quality of the idea** | Computer-vision fitness on Fire TV without a TV camera; multi-modal (phone camera + remote + voice + TV picture) in one flow |
-| **AWS Builder** | AppSync Events (live link), API Gateway + Lambda + DynamoDB (pairing), Amazon Polly (all 117 coach lines, recorded in CI), Amazon Bedrock with Amazon Nova (workout analysis), Budgets, SAM/CloudFormation via GitHub OIDC — [why each](https://github.com/Mallikarjuntr/spotter-backend#readme) |
+| **AWS Builder** | AppSync Events (live link), API Gateway + Lambda + DynamoDB (pairing), Amazon Polly (all 117 coach lines, recorded in CI), Amazon Bedrock with Amazon Nova (workout analysis), Budgets, SAM/CloudFormation via GitHub OIDC — [why each](https://github.com/Mallikarjuntr/repcast-backend#readme) |
 | **Open Source** | [repcast-movement](https://github.com/Mallikarjuntr/repcast-movement) (MIT): a separate library any app can use to count and judge reps from MediaPipe landmarks |
 | **Friction log** | [docs/FRICTION.md](docs/FRICTION.md): 21 entries, each with task, steps, expected vs actual, severity, workaround and suggestion |
 
@@ -51,7 +51,7 @@ Screenshots from the Fire TV Stick, taken over ADB. The live picture is our own 
 | Repo | What's inside |
 |---|---|
 | [repcast-tv-app](https://github.com/Mallikarjuntr/repcast-tv-app) | Fire TV app + phone camera web app (this repo) |
-| [spotter-backend](https://github.com/Mallikarjuntr/spotter-backend) | AWS stack (SAM): pairing API, live link (AppSync Events), coach voice (Polly) — deployed by GitHub Actions |
+| [repcast-backend](https://github.com/Mallikarjuntr/repcast-backend) | AWS stack (SAM): pairing API, live link (AppSync Events), coach voice (Polly) — deployed by GitHub Actions |
 | [repcast-movement](https://github.com/Mallikarjuntr/repcast-movement) | Open-source movement engine: rep and hold detection and form checks from pose landmarks |
 
 ## How it works
@@ -90,7 +90,7 @@ You need **Node.js 24** and npm. Install everything once from the repo root:
 npm ci
 ```
 
-The apps use the deployed RepCast backend out of the box (public endpoints in `packages/shared/src/config.ts`), so there is nothing to configure. To run your own backend, deploy [spotter-backend](https://github.com/Mallikarjuntr/spotter-backend) and put its stack outputs in that file.
+The apps use the deployed RepCast backend out of the box (public endpoints in `packages/shared/src/config.ts`), so there is nothing to configure. To run your own backend, deploy [repcast-backend](https://github.com/Mallikarjuntr/repcast-backend) and put its stack outputs in that file.
 
 ### Phone camera app
 
