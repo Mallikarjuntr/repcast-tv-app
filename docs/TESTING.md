@@ -1,6 +1,6 @@
 # How RepCast's rep counting is tested
 
-RepCast has to be an **honest spotter**: count good reps, say plainly when a rep doesn't count and why, and never count things that aren't the exercise. It is tested at three levels.
+RepCast has to be an **honest coach**: count good reps, say plainly when a rep doesn't count and why, and never count things that aren't the exercise. It is tested at three levels.
 
 ## 1. Unit tests (`repcast-movement`, 29 tests)
 

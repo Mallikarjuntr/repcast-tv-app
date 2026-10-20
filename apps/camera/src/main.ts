@@ -408,7 +408,7 @@ function onRep(rep: RepResult): void {
   // The TV speaks; the phone shows the verdict. Linked to a TV, the count shown is the TV's (it
   // arrives a moment later); on its own the phone counts.
   if (!rep.counted) {
-    // An honest spotter: say plainly that it didn't count, and why.
+    // An honest coach: say plainly that it didn't count, and why.
     setCue(`No rep — ${rep.cues[0] ?? "that one doesn't count"}`, true);
   } else {
     if (!tv) ui.count.textContent = String(rep.count);
