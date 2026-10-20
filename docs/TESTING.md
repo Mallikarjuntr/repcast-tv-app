@@ -58,11 +58,11 @@ Test clips are openly licensed exercise videos streamed from Wikimedia Commons (
 node tools/fake-phone.mjs 1234 --start-after 8 --rest 32
 ```
 
-Press "Start workout" on the TV within `--start-after` seconds. The script's attempts are known in advance, so the receipt can be checked exactly: knees caved on reps 2, 6, 16 and 32, three attempts didn't count, 32 of 36 reps were clean (89%) — which is what the receipt shows (`docs/screenshots/18-receipt.png`, `19-receipt-every-rep.png`). Screenshots of every state are in `docs/screenshots/`.
+Press "Start workout" on the TV within `--start-after` seconds. The script's attempts are known in advance, so the receipt can be checked exactly: knees caved on reps 2, 6, 16 and 32, three attempts didn't count, 32 of 36 reps were clean (89%) — which is what the receipt shows (screenshots of that build were later replaced by the current ones in `docs/screenshots/stick/`). Screenshots of every state are in `docs/screenshots/`.
 
 ## 4. On a real Fire TV
 
-Tested on a **Fire TV Stick 3rd gen (AFTSSS)**: Fire OS 7.7.1.7 (Android 9, API 28), MediaTek MT8695 (4 × Cortex-A53), PowerVR GE8300 (OpenGL ES 3.2, Vulkan 1.1), about 900 MB of RAM. Screenshots taken on the stick are in `docs/screenshots/fire-tv/`.
+Tested on a **Fire TV Stick 3rd gen (AFTSSS)**: Fire OS 7.7.1.7 (Android 9, API 28), MediaTek MT8695 (4 × Cortex-A53), PowerVR GE8300 (OpenGL ES 3.2, Vulkan 1.1), about 900 MB of RAM. Screenshots taken on the stick are in the screenshots of that build (since replaced by `docs/screenshots/stick/`).
 
 - **This stick is 32-bit only (`armeabi-v7a`)**, so the APK must include 32-bit libraries:
   `EXPO_TV=1 NODE_ENV=production ./gradlew assembleRelease -PreactNativeArchitectures=armeabi-v7a,arm64-v8a`
@@ -71,7 +71,7 @@ Tested on a **Fire TV Stick 3rd gen (AFTSSS)**: Fire OS 7.7.1.7 (Android 9, API 
 - **Voice:** the stick's built-in text-to-speech engine accepts requests but plays nothing (friction log #10), so every coach line is pre-recorded with Amazon Polly and bundled (56 lines, 872 KB). Confirmed on the stick: the audio service logs a new media player from the app for each count, on the beat.
 - **Smoothness:** the follow-along screen used to re-render entirely ten times a second, and the figure (SVG) was re-uploaded to the GPU as a bitmap every frame. Now the clock lives outside React state, the figure animates on its own ~30 fps loop, and it is drawn with native views. Measured over 10 s of squats: bitmap uploads 91 → 0, app CPU ~140% → ~95% (of 400%), no missed vsyncs; median frame 20 ms. The remaining slow frames line up with the stick's memory pressure (~46 MB free, swap nearly full).
 
-- **3D trainer (Follow along):** each move plays a pre-rendered loop of a 3D trainer drawn in the app's style (`tools/trainer`). On the stick the follow-along screen drops from ~55% slow frames with the drawn figure to **~2% (median 8 ms)** with the trainer video, because the stick decodes H.264 in hardware. The trainer holds still during the coach's intro and stays on the beat (resynced if it drifts > 0.15 s). Screenshots: `docs/screenshots/fire-tv/6-9`.
+- **3D trainer (Follow along):** each move plays a pre-rendered loop of a 3D trainer drawn in the app's style (`tools/trainer`). On the stick the follow-along screen drops from ~55% slow frames with the drawn figure to **~2% (median 8 ms)** with the trainer video, because the stick decodes H.264 in hardware. The trainer holds still during the coach's intro and stays on the beat (resynced if it drifts > 0.15 s). Screenshots: the screenshots of that build (since replaced by `docs/screenshots/stick/`).
 
 ## 5. Live video from the phone (WebRTC)
 
@@ -113,7 +113,7 @@ Not yet measured: glass-to-glass latency (an adb screenshot takes about a second
 
 The TV app moved from the paper "Training Notebook" look to a dark "Studio" look (Archivo type, one orange accent), chosen from three mocked-up directions. Only the look changed: every screen keeps its flow, focus order and remote keys. The 3D trainer clips were re-rendered on the panel colour (`tools/trainer/style.py`) so they sit seamlessly in the dark panels, and the app icon, TV banner, splash and Appstore images were regenerated (`tools/brand`).
 
-Checked on the Android TV emulator (1080p) with `tools/fake-phone.mjs`, screen by screen: Who's training → Add someone (Fire TV keyboard) → Home (trainer preview, carried-over coach advice) → Choose a mode → Pair (QR + code, checklist ticks, focus jumps to Start workout) → coached session: warm-up (trainer clip) → squats on the Live screen (count, segments, clean / with a note / no rep, coach card, outline fallback) → rest between sets → later moves ended early with "Done with this" → Paused overlay → receipt (stats, coach's note, every attempt by set). Then Follow along (beat count, rest with the trainer at ease and an "Up next" card, progress across the six moves) → Follow along done, Swap a move (cycle an option, "Put everything back"), and Progress (calendar, clean-form bars). Screenshots: `docs/screenshots/studio/`.
+Checked on the Android TV emulator (1080p) with `tools/fake-phone.mjs`, screen by screen: Who's training → Add someone (Fire TV keyboard) → Home (trainer preview, carried-over coach advice) → Choose a mode → Pair (QR + code, checklist ticks, focus jumps to Start workout) → coached session: warm-up (trainer clip) → squats on the Live screen (count, segments, clean / with a note / no rep, coach card, outline fallback) → rest between sets → later moves ended early with "Done with this" → Paused overlay → receipt (stats, coach's note, every attempt by set). Then Follow along (beat count, rest with the trainer at ease and an "Up next" card, progress across the six moves) → Follow along done, Swap a move (cycle an option, "Put everything back"), and Progress (calendar, clean-form bars). Screenshots: the screenshots of that build (since replaced by `docs/screenshots/stick/`).
 
 Not checked on the emulator: live phone video (the emulator's network can't receive it); that needs the stick.
 
