@@ -158,7 +158,7 @@ export function PairScreen({
     <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.bg, paddingTop: s(40), paddingHorizontal: s(64), paddingBottom: s(36), gap: s(40) }}>
       <View style={{ width: s(440), gap: s(16) }}>
         <Kicker color={colors.accent}>STEP 1 OF 2 · PAIR</Kicker>
-        <Headline text={'Your phone is\nthe camera'} size={66} />
+        <Headline text={'Scan with\nyour phone'} size={66} />
         <Note size={18}>Scan this with your phone. It opens in the browser, so there's nothing to install.</Note>
         {/* The live picture goes straight from phone to TV over the home network, so this matters. */}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: s(10), backgroundColor: colors.surface, borderRadius: s(10), paddingVertical: s(9), paddingHorizontal: s(14), alignSelf: 'flex-start' }}>

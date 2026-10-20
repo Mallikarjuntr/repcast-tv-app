@@ -14,7 +14,7 @@
 ## Why RepCast
 
 - **Runs on the cheapest Fire TV.** Built and measured on a **Fire TV Stick 3rd gen: 32-bit Fire OS, about 1 GB of RAM** — live phone video, a skeleton over it at ~20 updates a second, voice and rep judging, using ~140–200 MB of memory with no low-memory kills in 10-minute soaks. Also runs on the Fire TV Stick 4K. Numbers in [TESTING §5–6](docs/TESTING.md).
-- **No camera to buy.** The phone you own is the camera: scan a QR code, nothing to install. Pose tracking runs *on the phone*; the video goes straight from phone to TV over your Wi-Fi — never to the cloud.
+- **No camera to buy.** The phone you already own does the watching: scan a QR code, nothing to install. Pose tracking runs *on the phone*; the video goes straight from phone to TV over your Wi-Fi — never to the cloud.
 - **An honest coach.** Every rep is judged: clean, counted with a note, or **no rep — and why** ("Not low enough", "That's a lunge — this set is squats"). 12 moves, each told apart from its look-alikes (squat vs lunge, reverse vs forward lunge, step jack vs jumping jack) and checked from the front, 45° and the side.
 - **Tested on real people and real footage**, not just demos: the user's own phone tests, gym and office clips, and public exercise videos, all replayed through the exact phone pipeline ([TESTING §9–12](docs/TESTING.md)). Friend's gym squats: 5 of 5 counted, and refused in a lunge set; gym split squats: 5 of 5 and 3 of 3.
 - **Made for the living room.** Every screen works with the remote; a coach's voice (Amazon Polly) counts reps and says what to fix; profiles for everyone in the house, each with their own streak and history, kept on the TV.
