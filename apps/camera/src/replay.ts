@@ -27,6 +27,8 @@ const until = Number(params.get('until') ?? 'Infinity');
 const repeat = Math.max(1, Number(params.get('repeat') ?? '1'));
 const [traceFrom, traceTo] = (params.get('trace') ?? '-1--1').split('-').map(Number) as [number, number];
 const model = params.get('model') === 'full' ? 'full' : 'lite';
+/** Optional: also return every frame's pose points (?dump=1), e.g. to draw a demo video from. */
+const dump = params.get('dump') === '1';
 
 const video = document.getElementById('video') as HTMLVideoElement;
 const overlay = document.getElementById('overlay') as HTMLCanvasElement;
@@ -61,6 +63,10 @@ async function main(): Promise<void> {
   });
   const detector = new RepDetector(exercise as RepExercise);
   const reps: RepResult[] = [];
+  /** When each rep was reported (ms of video), parallel to `reps`. */
+  const repAt: number[] = [];
+  /** ?dump=1: [t, x0, y0, v0, x1, y1, v1, …] per frame, for the 33 MediaPipe points. */
+  const poses: number[][] = [];
   let frames = 0;
   let posed = 0;
   let upright = 0;
@@ -93,6 +99,7 @@ async function main(): Promise<void> {
     frames++;
     const pose = result.landmarks[0];
     ctx.clearRect(0, 0, overlay.width, overlay.height);
+    if (dump) poses.push(pose ? [t, ...pose.flatMap((p) => [+p.x.toFixed(4), +p.y.toFixed(4), +(p.visibility ?? 0).toFixed(2)])] : [t]);
     if (!pose) continue;
     posed++;
     ctx.strokeStyle = '#ff7a3d';
@@ -140,6 +147,7 @@ async function main(): Promise<void> {
     if (update.rep) {
       const rep = update.rep;
       reps.push(rep);
+      repAt.push(t);
       countEl.textContent = String(rep.count);
       const item = document.createElement('li');
       item.textContent = `${time.toFixed(1)}s · ${rep.verdict.toUpperCase()} · ${Math.round(rep.bottom)}° · ${rep.cues.join(' / ') || 'clean'}`;
@@ -162,7 +170,10 @@ async function main(): Promise<void> {
     tiltMedian: tilts.length ? Math.round(tilts.sort((a, b) => a - b)[Math.floor(tilts.length / 2)]!) : null,
     timeline: timeline.join(' '),
     trace,
-    reps: reps.map((r) => ({
+    reps: reps.map((r, i) => ({
+      at: repAt[i],
+      count: r.count,
+      counted: r.counted,
       verdict: r.verdict,
       bottomDeg: Math.round(r.bottom),
       sec: +(r.durationMs / 1000).toFixed(2),
@@ -177,6 +188,7 @@ async function main(): Promise<void> {
         n: r.feet.frames,
       },
     })),
+    ...(dump ? { size: [video.videoWidth, video.videoHeight], poses } : {}),
   };
   window.spotterResult = summary;
   resultEl.textContent = JSON.stringify(summary, null, 1);

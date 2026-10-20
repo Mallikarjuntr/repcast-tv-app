@@ -19,7 +19,7 @@
 
 ## On a real Fire TV Stick
 
-Screenshots from the Fire TV Stick, taken over ADB (the live picture is a [Wikimedia Commons squat demonstration](https://commons.wikimedia.org/wiki/File:Squat_-_exercise_demonstration_video.webm) played as the phone's camera).
+Screenshots from the Fire TV Stick, taken over ADB. The live picture is our own gym footage (filmed with a friend, who agreed to it), played through the phone page in place of the camera.
 
 | | |
 |---|---|
