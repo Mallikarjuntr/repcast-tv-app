@@ -13,7 +13,7 @@
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.1.0",
     "@spotter/shared": "*",
-    "repcast-movement": "github:Mallikarjuntr/repcast-movement#dev"
+    "repcast-movement": "file:../../vendor/repcast-movement-dd8e10f.tgz"
   },
   "devDependencies": {
     "typescript": "^7.0.2",

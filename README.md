@@ -80,13 +80,14 @@ MediaPipe pose ─▶ repcast-movement ─ reps ──▶ AppSync Events channel
 | `tools/trainer` | Blender scripts that render the 3D trainer clips ([how](tools/trainer/README.md)) |
 | `tools/voice` | Coach voice lines (recorded with Amazon Polly by the backend) |
 | `tools/brand` | App icon, TV banner and Appstore images ([how](docs/store/README.md)) |
+| `vendor/` | The rep engine from [repcast-movement](https://github.com/Mallikarjuntr/repcast-movement), packed, so `npm ci` works on every npm version ([why](vendor/README.md)) |
 | `docs/` | [How it's tested](docs/TESTING.md), [friction log](docs/FRICTION.md), screenshots |
 
 ## Run it
 
 Tested on **macOS (Apple silicon)**. On **Windows**, use WSL 2 (Ubuntu) and run the same commands; the Fire TV build also works from PowerShell with the environment variables set as `$env:EXPO_TV=1; $env:CI=1` (not tested by us). Easiest of all: no build needed to try the phone side — open the published camera page.
 
-You need **Node.js 24** and npm. Install everything once from the repo root:
+You need **Node.js 24** and npm (11 or 12). Install everything once from the repo root:
 
 ```bash
 npm ci
@@ -133,7 +134,7 @@ RepCast then appears in the Fire TV's apps list. It also runs on the Android TV 
 
 ### Try a coached workout
 
-1. On the TV: **Start → Coach me on camera → pick a move** (squats, lunges, jumping jacks, push-ups or glute bridges, each with an easier version). The TV shows a QR code and a 4-digit code.
+1. On the TV: **Start session → Coach me on camera → pick a move** (squats, lunges, jumping jacks, push-ups or glute bridges, each with an easier version). The TV shows a QR code and a 4-digit code.
 2. On a phone **on the same Wi-Fi as the TV**: scan the QR code (or open the camera page and type the code) and allow the camera. The camera starts by itself (on some browsers, tap **Start camera**).
 3. Prop the phone at hip height about 2–3 m away, turned about 45°, and step back until the TV ticks what it needs. The TV counts down from 5 and starts by itself (or press **Start now**).
 4. The TV runs the move and keeps the count; the phone shows the same count, set and rest, and the TV does the talking. **Done with this** ends the move early. On the receipt, **Another move** goes back to the list with the phone still linked — no new code.
