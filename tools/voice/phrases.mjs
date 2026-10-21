@@ -42,6 +42,7 @@ for (const exercise of Object.values(EXERCISES)) {
     exercise.width?.cue,
     exercise.width?.noRepCue,
     ...Object.values(exercise.footwork?.cues ?? {}),
+    exercise.footwork?.splitCue,
     ...Object.values(exercise.feetOut?.cues ?? {}),
     ...(exercise.targets ?? []).map((t) => t.cue),
   ];

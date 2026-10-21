@@ -1,16 +1,18 @@
-import { useCallback } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { FocusButton } from '../components/FocusButton';
 import { Avatar } from '../components/Avatar';
-import { PanelTag, Speaker, WeekStrip } from '../components/Studio';
-import { TrainerVideo } from '../components/TrainerVideo';
+import { Speaker, WeekStrip } from '../components/Studio';
+import { TrainerReel, type ReelItem } from '../components/TrainerReel';
 import { Headline, Kicker, Note, Wordmark } from '../components/Type';
 import { bestStreak } from '../progress';
 import { streakDays, weekView, type SessionRecord } from '../storage';
 import { colors, fonts, useScale } from '../theme';
 import { TRAINER_CLIPS } from '../trainerClips';
 import { isFocused } from '../tv';
-import { moveById, MOVES } from '../workouts';
+import { MOVES } from '../workouts';
+
+/** Every move with a trainer clip, in the order of the move list: squats first, forearm plank last. */
+const REEL: ReelItem[] = MOVES.flatMap((m) => (TRAINER_CLIPS[m.id] !== undefined ? [{ clip: TRAINER_CLIPS[m.id]!, name: m.name }] : []));
 
 function lastTime(record: SessionRecord | undefined, now: Date): string | null {
   if (!record) return null;
@@ -90,9 +92,6 @@ export function HomeScreen({
   const advice = sentence(last?.nextTime ?? FIRST_ADVICE);
   const now = new Date();
   const lastLine = lastTime(last, now);
-  // The trainer shows the move you did last, so Home feels like yours; squats before anything.
-  const preview = moveById(last?.move) ?? MOVES[0]!;
-  const freeLoop = useCallback(() => null, []);
   const week = weekView(sessions, now);
   const daysThisWeek = week.filter((d) => d.state === 'done').length;
 
@@ -136,10 +135,8 @@ export function HomeScreen({
 
         <View style={{ width: s(500), gap: s(12) }}>
           <View style={{ height: s(270), borderRadius: s(18), backgroundColor: colors.surface, overflow: 'hidden' }}>
-            {TRAINER_CLIPS[preview.id] !== undefined ? <TrainerVideo key={preview.id} clip={TRAINER_CLIPS[preview.id]!} paused={false} position={freeLoop} /> : null}
-            <View style={{ position: 'absolute', left: s(14), bottom: s(12) }}>
-              <PanelTag>{preview.name.toUpperCase()}</PanelTag>
-            </View>
+            {/* The trainer runs through every move, so Home shows what RepCast can coach. */}
+            <TrainerReel reel={REEL} />
           </View>
           {/* The coach's advice from last time carries over to today. */}
           <View style={{ flexDirection: 'row', gap: s(12), alignItems: 'flex-start', paddingHorizontal: s(4) }}>

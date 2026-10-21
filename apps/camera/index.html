@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#15120F" />
     <title>RepCast camera</title>
+    <!-- Served at repcast.netlify.app/camera/: without the trailing slash the page's relative paths would
+         point at the website's own files, so add it. -->
+    <script>
+      if (/\/camera$/i.test(location.pathname)) location.replace(location.pathname + '/' + location.search);
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

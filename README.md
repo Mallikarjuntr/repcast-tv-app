@@ -7,7 +7,7 @@
 
 > Built for **Build, Ship, Shape: Amazon Developer Hackathon 2026** — Fire TV track, plus the AWS Builder and Open Source mini challenges.
 
-**Try it:** [phone camera page](https://mallikarjuntr.github.io/repcast-tv-app/) · [website](https://repcast.netlify.app) · [open-source engine](https://github.com/Mallikarjuntr/repcast-movement) · [how it's tested](docs/TESTING.md) · [friction log](docs/FRICTION.md)
+**Try it:** [phone camera page](https://repcast.netlify.app/camera/) · [website](https://repcast.netlify.app) · [open-source engine](https://github.com/Mallikarjuntr/repcast-movement) · [how it's tested](docs/TESTING.md) · [friction log](docs/FRICTION.md)
 
 **Built with:** ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white) ![React Native for TV](https://img.shields.io/badge/React_Native_for_TV-20232A?logo=react&logoColor=61DAFB) ![Expo](https://img.shields.io/badge/Expo-1C2024?logo=expo&logoColor=white) ![MediaPipe](https://img.shields.io/badge/MediaPipe_Pose-0097A7?logo=mediapipe&logoColor=white) ![WebRTC](https://img.shields.io/badge/WebRTC-333333?logo=webrtc&logoColor=white) ![Vite](https://img.shields.io/badge/Vite-9135FF?logo=vite&logoColor=white) ![Vitest](https://img.shields.io/badge/Vitest-2C2C2C?logo=vitest&logoColor=00FF74) ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?logo=githubactions&logoColor=white) ![License: MIT](https://img.shields.io/badge/License-MIT-3DA639?logo=opensourceinitiative&logoColor=white)
 
@@ -96,7 +96,7 @@ The apps use the deployed RepCast backend out of the box (public endpoints in `p
 
 ### Phone camera app
 
-The published version is at **https://mallikarjuntr.github.io/repcast-tv-app/**. The TV's QR code opens the short link **https://repcast.netlify.app/go?code=…** on the [website](https://github.com/Mallikarjuntr/repcast-tv-landing-page), which opens the same page at **https://repcast.netlify.app/camera/** (Netlify serves it from GitHub Pages, so it is still built and published from here).
+Open it at **https://repcast.netlify.app/camera/**. The TV's QR code opens the short link **https://repcast.netlify.app/go?code=…**, which leads there. The page is built and published from this repo to GitHub Pages, and the [website](https://github.com/Mallikarjuntr/repcast-tv-landing-page) serves it at that address; if Netlify is ever down, the same page is at https://mallikarjuntr.github.io/repcast-tv-app/.
 
 To run it locally:
 

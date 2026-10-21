@@ -270,6 +270,22 @@ On the Fire TV Stick 4K with the release APK, phone = `tools/fake-phone.mjs` (no
 - **Analysis:** tiles (counted vs planned, clean %, deepest knee angle, seconds per rep, time, change since last time), a bar per attempt by set, the form breakdown with what the camera flagged, and the trend over earlier sessions all appear at once, before the AI answers; Amazon Nova's note arrived in ~10 s. The model once claimed "first session on record" with earlier sessions in the request, so the comparison line is now stated by the TV from the numbers and the model's headline isn't shown; only the coach's note and the next-session plan are the model's.
 - Test workouts added to the "Me" history today: 19:04 (24 reps), ~19:08 (12) and ~19:11 (12).
 
+## 14. A split squat in a squat set is called a split squat (2026-10-21)
+
+The gym split-squat clip judged as a squat set said "That's a lunge" on all five reps: true that it isn't a squat, wrong about what it was. Squat sets ignored the split-stance reading (planted squats and sumo squats at 45° read up to 0.46) and side-on the back foot seems to move as the legs cross, so it fell through to "a foot stepped: a lunge". Squat sets now trust a clearly split start stance: at `CLEAR_SPLIT` 0.6 or more of leg length (repcast-movement `footwork.ts`) the cue is "That's a split squat — this set is squats, feet side by side" (and the half/sumo squat versions). Verdicts don't change.
+
+Replay bench (phone pipeline, lite model, 30 fps) with the engine from source:
+
+| Clip | Judged as | Before | After |
+|---|---|---|---|
+| gym-03, side-on split squats | squat | 0/5, "That's a lunge" ×5 | 0/5, "That's a split squat" ×5 (split 0.72–0.85) |
+| gym-03 | split squat | 5/5 | 5/5 |
+| gym-02, squats from the front | squat | 5/5 | 5/5 |
+| gym-04, squats (second lifter) | squat | 5/5, first rep with a note | same |
+| gym-01, side-on split squats | squat | — | 1/3 counted; the two no-reps still say "lunge" (split 0.59 and 0.40, under the margin) |
+
+New engine test: a squat set with a long split stance and a back foot that seems to slide is two no-reps, "That's a split squat — this set is squats" (73 tests).
+
 ## Known limits
 
 - **Pure side-on filming** can't tell a lunge from a squat when one leg hides the other, nor a split squat from a lunge (heel lift and the hidden ankle look like a step). Mitigation: 45° placement in the setup flow, plus a live "turn the phone" hint.

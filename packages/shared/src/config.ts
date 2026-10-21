@@ -8,7 +8,10 @@ export const config = {
   eventsHttpHost: 'tfqlk5yeirbcpjecqsdq775ic4.appsync-api.ap-south-1.amazonaws.com',
   eventsRealtimeHost: 'tfqlk5yeirbcpjecqsdq775ic4.appsync-realtime-api.ap-south-1.amazonaws.com',
   eventsApiKey: 'da2-g4deiumcerfwzdyxlr3igkm7n4',
-  /** Where the phone camera app is hosted. */
+  /**
+   * Where the phone camera app is built and published (GitHub Pages). People open it at
+   * repcast.netlify.app/camera/, which serves this page; this address stays as the fallback.
+   */
   cameraAppUrl: 'https://mallikarjuntr.github.io/repcast-tv-app/',
   /**
    * What the TV's QR code opens (with ?code=…) and the address it shows: a short link on the
