@@ -31,7 +31,7 @@ Screenshots from the Fire TV Stick, taken over ADB. The live picture is our own 
 | **Live set:** your picture with the skeleton, count, verdicts and the coach's voice | **Workout analysis:** charts worked out on the TV, plus an AI coach's note from Amazon Nova on Bedrock |
 | ![A year of training as a GitHub-style calendar, with streaks, clean-form trend and most-trained moves](docs/screenshots/stick/3-progress.jpg) | ![When the video can't reach the TV: the trainer clip, a same-Wi-Fi notice, and the person's outline](docs/screenshots/stick/4-no-video-fallback.jpg) |
 | **Progress:** a year at a glance, per person | **No video?** The trainer shows the move, the outline still follows you, reps still count |
-| ![Pick a move: 12 camera-checked moves in four groups](docs/screenshots/stick/5-pick-a-move.jpg) | ![Pairing: QR code and 4-digit code, with the set-up plan](docs/screenshots/stick/6-pair.jpg) |
+| ![Pick a move: 12 camera-checked moves in five groups](docs/screenshots/stick/5-pick-a-move.jpg) | ![Pairing: QR code and 4-digit code, the phone connected and its live picture, the set about to start](docs/screenshots/stick/6-pair.jpg) |
 | **Pick a move:** 12 moves the camera checks | **Pair:** scan the QR code or type 4 digits |
 
 ## For judges
@@ -44,7 +44,7 @@ Screenshots from the Fire TV Stick, taken over ADB. The live picture is our own 
 | **Quality of the idea** | Computer-vision fitness on Fire TV without a TV camera; multi-modal (phone camera + remote + voice + TV picture) in one flow |
 | **AWS Builder** | AppSync Events (live link), API Gateway + Lambda + DynamoDB (pairing), Amazon Polly (all 117 coach lines, recorded in CI), Amazon Bedrock with Amazon Nova (workout analysis), Budgets, SAM/CloudFormation via GitHub OIDC — [why each](https://github.com/Mallikarjuntr/repcast-backend#readme) |
 | **Open Source** | [repcast-movement](https://github.com/Mallikarjuntr/repcast-movement) (MIT): a separate library any app can use to count and judge reps from MediaPipe landmarks |
-| **Friction log** | [docs/FRICTION.md](docs/FRICTION.md): 21 entries, each with task, steps, expected vs actual, severity, workaround and suggestion |
+| **Friction log** | [docs/FRICTION.md](docs/FRICTION.md): 22 entries, each with task, steps, expected vs actual, severity, workaround and suggestion |
 
 **What's real and what isn't:** everything in the demo is real and runs on a real Fire TV Stick, with the deployed backend. Test-only helpers are labelled as such: `tools/fake-phone.mjs` plays a phone's messages without a phone, and the camera page's `?src=` option plays a recorded clip instead of the camera.
 

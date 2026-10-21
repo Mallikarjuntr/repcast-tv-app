@@ -25,6 +25,7 @@ Problems hit while building RepCast, logged as they happened. Each entry: the ta
 | [19](#19) | 2026-10-18 | Amazon Bedrock (IAM, cross-account keys) | Bedrock's two APIs need different IAM actions | Medium |
 | [20](#20) | 2026-10-19 | Amazon Bedrock (third-party models) | Claude on Bedrock needs AWS Marketplace permissions on first call | Medium |
 | [21](#21) | 2026-10-19 | Amazon Polly (neural, ap-south-1) | Polly neural voices throttle a 4-way parallel recording job | Medium |
+| [22](#22) | 2026-10-21 | Fire TV launcher (Fire OS 8) | Home screen keeps a sideloaded app's first name and icon after updates | Medium |
 
 ## 1
 **CloudShell won't open: "account verification is in progress"** · AWS CloudShell · 2026-10-13
@@ -313,3 +314,17 @@ Problems hit while building RepCast, logged as they happened. Each entry: the ta
 - **Severity:** Medium (blocked a release until diagnosed)
 - **Workaround:** 2 requests at a time and `retryMode: 'adaptive'` with up to 10 attempts; recorded all 117 lines
 - **Suggestion:** Put the neural TPS limit for the Region in the throttling error and in the Polly quotas page; default to adaptive retries for Polly in the SDK
+
+## 22
+**The home screen keeps a sideloaded app's first name and icon** · Fire TV launcher (Fire OS 8.1, Fire TV Stick 4K) · 2026-10-21
+
+- **Task:** Ship the renamed app (Spotter → RepCast) with its new icon and banner to our test stick
+- **Steps:**
+  1. Install a build on Oct 16 (label "Spotter", tally-mark icon).
+  2. Install updates with `adb install -r`, the latest with label "RepCast", a new icon and banner, and `versionCode` raised from 1 to 2.
+  3. Reboot the stick.
+- **Expected:** "Your apps and channels" shows the new name and banner after the update (`aapt dump badging` on the APK shows label RepCast and the new banner)
+- **Actual:** The tile still said "Spotter" with the Oct 16 icon after the update and after a reboot. The launcher is a protected package (it can't be force-stopped) and Fire OS has Android's backup service off, so `adb backup` writes an empty file — the only fix is uninstall and reinstall, which wipes the app's data
+- **Severity:** Medium (a stale brand on the device we film the demo on; data loss unless worked around)
+- **Workaround:** Temporarily installed a debuggable build with the same signature, copied the app's database out with `run-as`, uninstalled, reinstalled, copied it back, then installed the release build over it. The tile now reads RepCast with the new icon
+- **Suggestion:** Refresh launcher tiles on `PACKAGE_REPLACED` when the label, icon or banner changes, or document the cache and add a "refresh app tiles" option in developer settings
