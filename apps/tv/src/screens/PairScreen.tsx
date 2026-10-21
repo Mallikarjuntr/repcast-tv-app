@@ -1,7 +1,7 @@
 import { BODY_PARTS, config, type BodyPart, type Session } from '@spotter/shared';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import { FloorPlan } from '../components/FloorPlan';
+import { SetupGuide } from '../components/SetupGuide';
 import { BackButton, FocusButton } from '../components/FocusButton';
 import { LiveVideo } from '../components/LiveVideo';
 import { Cross, Tick } from '../components/Marks';
@@ -218,7 +218,7 @@ export function PairScreen({
           {showVideo ? (
             <LiveVideo streamUrl={video.streamUrl!} getPose={videoPose.getPose} subscribePose={videoPose.subscribePose} notes={NO_NOTES} width={panel.width} height={panel.height} />
           ) : (
-            <FloorPlan width={s(560)} height={s(453)} />
+            <SetupGuide width={panel.width} height={panel.height} />
           )}
           {showVideo ? (
             <View style={{ position: 'absolute', left: s(18), top: s(16) }}>
