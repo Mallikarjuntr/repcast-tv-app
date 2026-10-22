@@ -17,7 +17,7 @@ import { latestOf } from '../poseFeed';
 import { useSpokenGuidance } from '../useSpokenGuidance';
 import { useVideoReceiver } from '../useVideoReceiver';
 import { hush, say } from '../voice';
-import { coachIntroLine, countLine, FINISH_LINE, HINT_LINES, NO_REP_LINE, restLine, setIntroLine } from '../voiceLines';
+import { coachIntroLine, countLine, FINISH_LINE, HINT_LINES, NO_REP_LINE, restLine, setIntroLine, WIFI_LINE } from '../voiceLines';
 
 /** A live set's state, as the phone needs it. */
 export interface LiveState {
@@ -137,6 +137,14 @@ export function LiveScreen({
   // No picture for a while (usually phone and TV on different Wi-Fi): show how the move goes, with
   // the drawn outline of the person in a corner, and say why.
   const videoMissing = useVideoMissing(showVideo, panel.width > 0);
+  // Out loud too, once per screen, so nobody stares at a silent TV wondering where the picture is.
+  const saidWifi = useRef(false);
+  useEffect(() => {
+    if (videoMissing && !saidWifi.current) {
+      saidWifi.current = true;
+      say(WIFI_LINE, { after: true });
+    }
+  }, [videoMissing]);
   const clip = clipFor(plan.exercise);
   const fallback = !showVideo && videoMissing && clip !== undefined;
   const { getPose, subscribePose } = w;

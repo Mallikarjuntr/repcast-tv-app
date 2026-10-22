@@ -116,9 +116,25 @@ export function NoVideoNotice({ compact = false }: { compact?: boolean }) {
       <View style={{ flexShrink: 1, gap: s(2) }}>
         <Text style={{ fontFamily: fonts.sansBold, fontSize: s(compact ? 15 : 17), color: colors.text }}>No live picture from your phone</Text>
         <Text style={{ fontFamily: fonts.sans, fontSize: s(compact ? 13 : 15), lineHeight: s(compact ? 18 : 21), color: colors.textSoft }}>
-          Put the phone and TV on the same Wi-Fi to see yourself here. Your reps still count.
+          Please check your phone and TV are on the same Wi-Fi. Your reps still count.
         </Text>
       </View>
+    </View>
+  );
+}
+
+/** The same message, filling the Pair screen's panel, where the set-up guide was: hard to miss. */
+export function NoVideoPanel() {
+  const s = useScale();
+  return (
+    <View style={{ alignItems: 'center', gap: s(14), paddingHorizontal: s(40) }}>
+      <View style={{ width: s(84), height: s(84), borderRadius: s(42), backgroundColor: colors.raised, alignItems: 'center', justifyContent: 'center' }}>
+        <Wifi size={s(40)} />
+      </View>
+      <Text style={{ fontFamily: fonts.display, fontSize: s(34), color: colors.text, textAlign: 'center' }}>Your phone is linked — but no picture</Text>
+      <Text style={{ fontFamily: fonts.sansSemi, fontSize: s(20), lineHeight: s(28), color: colors.textSoft, textAlign: 'center' }}>
+        Please check your phone and TV are on the same Wi-Fi.{'\n'}Your reps still count either way.
+      </Text>
     </View>
   );
 }

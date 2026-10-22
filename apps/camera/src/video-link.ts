@@ -12,7 +12,8 @@ export interface VideoLinkOptions {
   maxHeight?: number;
   maxBitrate?: number;
   maxFramerate?: number;
-  onState?: (state: RTCPeerConnectionState | 'waiting') => void;
+  /** `answered` = the TV replied, so if the link still fails the networks can't reach each other. */
+  onState?: (state: RTCPeerConnectionState | 'waiting' | 'answered') => void;
 }
 
 /**
@@ -106,6 +107,7 @@ export class VideoLink {
       const pc = this.pc;
       try {
         await pc.setRemoteDescription(event.sdp);
+        this.options.onState?.('answered');
         for (const c of this.pending.splice(0)) await pc.addIceCandidate(c).catch(() => {});
       } catch {
         this.retryOffer(RETRY_MS);

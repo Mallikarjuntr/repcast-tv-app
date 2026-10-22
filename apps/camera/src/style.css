@@ -570,3 +570,23 @@ code {
   font-size: 15px;
   line-height: 1.15;
 }
+
+/* Shown when the TV can't get the video: phone and TV on different Wi-Fi networks. */
+.wifi-warn {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 107, 91, 0.14);
+  border: 1px solid var(--fault);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.4;
+}
+.wifi-warn strong {
+  display: block;
+  color: var(--fault);
+  font-size: 16px;
+}
+.wifi-warn[hidden] {
+  display: none;
+}

@@ -60,12 +60,33 @@ const ui = {
   pairForm: $<HTMLFormElement>('pair-form'),
   statusTag: $('status-tag'),
   codeInput: $<HTMLInputElement>('code'),
+  wifiWarn: $('wifi-warn'),
 };
 
 /** Live connection to the TV session this phone is linked to, if any. */
 let tv: LiveChannel | null = null;
+/**
+ * The TV answered but the picture still can't get through: almost always the phone and TV on
+ * different networks (the video only travels inside the home). Say so after a fair wait, instead of
+ * the TV just showing nothing; clear it the moment the picture connects.
+ */
+const VIDEO_WAIT_MS = 10_000;
+let videoWait: ReturnType<typeof setTimeout> | undefined;
+function onVideoState(state: RTCPeerConnectionState | 'waiting' | 'answered'): void {
+  if (state === 'connected' || state === 'closed') {
+    clearTimeout(videoWait);
+    videoWait = undefined;
+    ui.wifiWarn.hidden = true;
+  } else if (state === 'answered') {
+    clearTimeout(videoWait);
+    videoWait = setTimeout(() => (ui.wifiWarn.hidden = false), VIDEO_WAIT_MS);
+  } else if (state === 'failed' && videoWait !== undefined) {
+    clearTimeout(videoWait);
+    ui.wifiWarn.hidden = false;
+  }
+}
 /** The camera picture for the TV, straight over the home Wi-Fi (`?video=off` to test without it). */
-const video = new URLSearchParams(location.search).get('video') === 'off' ? null : new VideoLink();
+const video = new URLSearchParams(location.search).get('video') === 'off' ? null : new VideoLink({ onState: onVideoState });
 let lastFraming = '';
 let lastFramingAt = 0;
 const steadyHint = new SteadyHint();

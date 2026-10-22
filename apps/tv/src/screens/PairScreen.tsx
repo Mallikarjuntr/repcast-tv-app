@@ -6,7 +6,7 @@ import { BackButton, FocusButton } from '../components/FocusButton';
 import { LiveVideo } from '../components/LiveVideo';
 import { Cross, Tick } from '../components/Marks';
 import { QrCode } from '../components/QrCode';
-import { Card, NoVideoNotice, PanelTag, PrivacyLine, Wifi } from '../components/Studio';
+import { Card, NoVideoPanel, PanelTag, PrivacyLine, Wifi } from '../components/Studio';
 import { useVideoMissing } from '../useVideoMissing';
 import { Headline, Kicker, Note } from '../components/Type';
 import { colors, fonts, useScale } from '../theme';
@@ -87,6 +87,13 @@ export function PairScreen({
   const hint = ready?.phoneConnected ? ready.hint : null;
   const phoneConnected = ready?.phoneConnected ?? false;
   const videoMissing = useVideoMissing(showVideo, phoneConnected, 8000);
+  const saidWifi = useRef(false);
+  useEffect(() => {
+    if (videoMissing && !saidWifi.current) {
+      saidWifi.current = true;
+      say(WIFI_LINE, { after: true });
+    }
+  }, [videoMissing]);
 
   // Said once per pairing: not again when the next move reuses the link.
   const linkedBefore = useRef(!!session);
@@ -217,16 +224,14 @@ export function PairScreen({
         >
           {showVideo ? (
             <LiveVideo streamUrl={video.streamUrl!} getPose={videoPose.getPose} subscribePose={videoPose.subscribePose} notes={NO_NOTES} width={panel.width} height={panel.height} />
+          ) : videoMissing ? (
+            <NoVideoPanel />
           ) : (
             <SetupGuide width={panel.width} height={panel.height} />
           )}
           {showVideo ? (
             <View style={{ position: 'absolute', left: s(18), top: s(16) }}>
               <PanelTag dot={colors.live}>YOU · LIVE</PanelTag>
-            </View>
-          ) : videoMissing ? (
-            <View style={{ position: 'absolute', left: s(16), bottom: s(16), maxWidth: panel.width * 0.62 }}>
-              <NoVideoNotice compact />
             </View>
           ) : null}
           {ready?.phoneConnected && missing ? (
