@@ -95,6 +95,16 @@ Status: **fixed** (2026-10-16, verified on the stick), **decided** (a product ca
 | 55 | No "step back" / "come closer" during a set | Standing moves ask to step back until both feet are in the picture; "come closer" when the torso is under 12% of the picture (was 10%). The TV says them during sets: "Step back a little, so I can see all of you." / "Come a little closer to the phone." | fixed |
 | 56 | Pairing code 6 digits felt slow to type | Back to 4 digits; the code lookup route is limited to 2 requests a second, so trying every code takes over 80 minutes (codes live 2 hours). 6-digit codes still accepted | fixed (backend) |
 
+## Pre-submission run on the Fire TV Stick 3rd gen (2026-10-23)
+
+Release build of `dev` on the stick (Fire OS 7, 32-bit); the phone was headless Chrome on the Mac running the camera page from the dev server with a gym clip as its camera. Passed: launch and Home (trainer reel), Start session → Coach me on camera → pick a move → Pair (QR + code, live picture, body checklist, "turn the phone" hint, auto countdown and "Start workout"), live video with the skeleton aligned, sets/rest/"Skip rest", phone and TV counts within a second of each other, coach lines, honest no-reps (a split-squat clip in a squats set: 12 no reps, "That's a split squat — this set is squats"), "Done with this" → receipt (honest early-end note), the analysis dashboard, Home and Progress updated, Follow along (trainer, beat count, voice, Play/Pause key), profiles and the Fire TV keyboard (no profile saved), BACK everywhere. The same-Wi-Fi warning (#16be9d6) with every WebRTC address dropped on the phone: the phone says "Your TV can't get the video. Please check your phone and TV are on the same Wi-Fi. Your reps still count."; the TV falls back to the trainer clip and outline with "No live picture from your phone" and keeps counting. App memory 135–184 MB.
+
+| # | What happened | Fix | Status |
+|---|---|---|---|
+| 57 | "Analyse with AI" said "The coach couldn't write this one" on the first try (worked on "Try again") | Not a cold start: about 1 in 4 Bedrock (Nova Lite) calls hung until the backend's 20 s timeout while the rest answered in ~1.6 s (10 calls against the live API: 3 hung). Each call is now cut off at 7 s and made again (up to ~3 tries inside API Gateway's 30 s), and a note that couldn't be written is given back to the session's allowance (the failed try used one of the 3 per move) | fixed in backend `dev` (17894f8); needs a deploy |
+| 58 | Pair screen: the link broke as "repcast.netlify.app" / "/go" on two lines | The forced line break was for the old, longer GitHub Pages address; the short link fits on one line | fixed |
+| 59 | Progress: "Moves you train most" lists "Legs, gently." | Sessions saved before the one-move-at-a-time change (Oct 17) carry the old routine's name; only TVs with that old history show it | not fixed (old data only) |
+
 ## Not ours
 
 - Fire OS shows "Allow USB debugging?" over a running app when a computer connects without "Always allow"; while it is up the app's timers stall (a rest took 74 s instead of 60). The phone correctly showed "Lost your TV" and recovered when the dialog closed.

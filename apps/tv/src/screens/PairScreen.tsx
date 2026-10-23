@@ -184,7 +184,7 @@ export function PairScreen({
                 <Kicker size={13}>OR TYPE THIS CODE</Kicker>
                 <Headline text={spacedCode(state.session.code)} size={state.session.code.length > 4 ? 52 : 62} />
                 <Text style={{ fontFamily: fonts.sans, fontSize: s(13), lineHeight: s(18), color: colors.faint }}>
-                  {'at ' + config.pairUrl.replace('https://', '').replace(/\/$/, '').replace('/', '\n/')}
+                  {'at ' + config.pairUrl.replace('https://', '').replace(/\/$/, '')}
                 </Text>
               </View>
             </>
