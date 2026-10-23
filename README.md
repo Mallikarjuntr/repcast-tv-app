@@ -54,13 +54,13 @@ Screenshots from the Fire TV Stick, taken over ADB. The live picture is our own 
 
 | Criterion | Where to look |
 |---|---|
-| **Technical implementation** | Phone ↔ TV over AppSync Events + WebRTC with a data channel for pose ([how it works](#how-it-works)); native-driven skeleton for a 1 GB stick ([friction #14](docs/FRICTION.md#14)); an open-source rep engine with 72 unit tests ([repcast-movement](https://github.com/Mallikarjuntr/repcast-movement)); replay bench + renders from three angles; infrastructure as code, deployed only by GitHub Actions with OIDC ([repcast-backend](https://github.com/Mallikarjuntr/repcast-backend)) |
+| **Technical implementation** | Phone ↔ TV over AppSync Events + WebRTC with a data channel for pose ([how it works](#how-it-works)); native-driven skeleton for a 1 GB stick ([friction #14](docs/FRICTION.md#14)); an open-source rep engine with 73 unit tests ([repcast-movement](https://github.com/Mallikarjuntr/repcast-movement)); replay bench + renders from three angles; infrastructure as code, deployed only by GitHub Actions with OIDC ([repcast-backend](https://github.com/Mallikarjuntr/repcast-backend)) |
 | **Design** | One accent, big numbers, readable from the sofa; D-pad first; the TV leads and the phone follows; a 5-second countdown starts the set when you're in frame. Screenshots in [docs/screenshots/stick](docs/screenshots/stick/) |
 | **Potential impact** | Turns any Fire TV + any phone into form coaching, with no hardware, account or subscription; privacy by design (video never leaves the home); free |
 | **Quality of the idea** | Computer-vision fitness on Fire TV without a TV camera; multi-modal (phone camera + remote + voice + TV picture) in one flow |
 | **AWS Builder** | AppSync Events (live link), API Gateway + Lambda + DynamoDB (pairing), Amazon Polly (all 117 coach lines, recorded in CI), Amazon Bedrock with Amazon Nova (workout analysis), Budgets, SAM/CloudFormation via GitHub OIDC — [why each](https://github.com/Mallikarjuntr/repcast-backend#readme) |
 | **Open Source** | [repcast-movement](https://github.com/Mallikarjuntr/repcast-movement) (MIT): a separate library any app can use to count and judge reps from MediaPipe landmarks |
-| **Friction log** | [docs/FRICTION.md](docs/FRICTION.md): 22 entries, each with task, steps, expected vs actual, severity, workaround and suggestion |
+| **Friction log** | [docs/FRICTION.md](docs/FRICTION.md): 23 entries, each with task, steps, expected vs actual, severity, workaround and suggestion |
 
 **What's real and what isn't:** everything in the demo is real and runs on a real Fire TV Stick, with the deployed backend. Test-only helpers are labelled as such: `tools/fake-phone.mjs` plays a phone's messages without a phone, and the camera page's `?src=` option plays a recorded clip instead of the camera.
 

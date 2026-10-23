@@ -26,6 +26,7 @@ Problems hit while building RepCast, logged as they happened. Each entry: the ta
 | [20](#20) | 2026-10-19 | Amazon Bedrock (third-party models) | Claude on Bedrock needs AWS Marketplace permissions on first call | Medium |
 | [21](#21) | 2026-10-19 | Amazon Polly (neural, ap-south-1) | Polly neural voices throttle a 4-way parallel recording job | Medium |
 | [22](#22) | 2026-10-21 | Fire TV launcher (Fire OS 8) | Home screen keeps a sideloaded app's first name and icon after updates | Medium |
+| [23](#23) | 2026-10-23 | Amazon Bedrock (Converse, Nova Lite, ap-south-1) | About 1 Converse call in 4 hangs until the client timeout | High |
 
 ## 1
 **CloudShell won't open: "account verification is in progress"** · AWS CloudShell · 2026-10-13
@@ -328,3 +329,16 @@ Problems hit while building RepCast, logged as they happened. Each entry: the ta
 - **Severity:** Medium (a stale brand on the device we film the demo on; data loss unless worked around)
 - **Workaround:** Temporarily installed a debuggable build with the same signature, copied the app's database out with `run-as`, uninstalled, reinstalled, copied it back, then installed the release build over it. The tile now reads RepCast with the new icon
 - **Suggestion:** Refresh launcher tiles on `PACKAGE_REPLACED` when the label, icon or banner changes, or document the cache and add a "refresh app tiles" option in developer settings
+
+## 23
+**About 1 Converse call in 4 hangs until the client timeout** · Amazon Bedrock (Converse, Amazon Nova Lite via the `apac.` inference profile, ap-south-1) · 2026-10-23
+
+- **Task:** Write a coach's note for a finished workout with Amazon Nova Lite (one Converse call with a forced tool call, about 1,500 input and 400 output tokens)
+- **Steps:**
+  1. Lambda (Node.js, AWS SDK v3) calls `ConverseCommand` with `maxAttempts: 1` and a 20 s request timeout.
+  2. Send 10 identical requests through the deployed API, one after another, each on a fresh pairing session.
+- **Expected:** Every call answers in a few seconds, or fails fast with an error that can be retried
+- **Actual:** 7 answered in 1.4–3.5 s; 3 sent no response at all and were cut off by our 20 s timeout, so the TV showed "The coach couldn't write this one". No error code, no throttling exception; the next identical call answered in under 2 s. It showed up first on the Fire TV during our pre-submission test
+- **Severity:** High (the AI note is a headline feature; a judge's first try could fail)
+- **Workaround:** Each call is cut off after 7 s and made again (at most three starts inside API Gateway's 30 s), and a note that couldn't be written is no longer counted against the session's allowance. After the deploy: 10 of 10 notes written, one of them on its retry (8.6 s)
+- **Suggestion:** Return a retryable error (or a 503 with `Retry-After`) instead of leaving the connection silent, and document typical and worst-case latency for Nova Lite on cross-region inference profiles, with a recommended client timeout
