@@ -39,11 +39,11 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1B1714"
       },
-      "versionCode": 2
+      "versionCode": 3
     },
     "name": "RepCast",
     "slug": "spotter",
-    "version": "0.2.0",
+    "version": "1.0.0",
     "orientation": "landscape",
     "userInterfaceStyle": "light",
     "backgroundColor": "#15120F",

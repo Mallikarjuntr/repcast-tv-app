@@ -13,6 +13,22 @@
 
 **On AWS:** <img src="docs/logos/aws-appsync.svg" width="28" height="28" alt="" align="absmiddle"> AppSync Events &nbsp; <img src="docs/logos/amazon-api-gateway.svg" width="28" height="28" alt="" align="absmiddle"> API Gateway &nbsp; <img src="docs/logos/aws-lambda.svg" width="28" height="28" alt="" align="absmiddle"> Lambda &nbsp; <img src="docs/logos/amazon-dynamodb.svg" width="28" height="28" alt="" align="absmiddle"> DynamoDB &nbsp; <img src="docs/logos/amazon-polly.svg" width="28" height="28" alt="" align="absmiddle"> Polly &nbsp; <img src="docs/logos/amazon-bedrock.svg" width="28" height="28" alt="" align="absmiddle"> Bedrock (Nova) &nbsp; <img src="docs/logos/aws-cloudformation.svg" width="28" height="28" alt="" align="absmiddle"> SAM / CloudFormation
 
+## Try it in 5 minutes
+
+**You need:** a Fire TV (any Fire TV Stick; it's built on the 3rd gen) and a phone, or a laptop with a webcam, **on the same Wi-Fi**.
+
+1. **Install RepCast on the Fire TV** ([release v1.0.0](https://github.com/Mallikarjuntr/repcast-tv-app/releases/tag/v1.0.0)), either:
+   - **On the TV, no computer:** install **Downloader** (free, from the Appstore). Turn on *Settings → My Fire TV → Developer Options → Install unknown apps → Downloader*. Open Downloader, type **`repcast.netlify.app/apk`**, select *Go*, then *Install*. (Developer Options hidden? Open *Settings → My Fire TV → About* and select the device name 7 times.)
+   - **From a computer:** download [RepCast-1.0.0.apk](https://github.com/Mallikarjuntr/repcast-tv-app/releases/download/v1.0.0/RepCast-1.0.0.apk), then `adb connect <TV IP>:5555` and `adb install RepCast-1.0.0.apk`.
+2. Open **RepCast** → **Start session** → **Coach me on camera** → **Squats**.
+3. **Scan the QR code** with the phone's camera (or open `repcast.netlify.app/go` and type the 4-digit code) and allow the camera. Nothing to install on the phone.
+4. Lean the phone at hip height, about 3 big steps away and a little to one side, and step back until your head and feet show on the TV. The set starts by itself. Do a few squats, and one half-way down to see a "no rep".
+5. After the set: **Analyse with AI** for Amazon Nova's note; **Your progress** on Home.
+
+No phone handy? **Follow along** needs no camera: follow the 3D trainer, it counts with you.
+
+The APK is a sideload build (not from the Appstore), signed with the standard debug key. SHA-256 `2a9515c5b19ccbf1662f737d8016e1dd665b02cacef53e5e438fdf9bc90e9cee`.
+
 ## Why RepCast
 
 - **Runs on the cheapest Fire TV.** Built and measured on a **Fire TV Stick 3rd gen: 32-bit Fire OS, about 1 GB of RAM** — live phone video, a skeleton over it at ~20 updates a second, voice and rep judging, using ~140–200 MB of memory with no low-memory kills in 10-minute soaks. Also runs on the Fire TV Stick 4K. Numbers in [TESTING §5–6](docs/TESTING.md).
